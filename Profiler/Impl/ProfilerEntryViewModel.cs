@@ -15,6 +15,11 @@ namespace Profiler.Impl
 {
     public class ProfilerEntryViewModel : IProfilerEntryViewModel
     {
+        /// <summary>
+        /// Applies to <see cref="ChildrenSorted"/>
+        /// </summary>
+        private const int PaginationCount = 50;
+
 #pragma warning disable 649
         [ReflectedGetter(Name = "Keys")]
         private static readonly Func<ConditionalWeakTable<object, SlimProfilerEntry>, ICollection<object>> _weakTableKeys;
@@ -203,10 +208,37 @@ namespace Profiler.Impl
                     }
                     using (ChildrenSorted.DeferredUpdate())
                     {
-                        ChildrenSorted.Clear();
-                        foreach (var k in Children.OrderBy(x => (int)(-x.UpdateTime * 1e6)))
-                            if (k.UpdateTime > 0)
-                                ChildrenSorted.Add(k);
+                        var wasPaged = ChildrenSorted.Count > PaginationCount;
+                        var sortedEnumerable = Children.OrderBy(x => (int)(-x.UpdateTime * 1e6));
+                        if (Children.Count > PaginationCount)
+                        {
+                            var pageCount = (int)Math.Ceiling(Children.Count / (float)PaginationCount);
+                            if (wasPaged)
+                                while (ChildrenSorted.Count > pageCount)
+                                    ChildrenSorted.RemoveAt(ChildrenSorted.Count - 1);
+                            else
+                                ChildrenSorted.Clear();
+                            while (ChildrenSorted.Count < pageCount)
+                                ChildrenSorted.Add(new ProfilerEntryViewModel());
+
+                            using (var iterator = sortedEnumerable.GetEnumerator())
+                            {
+                                for (var i = 0; i < pageCount; i++)
+                                {
+                                    ChildrenSorted[i].OwnerName =
+                                        $"Items {i * PaginationCount + 1} to {i * PaginationCount + PaginationCount}";
+                                    ChildrenSorted[i].OnPropertyChanged(nameof(OwnerName));
+                                    FillPage(ChildrenSorted[i], iterator);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ChildrenSorted.Clear();
+                            foreach (var k in sortedEnumerable)
+                                if (k.UpdateTime > 0)
+                                    ChildrenSorted.Add(k);
+                        }
                     }
                 }
                 else
@@ -215,6 +247,38 @@ namespace Profiler.Impl
             else
             {
                 Children.Clear();
+            }
+        }
+
+        private void FillPage(ProfilerEntryViewModel target, IEnumerator<ProfilerEntryViewModel> items)
+        {
+            using (target.Children.DeferredUpdate())
+            using (target.ChildrenSorted.DeferredUpdate())
+            {
+                var count = 0;
+                var time = 0.0;
+                while (count < PaginationCount)
+                {
+                    if (!items.MoveNext() || items.Current == null)
+                        break;
+                    ProfilerEntryViewModel entry = items.Current;
+                    if (count < target.Children.Count)
+                        target.Children[count] = entry;
+                    else
+                        target.Children.Add(entry);
+                    if (count < target.ChildrenSorted.Count)
+                        target.ChildrenSorted[count] = entry;
+                    else
+                        target.ChildrenSorted.Add(entry);
+                    time += entry.UpdateTime;
+                    count++;
+                }
+                while (target.Children.Count > count)
+                    target.Children.RemoveAt(target.Children.Count - 1);
+                while (target.ChildrenSorted.Count > count)
+                    target.ChildrenSorted.RemoveAt(target.ChildrenSorted.Count - 1);
+                target.UpdateTime = time;
+                target.OnPropertyChanged(nameof(UpdateTime));
             }
         }
 

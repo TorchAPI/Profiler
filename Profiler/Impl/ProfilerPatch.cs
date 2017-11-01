@@ -206,12 +206,18 @@ namespace Profiler.Impl
             var sargs = source.GetParameters();
             foreach (var profilerArg in pcarg)
             {
-                if (profilerArg.Name.Equals("__instance") && (source.IsStatic ||
-                                                    !profilerArg.ParameterType.IsAssignableFrom(source.DeclaringType)))
-                    return false;
-                if (!profilerArg.Name.Equals("__key") &&
-                    !sargs.Any(sourceArg => (sourceArg.Name.Equals(profilerArg.Name) || profilerArg.Name.StartsWith("__any")) && profilerArg.ParameterType.IsAssignableFrom(sourceArg.ParameterType)))
-                    return false;
+                if (profilerArg.Name.Equals("__instance"))
+                {
+                    if (source.IsStatic || !profilerArg.ParameterType.IsAssignableFrom(source.DeclaringType))
+                        return false;
+                }
+                else if (!profilerArg.Name.Equals("__key"))
+                {
+                    if (!sargs.Any(sourceArg =>
+                            (sourceArg.Name.Equals(profilerArg.Name) || profilerArg.Name.StartsWith("__any")) &&
+                                                profilerArg.ParameterType.IsAssignableFrom(sourceArg.ParameterType)))
+                        return false;
+                }
             }
             return true;
         }
