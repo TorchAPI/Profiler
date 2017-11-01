@@ -152,6 +152,7 @@ namespace Profiler.Impl
         private const string _noData = "No Data";
 
         private bool _childrenUpdateDeferred = false;
+        private bool _wasPaged = false;
         private void UpdateInternal(object owner, SlimProfilerEntry entry, bool forcePropertyUpdate = false)
         {
             if (entry == null)
@@ -208,12 +209,11 @@ namespace Profiler.Impl
                     }
                     using (ChildrenSorted.DeferredUpdate())
                     {
-                        var wasPaged = ChildrenSorted.Count > PaginationCount;
                         var sortedEnumerable = Children.OrderBy(x => (int)(-x.UpdateTime * 1e6));
                         if (Children.Count > PaginationCount)
                         {
                             var pageCount = (int)Math.Ceiling(Children.Count / (float)PaginationCount);
-                            if (wasPaged)
+                            if (_wasPaged)
                                 while (ChildrenSorted.Count > pageCount)
                                     ChildrenSorted.RemoveAt(ChildrenSorted.Count - 1);
                             else
@@ -231,6 +231,7 @@ namespace Profiler.Impl
                                     FillPage(ChildrenSorted[i], iterator);
                                 }
                             }
+                            _wasPaged = true;
                         }
                         else
                         {
@@ -238,6 +239,7 @@ namespace Profiler.Impl
                             foreach (var k in sortedEnumerable)
                                 if (k.UpdateTime > 0)
                                     ChildrenSorted.Add(k);
+                            _wasPaged = false;
                         }
                     }
                 }

@@ -25,11 +25,6 @@ namespace Profiler.Impl
     [ReflectedLazy]
     internal static class ProfilerPatch
     {
-        static ProfilerPatch()
-        {
-            ReflectedManager.Process(typeof(ProfilerPatch));
-        }
-
         private static readonly Logger _log = LogManager.GetCurrentClassLogger();
 
         #region Patch Targets
@@ -75,6 +70,13 @@ namespace Profiler.Impl
 
         [ReflectedFieldInfo(typeof(MyCubeGridSystems), "m_cubeGrid")]
         private static readonly FieldInfo _gridSystemsCubeGrid;
+
+        #region Single Methods
+        [ReflectedMethodInfo(typeof(MyCubeGrid), "UpdatePhysicsShape")]
+        private static readonly MethodInfo _cubeGridUpdatePhysicsShape;
+/
+        #endregion
+
 #pragma warning restore 649
         #endregion
 
@@ -82,6 +84,8 @@ namespace Profiler.Impl
 
         public static void Patch(PatchContext ctx)
         {
+            ReflectedManager.Process(typeof(ProfilerPatch));
+
             _distributedUpdaterIterate = typeof(MyDistributedUpdater<,>).GetMethod("Iterate");
             ParameterInfo[] duiP = _distributedUpdaterIterate?.GetParameters();
             if (_distributedUpdaterIterate == null || duiP == null || duiP.Length != 1 || typeof(Action<>) != duiP[0].ParameterType.GetGenericTypeDefinition())
@@ -155,15 +159,7 @@ namespace Profiler.Impl
             var singleMethodProfiler = typeof(ProfilerPatch).GetMethod(nameof(TranspileSingleMethod),
                 BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
 
-            ctx.GetPattern(typeof(MyPhysicsBody).GetMethod("OnMotion", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)).Transpilers.Add(singleMethodProfiler);
-            ctx.GetPattern(typeof(MyRefinery).GetMethod("RebuildQueue", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)).Transpilers.Add(singleMethodProfiler);
-            foreach (var method in typeof(MyGridConveyorSystem).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
-                foreach (var tag in new[] { nameof(MyGridConveyorSystem.ItemPushRequest), nameof(MyGridConveyorSystem.ItemPullRequest), nameof(MyGridConveyorSystem.PullAllRequest), nameof(MyGridConveyorSystem.PushAnyRequest) })
-                    if (method.Name.Equals(tag))
-                    {
-                        ctx.GetPattern(method).Transpilers.Add(singleMethodProfiler);
-                        break;
-                    }
+            ctx.GetPattern(_cubeGridUpdatePhysicsShape).Transpilers.Add(singleMethodProfiler);
         }
 
         #region Single Method Transpiler Entry Providers

@@ -37,7 +37,6 @@ namespace Profiler.Impl
                 _patched = true;
                 _patchContext = _patchMgr.AcquireContext();
                 ProfilerPatch.Patch(_patchContext);
-                _patchMgr.Commit();
             }
 
             _controlMgr?.RegisterControlFactory<ProfilerEntityControlViewModel>(CreateView);

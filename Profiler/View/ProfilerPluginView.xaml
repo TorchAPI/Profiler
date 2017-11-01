@@ -14,7 +14,9 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <local:ProfilerTreeView DataContext="{Binding ProfilerRoots}" Grid.Row="0" Grid.Column="0" />
+        <ScrollViewer Grid.Row="0" Grid.Column="0">
+            <local:ProfilerTreeView DataContext="{Binding ProfilerRoots}"  />
+        </ScrollViewer>
         <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="1">
             <GroupBox Header="Grid Profiling">
                 <StackPanel Orientation="Vertical">
