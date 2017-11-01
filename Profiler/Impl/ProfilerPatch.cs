@@ -74,7 +74,6 @@ namespace Profiler.Impl
         #region Single Methods
         [ReflectedMethodInfo(typeof(MyCubeGrid), "UpdatePhysicsShape")]
         private static readonly MethodInfo _cubeGridUpdatePhysicsShape;
-/
         #endregion
 
 #pragma warning restore 649
