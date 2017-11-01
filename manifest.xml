@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<PluginManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Name>Profiler</Name>
+  <Guid>da82de0f-9d2f-4571-af1c-88c7921bc063</Guid>
+  <Repository>TorchAPI/Profiler</Repository>
+  <Version>${VERSION}</Version>
+</PluginManifest>
