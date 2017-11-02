@@ -20,11 +20,6 @@ namespace Profiler.Impl
         /// </summary>
         private const int PaginationCount = 50;
 
-#pragma warning disable 649
-        [ReflectedGetter(Name = "Keys")]
-        private static readonly Func<ConditionalWeakTable<object, SlimProfilerEntry>, ICollection<object>> _weakTableKeys;
-#pragma warning restore 649
-
         internal ProfilerEntryViewModel()
         {
             Children.PropertyChanged += ObservedChanged;
@@ -186,7 +181,7 @@ namespace Profiler.Impl
                 if (ChildrenSorted.IsObserved || Children.IsObserved || forcePropertyUpdate)
                 {
                     _childrenUpdateDeferred = false;
-                    ICollection<object> keys = _weakTableKeys(fat.ChildUpdateTime);
+                    ICollection<object> keys = fat.ChildUpdateKeys();
                     while (Children.Count > keys.Count)
                         Children.RemoveAt(Children.Count - 1);
                     var id = 0;

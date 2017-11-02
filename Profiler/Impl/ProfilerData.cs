@@ -2,8 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Threading;
+using System.Xml.Serialization;
 using NLog;
 using ParallelTasks;
 using Profiler.Api;
@@ -38,6 +40,8 @@ namespace Profiler.Impl
         // Doesn't update properly during runtime so not exposed.
         private static bool ProfileBlocksUpdateByOwner = true;
 
+        #region Msil Method Handles
+
         private const BindingFlags INSTANCE_FLAGS = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
         private const BindingFlags STATIC_FLAGS = BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public;
 
@@ -54,10 +58,11 @@ namespace Profiler.Impl
         internal static readonly MethodInfo GetSessionComponentProfiler = Method(typeof(ProfilerData), nameof(SessionComponentEntry), STATIC_FLAGS);
         internal static readonly MethodInfo GetSlim = Method(typeof(FatProfilerEntry), nameof(FatProfilerEntry.GetSlim), INSTANCE_FLAGS);
         internal static readonly MethodInfo GetFat = Method(typeof(FatProfilerEntry), nameof(FatProfilerEntry.GetFat), INSTANCE_FLAGS);
-        internal static readonly FieldInfo FieldProfileSingleMethods = typeof(ProfilerData).GetField(nameof(ProfileSingleMethods), STATIC_FLAGS)?? throw new Exception($"Couldn't find profile single methods setting");
+        internal static readonly FieldInfo FieldProfileSingleMethods = typeof(ProfilerData).GetField(nameof(ProfileSingleMethods), STATIC_FLAGS) ?? throw new Exception($"Couldn't find profile single methods setting");
         internal static readonly MethodInfo DoRotateEntries = Method(typeof(ProfilerData), nameof(RotateEntries), STATIC_FLAGS);
+        #endregion
 
-
+        #region View Models
         internal static ProfilerEntryViewModel BindView(ProfilerEntryViewModel cache = null)
         {
             if (cache != null)
@@ -69,6 +74,7 @@ namespace Profiler.Impl
 
         private static readonly ReaderWriterLockSlim _boundViewModelsLock = new ReaderWriterLockSlim();
         private static readonly List<WeakReference<ProfilerEntryViewModel>> _boundViewModels = new List<WeakReference<ProfilerEntryViewModel>>();
+        #endregion
 
         #region Rotation
         public const int RotateInterval = 300;
@@ -84,19 +90,20 @@ namespace Profiler.Impl
             if (_rotateIntervalCounter++ > RotateInterval)
             {
                 _rotateIntervalCounter = 0;
-                lock (ProfilingEntriesAll)
+                // we remove == write
+                using (_profilingEntriesAllLock.WriteUsing())
                 {
                     var i = 0;
-                    while (i < ProfilingEntriesAll.Count)
+                    while (i < _profilingEntriesAll.Count)
                     {
-                        if (ProfilingEntriesAll[i].TryGetTarget(out SlimProfilerEntry result))
+                        if (_profilingEntriesAll[i].TryGetTarget(out SlimProfilerEntry result))
                         {
                             result.Rotate();
                             i++;
                         }
                         else
                         {
-                            ProfilingEntriesAll.RemoveAtFast(i);
+                            _profilingEntriesAll.RemoveAtFast(i);
                         }
                     }
                 }
@@ -180,7 +187,8 @@ namespace Profiler.Impl
         #endregion
 
         #region Internal Access
-        internal static readonly List<WeakReference<SlimProfilerEntry>> ProfilingEntriesAll = new List<WeakReference<SlimProfilerEntry>>();
+        private static readonly ReaderWriterLockSlim _profilingEntriesAllLock = new ReaderWriterLockSlim();
+        internal static readonly List<WeakReference<SlimProfilerEntry>> _profilingEntriesAll = new List<WeakReference<SlimProfilerEntry>>();
         internal static readonly FatProfilerEntry[] Fixed;
 
         internal static FatProfilerEntry FixedProfiler(ProfilerFixedEntry item)
@@ -191,11 +199,12 @@ namespace Profiler.Impl
         static ProfilerData()
         {
             Fixed = new FatProfilerEntry[(int)ProfilerFixedEntry.Count];
-            lock (ProfilingEntriesAll)
+            // add to end is "read"
+            using (_profilingEntriesAllLock.ReadUsing())
                 for (var i = 0; i < Fixed.Length; i++)
                 {
                     Fixed[i] = new FatProfilerEntry();
-                    ProfilingEntriesAll.Add(new WeakReference<SlimProfilerEntry>(Fixed[i]));
+                    _profilingEntriesAll.Add(new WeakReference<SlimProfilerEntry>(Fixed[i]));
                 }
         }
 
@@ -258,12 +267,13 @@ namespace Profiler.Impl
         }
         #endregion
 
-        internal static SlimProfilerEntry MakeSlim(FatProfilerEntry caller, object key)
+        #region Profiler Entry Factory
+        private static SlimProfilerEntry MakeSlim(FatProfilerEntry caller, object key)
         {
             return new SlimProfilerEntry(caller);
         }
 
-        internal static FatProfilerEntry MakeFat(FatProfilerEntry caller, object key)
+        private static FatProfilerEntry MakeFat(FatProfilerEntry caller, object key)
         {
             if (ProfileBlocksUpdateByOwner && key is MyCubeBlock block)
             {
@@ -289,5 +299,61 @@ namespace Profiler.Impl
             }
             return new FatProfilerEntry(caller);
         }
+
+        internal static SlimProfilerEntry MakeSlimExternal(FatProfilerEntry caller, object key)
+        {
+            var res = MakeSlim(caller, key);
+            // add to end is read
+            using (_profilingEntriesAllLock.ReadUsing())
+                _profilingEntriesAll.Add(new WeakReference<SlimProfilerEntry>(res));
+            return res;
+        }
+
+        internal static FatProfilerEntry MakeFatExternal(FatProfilerEntry caller, object key)
+        {
+            var res = MakeFat(caller, key);
+            // add to end is read
+            using (_profilingEntriesAllLock.ReadUsing())
+                _profilingEntriesAll.Add(new WeakReference<SlimProfilerEntry>(res));
+            return res;
+        }
+
+        #endregion
+
+        #region Dump to Disk
+        internal static void Dump(string path)
+        {
+            var tmp = new Dictionary<SlimProfilerEntry, ProfilerBlock>();
+            var roots = new List<ProfilerBlock>();
+            for (var i = 0; i < (int)ProfilerFixedEntry.Count; i++)
+                roots.Add(DumpRecursive((ProfilerFixedEntry)i, FixedProfiler((ProfilerFixedEntry)i), tmp));
+            using (var writer = File.CreateText(path))
+                new XmlSerializer(typeof(List<ProfilerBlock>)).Serialize(writer, roots);
+        }
+
+        private static ProfilerBlock DumpRecursive(object owner, SlimProfilerEntry entry, IDictionary<SlimProfilerEntry, ProfilerBlock> result)
+        {
+            if (result.TryGetValue(entry, out ProfilerBlock block))
+                return block;
+            block = new ProfilerBlock()
+            {
+                TimeElapsed = entry.UpdateTime
+            };
+            block.SetOwner(owner);
+            result.Add(entry, block);
+            if (entry is FatProfilerEntry fat)
+            {
+                var keys = fat.ChildUpdateKeys();
+                block.Children = new ProfilerBlock[keys.Count];
+                var i = 0;
+                foreach (var key in keys)
+                    if (fat.ChildUpdateTime.TryGetValue(key, out SlimProfilerEntry child))
+                        block.Children[i++] = DumpRecursive(key, child, result);
+                if (i != block.Children.Length)
+                    Array.Resize(ref block.Children, i);
+            }
+            return block;
+        }
+        #endregion
     }
 }

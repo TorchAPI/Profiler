@@ -142,6 +142,7 @@
     </Compile>
     <Compile Include="Api\IProfilerEntryViewModel.cs" />
     <Compile Include="Impl\FatProfilerEntry.cs" />
+    <Compile Include="Impl\ProfilerBlock.cs" />
     <Compile Include="Impl\ProfilerData.cs" />
     <Compile Include="Impl\ProfilerEntryViewModel.cs" />
     <Compile Include="Api\ProfilerFixedEntry.cs" />

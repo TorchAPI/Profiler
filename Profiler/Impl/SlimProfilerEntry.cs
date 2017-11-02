@@ -5,7 +5,7 @@ namespace Profiler.Impl
 {
     public class SlimProfilerEntry
     {
-        private readonly FatProfilerEntry[] _parents;
+        internal readonly FatProfilerEntry[] _parents;
         private readonly Stopwatch _updateWatch = new Stopwatch();
         
         public double UpdateTime { get; private set; } = 0;

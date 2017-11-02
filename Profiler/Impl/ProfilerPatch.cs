@@ -6,9 +6,11 @@ using System.Reflection.Emit;
 using NLog;
 using Sandbox.Engine.Physics;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.GameSystems;
 using Sandbox.Game.GameSystems.Conveyors;
+using Sandbox.Game.Weapons;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
@@ -74,6 +76,12 @@ namespace Profiler.Impl
         #region Single Methods
         [ReflectedMethodInfo(typeof(MyCubeGrid), "UpdatePhysicsShape")]
         private static readonly MethodInfo _cubeGridUpdatePhysicsShape;
+
+        [ReflectedMethodInfo(typeof(MyProgrammableBlock), nameof(MyProgrammableBlock.RunSandboxedProgramAction))]
+        private static readonly MethodInfo _programmableBlockRunSandbox;
+
+        [ReflectedMethodInfo(typeof(MyLargeTurretBase), "UpdateAiWeapon")]
+        private static readonly MethodInfo _turretUpdateAiWeapon;
         #endregion
 
 #pragma warning restore 649
@@ -159,9 +167,12 @@ namespace Profiler.Impl
                 BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
 
             ctx.GetPattern(_cubeGridUpdatePhysicsShape).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_turretUpdateAiWeapon).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_programmableBlockRunSandbox).Transpilers.Add(singleMethodProfiler);
         }
 
         #region Single Method Transpiler Entry Providers
+        // ReSharper disable UnusedMember.Local
         private static SlimProfilerEntry SingleMethodEntryProvider_Entity(IMyEntity __instance, string __key)
         {
             return ProfilerData.EntityEntry(__instance)?.GetSlim(__key);
@@ -183,6 +194,7 @@ namespace Profiler.Impl
                 return ProfilerData.EntityEntry(entity)?.GetSlim(__key);
             return null;
         }
+        // ReSharper restore UnusedMember.Local
         #endregion
 
         #region Single Method Transpiler

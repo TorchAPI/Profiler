@@ -146,5 +146,14 @@ namespace Profiler.Impl
             return cache;
 
         }
+
+        /// <summary>
+        /// Dumps the contents of the profiler into an XML file
+        /// </summary>
+        /// <param name="path">file target</param>
+        public void DumpToFile(string path)
+        {
+            ProfilerData.Dump(path);
+        }
     }
 }

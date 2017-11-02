@@ -14,7 +14,11 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <ScrollViewer Grid.Row="0" Grid.Column="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" Grid.Column="0" Grid.RowSpan="2">
             <local:ProfilerTreeView DataContext="{Binding ProfilerRoots}"  />
         </ScrollViewer>
         <StackPanel Orientation="Vertical" Grid.Row="0" Grid.Column="1">
@@ -38,6 +42,9 @@
                     <CheckBox IsChecked="{Binding Path=Settings.DisplayModNames}" Content="Display Mod Names"/>
                 </StackPanel>
             </GroupBox>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+            <Button Content="Dump Profiler Data" x:Name="DataDump" Click="ButtonBase_OnClick"/>
         </StackPanel>
     </Grid>
 </UserControl>
