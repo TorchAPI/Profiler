@@ -60,7 +60,7 @@ node {
 		result = test_with_torch("master")
 	} else {
 		buildMode = "Debug"
-		result = test_with_torch("staging")
+		result = test_with_torch("plugin-wpf-controls")
 	}
 	if (result) {
 		currentBuild.result = "SUCCESS"
