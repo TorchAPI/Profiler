@@ -87,6 +87,8 @@ namespace Profiler.Impl
 
         private void SetEntity(IMyEntity ent)
         {
+            if (ent == null)
+                return;
             EntityId = ent.EntityId;
             if (ent is IMyCubeBlock block)
             {

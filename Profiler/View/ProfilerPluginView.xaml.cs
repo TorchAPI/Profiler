@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using NLog;
 using Profiler.Impl;
 using Torch;
 using Torch.API.Managers;
@@ -23,6 +24,8 @@ namespace Profiler.View
     /// </summary>
     public partial class ProfilerPluginView : UserControl
     {
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
+
         public ProfilerPluginView()
         {
             InitializeComponent();
@@ -40,6 +43,7 @@ namespace Profiler.View
                 }
                 catch (Exception ex)
                 {
+                    _log.Error(ex);
                     MessageBox.Show(ex.ToString(), "Error dumping profiler data");
                 }
             }

@@ -21,6 +21,7 @@ using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.Entity.EntityComponents.Interfaces;
 using VRage.ModAPI;
+using VRage.Utils;
 
 namespace Profiler.Impl
 {
@@ -82,6 +83,9 @@ namespace Profiler.Impl
 
         [ReflectedMethodInfo(typeof(MyLargeTurretBase), "UpdateAiWeapon")]
         private static readonly MethodInfo _turretUpdateAiWeapon;
+
+        [ReflectedMethodInfo(typeof(MySlimBlock), nameof(MySlimBlock.DoDamageInternal))]
+        private static readonly MethodInfo _slimBlockDoDamageInternal;
         #endregion
 
 #pragma warning restore 649
@@ -169,6 +173,7 @@ namespace Profiler.Impl
             ctx.GetPattern(_cubeGridUpdatePhysicsShape).Transpilers.Add(singleMethodProfiler);
             ctx.GetPattern(_turretUpdateAiWeapon).Transpilers.Add(singleMethodProfiler);
             ctx.GetPattern(_programmableBlockRunSandbox).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_slimBlockDoDamageInternal).Transpilers.Add(singleMethodProfiler);
         }
 
         #region Single Method Transpiler Entry Providers
@@ -193,6 +198,11 @@ namespace Profiler.Impl
             if (__anyBlock is IMyEntity entity)
                 return ProfilerData.EntityEntry(entity)?.GetSlim(__key);
             return null;
+        }
+        
+        private static SlimProfilerEntry SingleMethodEntryProvider_SlimBlock_Damage(MySlimBlock __instance, MyStringHash damageType, string __key)
+        {
+            return ProfilerData.EntityEntry(__instance?.CubeGrid)?.GetFat("Damage")?.GetSlim(damageType.String);
         }
         // ReSharper restore UnusedMember.Local
         #endregion
