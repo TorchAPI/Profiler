@@ -39,11 +39,17 @@ namespace Profiler.Impl
         [ReflectedMethodInfo(typeof(MyGameLogic), nameof(MyGameLogic.UpdateAfterSimulation))]
         private static readonly MethodInfo _gameLogicUpdateAfterSimulation;
 
+        [ReflectedMethodInfo(typeof(MyGameLogic), nameof(MyGameLogic.UpdateOnceBeforeFrame))]
+        private static readonly MethodInfo _gameLogicUpdateOnceBeforeFrame;
+
         [ReflectedMethodInfo(typeof(MyEntities), nameof(MyEntities.UpdateBeforeSimulation))]
         private static readonly MethodInfo _entitiesUpdateBeforeSimulation;
 
         [ReflectedMethodInfo(typeof(MyEntities), nameof(MyEntities.UpdateAfterSimulation))]
         private static readonly MethodInfo _entitiesUpdateAfterSimulation;
+
+        [ReflectedMethodInfo(typeof(MyEntities), nameof(MyEntities.UpdateOnceBeforeFrame))]
+        private static readonly MethodInfo _entitiesUpdateOnceBeforeFrame;
 
         [ReflectedMethodInfo(typeof(Sandbox.Engine.Platform.Game), nameof(Sandbox.Engine.Platform.Game.RunSingleFrame))]
         private static readonly MethodInfo _gameRunSingleFrame;
@@ -122,6 +128,8 @@ namespace Profiler.Impl
             PatchDistributedUpdate(ctx, _entitiesUpdateBeforeSimulation);
             PatchDistributedUpdate(ctx, _entitiesUpdateAfterSimulation);
 
+            
+
             {
                 MethodInfo patcher = typeof(ProfilerPatch).GetMethod(nameof(TranspilerForUpdate),
                         BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?
@@ -130,12 +138,12 @@ namespace Profiler.Impl
                 {
                     _log.Error($"Failed to make generic patching method for cube grid systems");
                 }
-                ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation).Transpilers.Add(patcher);
-                ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation10).Transpilers.Add(patcher);
-                ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation100).Transpilers.Add(patcher);
+                ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation).PostTranspilers.Add(patcher);
+                ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation10).PostTranspilers.Add(patcher);
+                ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation100).PostTranspilers.Add(patcher);
                 //                ctx.GetPattern(_cubeGridSystemsUpdateAfterSimulation).Transpilers.Add(patcher);
                 //                ctx.GetPattern(_cubeGridSystemsUpdateAfterSimulation10).Transpilers.Add(patcher);
-                ctx.GetPattern(_cubeGridSystemsUpdateAfterSimulation100).Transpilers.Add(patcher);
+                ctx.GetPattern(_cubeGridSystemsUpdateAfterSimulation100).PostTranspilers.Add(patcher);
             }
 
             {
@@ -146,6 +154,7 @@ namespace Profiler.Impl
                 {
                     _log.Error($"Failed to make generic patching method for composite updates");
                 }
+                ctx.GetPattern(_gameLogicUpdateOnceBeforeFrame).PostTranspilers.Add(patcher);
                 foreach (var type in new[] { "After", "Before" })
                     foreach (var timing in new[] { 1, 10, 100 })
                     {
@@ -159,8 +168,19 @@ namespace Profiler.Impl
                                 $"Failed to find {name} in CompositeGameLogicComponent.  Entity component profiling may not work.");
                             continue;
                         }
-                        ctx.GetPattern(method).Transpilers.Add(patcher);
+                        ctx.GetPattern(method).PostTranspilers.Add(patcher);
                     }
+            }
+
+            {
+                MethodInfo patcher = typeof(ProfilerPatch).GetMethod(nameof(TranspilerForUpdate),
+                        BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?
+                    .MakeGenericMethod(typeof(MyEntity));
+                if (patcher == null)
+                {
+                    _log.Error($"Failed to make generic patching method for entity update before frame");
+                }
+                ctx.GetPattern(_entitiesUpdateOnceBeforeFrame).PostTranspilers.Add(patcher);
             }
 
             {
@@ -172,7 +192,7 @@ namespace Profiler.Impl
                     _log.Error($"Failed to make generic patching method for session components");
                 }
 
-                ctx.GetPattern(_sessionUpdateComponents).Transpilers.Add(patcher);
+                ctx.GetPattern(_sessionUpdateComponents).PostTranspilers.Add(patcher);
             }
 
             ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(ProfilerData.DoRotateEntries);
@@ -181,13 +201,13 @@ namespace Profiler.Impl
             var singleMethodProfiler = typeof(ProfilerPatch).GetMethod(nameof(TranspileSingleMethod),
                 BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
 
-            ctx.GetPattern(_cubeGridUpdatePhysicsShape).Transpilers.Add(singleMethodProfiler);
-            ctx.GetPattern(_turretUpdateAiWeapon).Transpilers.Add(singleMethodProfiler);
-            ctx.GetPattern(_programmableBlockRunSandbox).Transpilers.Add(singleMethodProfiler);
-            ctx.GetPattern(_slimBlockDoDamageInternal).Transpilers.Add(singleMethodProfiler);
-            ctx.GetPattern(_voxelPhysicsUpdateAfterSimulation10).Transpilers.Add(singleMethodProfiler);
-            ctx.GetPattern(_voxelPhysicsUpdateBeforeSimulation10).Transpilers.Add(singleMethodProfiler);
-            ctx.GetPattern(_planetUpdateFloraAndPhysics).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_cubeGridUpdatePhysicsShape).PostTranspilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_turretUpdateAiWeapon).PostTranspilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_programmableBlockRunSandbox).PostTranspilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_slimBlockDoDamageInternal).PostTranspilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_voxelPhysicsUpdateAfterSimulation10).PostTranspilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_voxelPhysicsUpdateBeforeSimulation10).PostTranspilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_planetUpdateFloraAndPhysics).PostTranspilers.Add(singleMethodProfiler);
         }
 
         #region Single Method Transpiler Entry Providers
@@ -394,12 +414,13 @@ namespace Profiler.Impl
 
             if (typeof(T) != typeof(MyCubeGridSystems) &&
                 !typeof(T).IsAssignableFrom(info.DeclaringType) &&
-                (!typeof(MyGameLogicComponent).IsAssignableFrom(typeof(T)) || typeof(IMyGameLogicComponent) != info.DeclaringType))
+                (!typeof(MyGameLogicComponent).IsAssignableFrom(typeof(T)) || !typeof(IMyGameLogicComponent).IsAssignableFrom(info.DeclaringType)))
                 return false;
             if (typeof(T) == typeof(MySessionComponentBase) && info.Name.Equals("Simulate", StringComparison.OrdinalIgnoreCase))
                 return true;
             return info.Name.StartsWith("UpdateBeforeSimulation", StringComparison.OrdinalIgnoreCase) ||
-                   info.Name.StartsWith("UpdateAfterSimulation", StringComparison.OrdinalIgnoreCase);
+                   info.Name.StartsWith("UpdateAfterSimulation", StringComparison.OrdinalIgnoreCase) ||
+                   info.Name.StartsWith("UpdateOnceBeforeFrame", StringComparison.OrdinalIgnoreCase);
         }
 
         private static IEnumerable<MsilInstruction> TranspilerForUpdate<T>(IEnumerable<MsilInstruction> insn, Func<Type, MsilLocal> __localCreator, MethodBase __methodBase)
@@ -498,7 +519,7 @@ namespace Profiler.Impl
             {
                 _log.Error($"Failed to make generic patching method for {method}");
             }
-            pattern.Transpilers.Add(patcher);
+            pattern.PostTranspilers.Add(patcher);
         }
 
         private static bool IsDistributedIterate(MethodInfo info)

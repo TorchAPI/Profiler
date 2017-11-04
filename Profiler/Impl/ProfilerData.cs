@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Xml.Serialization;
 using NLog;
@@ -222,7 +223,7 @@ namespace Profiler.Impl
         private static readonly string _sessionKey = "Session";
         private static readonly string _methodsKey = "Methods";
         // ReSharper restore ConvertToConstant.Local
-
+        
         internal static FatProfilerEntry EntityEntry(IMyEntity entity)
         {
             if (entity == null)
@@ -251,7 +252,7 @@ namespace Profiler.Impl
             {
                 if (!ProfilerVoxels)
                     return null;
-                return FixedProfiler(ProfilerFixedEntry.Entities)?.GetFat(entity);
+                return vox.RootVoxel != null && vox.RootVoxel != vox ? EntityEntry(vox.RootVoxel)?.GetFat(vox) : FixedProfiler(ProfilerFixedEntry.Entities)?.GetFat(vox);
             }
             return null;
         }
