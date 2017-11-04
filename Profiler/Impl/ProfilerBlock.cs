@@ -68,7 +68,7 @@ namespace Profiler.Impl
         }
 
         public double TimeElapsed;
-        
+
         public ProfilerBlock[] Children;
 
         public bool ShouldSerializeChildren()
@@ -89,34 +89,37 @@ namespace Profiler.Impl
         {
             if (ent == null)
                 return;
-            EntityId = ent.EntityId;
+            if (!ProfilerData.AnonymousProfilingDumps)
+                EntityId = ent.EntityId;
             if (ent is IMyCubeBlock block)
             {
                 var owner = MySession.Static?.Players.TryGetIdentity(block.OwnerId);
-                if (owner != null)
+                if (owner != null && !ProfilerData.AnonymousProfilingDumps)
                     Owner = new[] { new OwnershipData(owner) };
                 _definition = block.BlockDefinition;
             }
             else if (ent is MyCubeGrid grid)
             {
-                Owner = grid.BigOwners.Concat(grid.SmallOwners).Distinct()
+                if (!ProfilerData.AnonymousProfilingDumps)
+                    Owner = grid.BigOwners.Concat(grid.SmallOwners).Distinct()
                     .Select(x => MySession.Static?.Players.TryGetIdentity(x)).Where(x => x != null)
                     .Select(x => new OwnershipData(x)).ToArray();
-            } else if (ent is MyPlanet planet)
+            }
+            else if (ent is MyPlanet planet)
             {
                 _definition = planet.Generator.Id;
             }
-            if (ent is MyVoxelBase vox)
+            if (ent is MyVoxelBase vox && !ProfilerData.AnonymousProfilingDumps)
                 VoxelStorage = vox.StorageName;
             var parentData = ent.Components.Get<MyHierarchyComponentBase>();
-            if (parentData?.Parent != null)
+            if (parentData?.Parent != null && !ProfilerData.AnonymousProfilingDumps)
             {
                 var parentEntity = parentData.Parent.Entity;
                 ParentEntityId = parentEntity.EntityId;
                 ParentEntityName = parentEntity.DisplayName;
             }
             var positionComp = ent.Components.Get<MyPositionComponentBase>();
-            if (positionComp != null)
+            if (positionComp != null && !ProfilerData.AnonymousProfilingDumps)
                 _position = positionComp.GetPosition();
         }
 

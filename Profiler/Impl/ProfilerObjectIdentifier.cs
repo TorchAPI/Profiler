@@ -4,10 +4,12 @@ using System.Reflection;
 using NLog;
 using Profiler.Api;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Character;
 using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
 using VRage.Game;
 using VRage.Utils;
+// ReSharper disable ConvertIfStatementToReturnStatement
 
 namespace Profiler.Impl
 {
@@ -26,6 +28,8 @@ namespace Profiler.Impl
                     x => Sync.Players?.TryGetIdentity(x)?.DisplayName ?? $"Identity[{x}]"));
                 if (string.IsNullOrWhiteSpace(owners))
                     owners = "unknown";
+                if (ProfilerData.AnonymousProfilingDumps)
+                    return $"Grid {o.GetHashCode():X}";
                 return $"{grid.DisplayName ?? ($"{grid.GridSizeEnum} {grid.EntityId}")} owned by [{owners}]";
             }
             if (o is MyDefinitionBase def)
@@ -34,6 +38,13 @@ namespace Profiler.Impl
                 string subtype = def.Id.SubtypeName?.Replace(typeIdSimple, "");
                 return WithModName(string.IsNullOrWhiteSpace(subtype) ? typeIdSimple : $"{typeIdSimple}::{subtype}",
                     def);
+            }
+            if (o is MyCharacter character)
+            {
+                var id = character.GetIdentity();
+                if (ProfilerData.AnonymousProfilingDumps)
+                    return $"Character {o.GetHashCode():X}";
+                return id != null ? $"Character {character.EntityId}, Player {Identify(id)}" : $"Character {character.EntityId}";
             }
             if (o is string str)
             {
@@ -50,14 +61,24 @@ namespace Profiler.Impl
             }
             if (o is MyIdentity identity)
             {
+                if (ProfilerData.AnonymousProfilingDumps)
+                    return $"Identity {o.GetHashCode():X}";
                 return
                     $"{identity.DisplayName ?? "unknown identity"} ID={identity.IdentityId} SteamID={MySession.Static?.Players?.TryGetSteamId(identity.IdentityId) ?? 0}";
             }
             if (o is MyCubeBlock block)
             {
+                if (ProfilerData.AnonymousProfilingDumps)
+                    return $"Block {o.GetHashCode():X}";
                 var ownership = MySession.Static?.Players?.TryGetIdentity(block.OwnerId) ??
                                 MySession.Static?.Players?.TryGetIdentity(block.BuiltBy);
                 return $"{block.GetType().Name} at {block.Min} owned by {Identify(ownership)} on {block.CubeGrid.DisplayName ?? ($"{block.CubeGrid.GridSizeEnum} {block.CubeGrid.EntityId}")}";
+            }
+            if (o is MyVoxelBase vox)
+            {
+                if (ProfilerData.AnonymousProfilingDumps)
+                    return $"{o.GetType().Name} {o.GetHashCode():X}";
+                return $"{o.GetType().Name} {vox.StorageName}";
             }
             if (o is Assembly asm)
             {
@@ -92,7 +113,7 @@ namespace Profiler.Impl
                     var asmName = asmToLookup.GetName().Name;
                     foreach (var kv in MyScriptManager.Static.ScriptsPerMod)
                     {
-                        if (kv.Value.Any(x=>x.String.EndsWith(asmName)))
+                        if (kv.Value.Any(x => x.String.EndsWith(asmName)))
                         {
                             ctx = kv.Key;
                             break;

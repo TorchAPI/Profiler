@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using NLog;
 using Sandbox.Engine.Physics;
+using Sandbox.Engine.Voxels;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Cube;
@@ -88,6 +89,16 @@ namespace Profiler.Impl
         private static readonly MethodInfo _slimBlockDoDamageInternal;
         #endregion
 
+        #region Voxels
+
+        [ReflectedMethodInfo(typeof(MyVoxelPhysicsBody), "UpdateBeforeSimulation10")]
+        private static readonly MethodInfo _voxelPhysicsUpdateBeforeSimulation10;
+        [ReflectedMethodInfo(typeof(MyVoxelPhysicsBody), "UpdateAfterSimulation10")]
+        private static readonly MethodInfo _voxelPhysicsUpdateAfterSimulation10;
+
+        [ReflectedMethodInfo(typeof(MyPlanet), "UpdateFloraAndPhysics")]
+        private static readonly MethodInfo _planetUpdateFloraAndPhysics;
+        #endregion
 #pragma warning restore 649
         #endregion
 
@@ -174,6 +185,9 @@ namespace Profiler.Impl
             ctx.GetPattern(_turretUpdateAiWeapon).Transpilers.Add(singleMethodProfiler);
             ctx.GetPattern(_programmableBlockRunSandbox).Transpilers.Add(singleMethodProfiler);
             ctx.GetPattern(_slimBlockDoDamageInternal).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_voxelPhysicsUpdateAfterSimulation10).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_voxelPhysicsUpdateBeforeSimulation10).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_planetUpdateFloraAndPhysics).Transpilers.Add(singleMethodProfiler);
         }
 
         #region Single Method Transpiler Entry Providers

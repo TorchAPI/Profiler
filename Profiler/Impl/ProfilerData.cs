@@ -10,6 +10,7 @@ using NLog;
 using ParallelTasks;
 using Profiler.Api;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Character;
 using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
@@ -25,17 +26,22 @@ namespace Profiler.Impl
     /// </summary>
     internal class ProfilerData
     {
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
 
         // Don't assign directly.  Use ProfilerManager.
         internal static bool ProfileGridsUpdate = true;
         internal static bool ProfileBlocksUpdate = true;
+        internal static bool ProfileBlocksIndividually = true;
         internal static bool ProfileEntityComponentsUpdate = true;
         internal static bool ProfileGridSystemUpdates = true;
         internal static bool ProfileSessionComponentsUpdate = true;
         internal static bool ProfileSingleMethods = true;
+        internal static bool ProfilerVoxels = true;
+        internal static bool ProfileCharacterEntities = true;
         internal static bool DisplayLoadPercentage = false;
         internal static bool DisplayModNames = true;
+
+        internal static bool AnonymousProfilingDumps = false;
 
         // Doesn't update properly during runtime so not exposed.
         private static bool ProfileBlocksUpdateByOwner = true;
@@ -225,12 +231,25 @@ namespace Profiler.Impl
             {
                 if (!ProfileBlocksUpdate || !ProfileGridsUpdate)
                     return null;
-                return EntityEntry(block.CubeGrid)?.GetFat(_blocksKey)?.GetFat(block.BlockDefinition)?.GetFat(block);
+                var defEntry =  EntityEntry(block.CubeGrid)?.GetFat(_blocksKey)?.GetFat(block.BlockDefinition);
+                return ProfileBlocksIndividually ? defEntry?.GetFat(block) : defEntry;
             }
             if (entity is MyCubeGrid)
             {
                 // ReSharper disable once ConvertIfStatementToReturnStatement
                 if (!ProfileGridsUpdate)
+                    return null;
+                return FixedProfiler(ProfilerFixedEntry.Entities)?.GetFat(entity);
+            }
+            if (entity is IMyCharacter)
+            {
+                if (!ProfileCharacterEntities)
+                    return null;
+                return FixedProfiler(ProfilerFixedEntry.Entities)?.GetFat(entity);
+            }
+            if (entity is MyVoxelBase vox)
+            {
+                if (!ProfilerVoxels)
                     return null;
                 return FixedProfiler(ProfilerFixedEntry.Entities)?.GetFat(entity);
             }
@@ -297,6 +316,24 @@ namespace Profiler.Impl
                     }
                 }
             }
+            if (key is MyCharacter character)
+            {
+                var id = character.GetIdentity();
+                var playerEntry = id != null ? PlayerEntry(id) : null;
+                if (id != null && playerEntry != null)
+                {
+                    var result = new FatProfilerEntry(caller, playerEntry);
+                    try
+                    {
+                        playerEntry.ChildUpdateTime.Add(key, result);
+                    }
+                    catch
+                    {
+                        // Ignore :/
+                    }
+                    return result;
+                }
+            }
             return new FatProfilerEntry(caller);
         }
 
@@ -348,11 +385,23 @@ namespace Profiler.Impl
                 var i = 0;
                 foreach (var key in keys)
                     if (fat.ChildUpdateTime.TryGetValue(key, out SlimProfilerEntry child))
-                        block.Children[i++] = DumpRecursive(key, child, result);
+                        if (child.UpdateTime > 0)
+                            block.Children[i++] = DumpRecursive(key, child, result);
                 if (i != block.Children.Length)
                     Array.Resize(ref block.Children, i);
+                Array.Sort(block.Children, new ProfilerBlockComparer());
             }
             return block;
+        }
+
+        private class ProfilerBlockComparer : IComparer<ProfilerBlock>
+        {
+            public int Compare(ProfilerBlock x, ProfilerBlock y)
+            {
+                if (x == null || y == null)
+                    return 0;
+                return -x.TimeElapsed.CompareTo(y.TimeElapsed);
+            }
         }
         #endregion
     }

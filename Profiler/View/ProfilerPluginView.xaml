@@ -25,12 +25,15 @@
             <GroupBox Header="Grid Profiling">
                 <StackPanel Orientation="Vertical">
                     <CheckBox IsChecked="{Binding Path=Settings.ProfileGridsUpdate}" Content="Grid Updates"/>
-                    <CheckBox IsChecked="{Binding Path=Settings.ProfileBlocksUpdate}" Content="Block Updates" IsEnabled="{Binding Path=Settings.ProfileGridsUpdate}"/>
+                    <CheckBox IsChecked="{Binding Path=Settings.ProfileBlocksUpdate}" Content="Block Updates by Definition" IsEnabled="{Binding Path=Settings.ProfileGridsUpdate}"/>
+                    <CheckBox IsChecked="{Binding Path=Settings.ProfileBlocksIndividually}" Content="Individual Block Updates"  IsEnabled="{Binding Path=Settings.CanProfileBlocksIndividually}"/>
                     <CheckBox IsChecked="{Binding Path=Settings.ProfileGridSystemUpdates}" Content="Grid System Updates" IsEnabled="{Binding Path=Settings.ProfileGridsUpdate}"/>
                 </StackPanel>
             </GroupBox>
             <GroupBox Header="Misc Profiling">
                 <StackPanel Orientation="Vertical">
+                    <CheckBox IsChecked="{Binding Path=Settings.ProfileCharacterEntities}" Content="Character Entities"/>
+                    <CheckBox IsChecked="{Binding Path=Settings.ProfileVoxels}" Content="Voxels" />
                     <CheckBox IsChecked="{Binding Path=Settings.ProfileEntityComponentsUpdate}" Content="Entity Component Updates"/>
                     <CheckBox IsChecked="{Binding Path=Settings.ProfileSessionComponentsUpdate}" Content="Session Component Updates"/>
                     <CheckBox IsChecked="{Binding Path=Settings.ProfileSingleMethods}" Content="Individual Methods"/>
@@ -44,6 +47,7 @@
             </GroupBox>
         </StackPanel>
         <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+            <CheckBox IsChecked="{Binding Path=Settings.AnonymousProfilingDumps}" Content="Anonymous Data Dumps" ToolTip="Exclude identifying information from profiling data dumps"/>
             <Button Content="Dump Profiler Data" x:Name="DataDump" Click="ButtonBase_OnClick"/>
         </StackPanel>
     </Grid>

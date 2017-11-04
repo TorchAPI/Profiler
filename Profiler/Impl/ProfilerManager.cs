@@ -1,5 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
+using System.Xml.Serialization;
+using NLog;
 using Profiler.Api;
 using Profiler.View;
 using Sandbox.Game.Entities;
@@ -15,6 +18,8 @@ namespace Profiler.Impl
 {
     public class ProfilerManager : Manager
     {
+        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
+
 #pragma warning disable 649
         [Dependency(Ordered = false)] private readonly PatchManager _patchMgr;
 
@@ -23,6 +28,24 @@ namespace Profiler.Impl
 
         public ProfilerManager(ITorchBase torchInstance) : base(torchInstance)
         {
+            try
+            {
+                var serializer = new XmlSerializer(typeof(ProfilerSettings));
+                var path = Path.Combine(Torch.Config.InstancePath, "profiler.xml");
+                if (File.Exists(path))
+                    using (var stream = File.OpenRead(path))
+                    {
+                        var settings = serializer.Deserialize(stream) as ProfilerSettings;
+                        if (settings != null)
+                            Settings = settings;
+                    }
+                else
+                    SaveConfig();
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Failed to load profiler config");
+            }
         }
 
         private static bool _patched = false;
@@ -52,7 +75,7 @@ namespace Profiler.Impl
                 _patched = false;
                 _patchMgr.FreeContext(_patchContext);
             }
-
+            SaveConfig();
             _controlMgr?.UnregisterModelFactory<EntityViewModel>(CreateModel);
             _controlMgr?.UnregisterControlFactory<ProfilerEntityControlViewModel>(CreateView);
         }
@@ -82,13 +105,13 @@ namespace Profiler.Impl
 
         private ProfilerEntityControl CreateView(ProfilerEntityControlViewModel model)
         {
-            return new ProfilerEntityControl() {DataContext = model};
+            return new ProfilerEntityControl() { DataContext = model };
         }
 
         /// <summary>
         /// Gets the settings associated with this profiler.
         /// </summary>
-        public ProfilerSettings Settings { get; } = new ProfilerSettings();
+        public ProfilerSettings Settings { get; private set; } = new ProfilerSettings();
 
         /// <summary>
         /// Gets the profiler information associated with the given entity.
@@ -154,6 +177,21 @@ namespace Profiler.Impl
         public void DumpToFile(string path)
         {
             ProfilerData.Dump(path);
+        }
+
+        private void SaveConfig()
+        {
+            try
+            {
+                var serializer = new XmlSerializer(typeof(ProfilerSettings));
+                var path = Path.Combine(Torch.Config.InstancePath, "profiler.xml");
+                using (var stream = File.CreateText(path))
+                    serializer.Serialize(stream, Settings);
+            }
+            catch (Exception e)
+            {
+                _log.Error(e, "Failed to save profiler config");
+            }
         }
     }
 }

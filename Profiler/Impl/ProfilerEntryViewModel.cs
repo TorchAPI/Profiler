@@ -19,6 +19,10 @@ namespace Profiler.Impl
         /// Applies to <see cref="ChildrenSorted"/>
         /// </summary>
         private const int PaginationCount = 50;
+        /// <summary>
+        /// Times below this won't be shown.
+        /// </summary>
+        private const double DisplayTimeThreshold = 1e-6;
 
         internal ProfilerEntryViewModel()
         {
@@ -182,12 +186,10 @@ namespace Profiler.Impl
                 {
                     _childrenUpdateDeferred = false;
                     ICollection<object> keys = fat.ChildUpdateKeys();
-                    while (Children.Count > keys.Count)
-                        Children.RemoveAt(Children.Count - 1);
                     var id = 0;
                     foreach (object key in keys)
                     {
-                        if (fat.ChildUpdateTime.TryGetValue(key, out SlimProfilerEntry child))
+                        if (fat.ChildUpdateTime.TryGetValue(key, out SlimProfilerEntry child) && child.UpdateTime > DisplayTimeThreshold)
                         {
                             if (id >= Children.Count)
                             {
@@ -202,9 +204,11 @@ namespace Profiler.Impl
                             }
                         }
                     }
+                    while (Children.Count > id)
+                        Children.RemoveAt(Children.Count - 1);
                     using (ChildrenSorted.DeferredUpdate())
                     {
-                        var sortedEnumerable = Children.OrderBy(x => (int)(-x.UpdateTime * 1e6));
+                        var sortedEnumerable = Children.OrderBy(x => (int)(-x.UpdateTime / DisplayTimeThreshold));
                         if (Children.Count > PaginationCount)
                         {
                             var pageCount = (int)Math.Ceiling(Children.Count / (float)PaginationCount);
@@ -232,8 +236,7 @@ namespace Profiler.Impl
                         {
                             ChildrenSorted.Clear();
                             foreach (var k in sortedEnumerable)
-                                if (k.UpdateTime > 0)
-                                    ChildrenSorted.Add(k);
+                                ChildrenSorted.Add(k);
                             _wasPaged = false;
                         }
                     }

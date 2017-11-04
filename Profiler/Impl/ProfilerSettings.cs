@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Xml.Serialization;
 using Torch.Collections;
 
 namespace Profiler.Impl
@@ -48,6 +49,7 @@ namespace Profiler.Impl
             {
                 ProfilerData.ProfileGridsUpdate = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanProfileBlocksIndividually));
             }
         }
 
@@ -61,6 +63,7 @@ namespace Profiler.Impl
             {
                 ProfilerData.ProfileBlocksUpdate = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanProfileBlocksIndividually));
             }
         }
 
@@ -104,6 +107,19 @@ namespace Profiler.Impl
         }
 
         /// <summary>
+        /// Profile voxel maps and planets
+        /// </summary>
+        public bool ProfileVoxels
+        {
+            get => ProfilerData.ProfilerVoxels;
+            set
+            {
+                ProfilerData.ProfilerVoxels = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
         /// Profile individual methods.
         /// </summary>
         public bool ProfileSingleMethods
@@ -112,6 +128,48 @@ namespace Profiler.Impl
             set
             {
                 ProfilerData.ProfileSingleMethods = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Profile character entities.
+        /// </summary>
+        public bool ProfileCharacterEntities
+        {
+            get => ProfilerData.ProfileCharacterEntities;
+            set
+            {
+                ProfilerData.ProfileCharacterEntities = value;
+                OnPropertyChanged();
+            }
+        }
+
+        [XmlIgnore]
+        public bool CanProfileBlocksIndividually => ProfileBlocksUpdate && ProfileGridsUpdate;
+
+        /// <summary>
+        /// Profile blocks by reference instead of by definition.  Requires <see cref="ProfileBlocksUpdate"/> and <see cref="ProfileGridsUpdate"/>
+        /// </summary>
+        public bool ProfileBlocksIndividually
+        {
+            get => ProfilerData.ProfileBlocksIndividually;
+            set
+            {
+                ProfilerData.ProfileBlocksIndividually = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Dump profiling data anonymously
+        /// </summary>
+        public bool AnonymousProfilingDumps
+        {
+            get => ProfilerData.AnonymousProfilingDumps;
+            set
+            {
+                ProfilerData.AnonymousProfilingDumps = value;
                 OnPropertyChanged();
             }
         }

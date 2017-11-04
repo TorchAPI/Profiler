@@ -24,7 +24,7 @@ namespace Profiler
             torch.Managers.AddManager(pgmr);
         }
 
-        private ProfilerPluginView _control;
+        internal ProfilerPluginView _control;
 
         /// <inheritdoc cref="IWpfPlugin.GetControl"/>
         public UserControl GetControl() => _control = (_control ?? new ProfilerPluginView());
