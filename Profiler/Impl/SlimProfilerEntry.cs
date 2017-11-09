@@ -44,11 +44,16 @@ namespace Profiler.Impl
             }
         }
 
-        internal void Rotate()
+        private uint _lastTickId;
+        internal void Rotate(uint tickId)
         {
-            UpdateTime = _updateWatch.Elapsed.TotalSeconds / ProfilerData.RotateInterval;
+            // Modulo math.  If tickId rolls around, this still works.
+            uint ticksPassed = unchecked(tickId - _lastTickId);
+            if (ticksPassed <= 100)
+                return;
+            _lastTickId = tickId;
+            UpdateTime = _updateWatch.Elapsed.TotalSeconds / ticksPassed;
             _updateWatch.Reset();
-            Debug.Assert(_watchStarts == 0, "A watch wasn't stopped");
             _watchStarts = 0;
         }
     }

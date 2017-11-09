@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Profiler.Api;
 using Torch.Collections;
 using Torch.Utils;
@@ -19,6 +20,7 @@ namespace Profiler.Impl
         /// Applies to <see cref="ChildrenSorted"/>
         /// </summary>
         private const int PaginationCount = 50;
+
         /// <summary>
         /// Times below this won't be shown.
         /// </summary>
@@ -42,49 +44,69 @@ namespace Profiler.Impl
         public double UpdateTime { get; private set; }
         public double UpdateTimeMs => 1000 * UpdateTime;
         public double UpdateLoadPercent => 100 * UpdateTime / MyEngineConstants.UPDATE_STEP_SIZE_IN_SECONDS;
+
         public string UpdateDescription => ProfilerData.DisplayLoadPercentage
             ? $"{UpdateLoadPercent:F2} %"
             : $"{UpdateTimeMs:F3} ms";
 
-        public MtObservableList<ProfilerEntryViewModel> Children { get; } = new MtObservableList<ProfilerEntryViewModel>();
-        public MtObservableList<ProfilerEntryViewModel> ChildrenSorted { get; } = new MtObservableList<ProfilerEntryViewModel>();
+        public MtObservableList<ProfilerEntryViewModel> Children { get; } =
+            new MtObservableList<ProfilerEntryViewModel>();
+
+        public MtObservableList<ProfilerEntryViewModel> ChildrenSorted { get; } =
+            new MtObservableList<ProfilerEntryViewModel>();
 
         private ProfilerFixedEntry _fixedEntry = ProfilerFixedEntry.Count;
-        private readonly WeakReference<object> _owner = new WeakReference<object>(null);
-        private WeakReference<object>[] _getterExtra;
+        private GCHandle _owner;
+        private GCHandle[] _getterExtra;
         private Func<SlimProfilerEntry> _getter;
 
         public bool IsExpanded { get; set; }
         public bool IsSelected { get; set; }
 
         #region Getter Impls
+
         private SlimProfilerEntry GetterImplEntity()
         {
-            return _owner.TryGetTarget(out var own) ? ProfilerData.EntityEntry((IMyEntity)own) : null;
+            return !_owner.IsAllocated ? null : ProfilerData.EntityEntry(_owner.Target as IMyEntity);
         }
 
         private SlimProfilerEntry GetterImplEntityComponent()
         {
-            return _owner.TryGetTarget(out var own)
-                ? ProfilerData.EntityComponentEntry((MyEntityComponentBase)own)
-                : null;
+            return !_owner.IsAllocated
+                ? null
+                : ProfilerData.EntityComponentEntry(_owner.Target as MyEntityComponentBase);
         }
 
         private SlimProfilerEntry GetterImplGridSystem()
         {
-            return _owner.TryGetTarget(out var own) && _getterExtra[0].TryGetTarget(out object grd) ? ProfilerData.GridSystemEntry(own, (IMyCubeGrid)grd) : null;
+            return !_owner.IsAllocated || !_getterExtra[0].IsAllocated
+                ? null
+                : ProfilerData.GridSystemEntry(_owner.Target, _getterExtra[0].Target as IMyCubeGrid);
         }
+
         #endregion
 
         #region SetTarget
+
+        private void FreeHandles()
+        {
+            if (_owner.IsAllocated)
+                _owner.Free();
+            if (_getterExtra != null)
+            {
+                foreach (var k in _getterExtra)
+                    k.Free();
+                _getterExtra = null;
+            }
+        }
 
         internal void SetTarget(ProfilerFixedEntry owner)
         {
             if (owner == ProfilerFixedEntry.Count)
                 throw new ArgumentOutOfRangeException(nameof(owner), "Must not be the count enum");
             _fixedEntry = owner;
-            _owner.SetTarget(null);
-            _getterExtra = null;
+            FreeHandles();
+            _owner = GCHandle.Alloc(owner, GCHandleType.Weak);
             // we can capture here since its a value type
             _getter = () => ProfilerData.FixedProfiler(owner);
         }
@@ -92,27 +114,33 @@ namespace Profiler.Impl
         internal void SetTarget(IMyEntity owner)
         {
             _fixedEntry = ProfilerFixedEntry.Count;
-            _owner.SetTarget(owner);
-            _getterExtra = new WeakReference<object>[0];
+            FreeHandles();
+            _owner = GCHandle.Alloc(owner, GCHandleType.Weak);
             _getter = GetterImplEntity;
         }
 
         internal void SetTarget(MyEntityComponentBase owner)
         {
             _fixedEntry = ProfilerFixedEntry.Count;
-            _owner.SetTarget(owner);
-            _getterExtra = new WeakReference<object>[0];
+            FreeHandles();
+            _owner = GCHandle.Alloc(owner, GCHandleType.Weak);
             _getter = GetterImplEntityComponent;
         }
 
         internal void SetTarget(IMyCubeGrid grid, object owner)
         {
             _fixedEntry = ProfilerFixedEntry.Count;
-            _owner.SetTarget(owner);
-            _getterExtra = new[] { new WeakReference<object>(grid) };
+            FreeHandles();
+            _owner = GCHandle.Alloc(owner, GCHandleType.Weak);
+            _getterExtra = new[] {GCHandle.Alloc(grid, GCHandleType.Weak)};
             _getter = GetterImplGridSystem;
         }
         #endregion
+
+        ~ProfilerEntryViewModel()
+        {
+            FreeHandles();
+        }
 
         /// <summary>
         /// Called to update the values of this view model without changing the target.
@@ -124,10 +152,10 @@ namespace Profiler.Impl
             object owner;
             if (_fixedEntry == ProfilerFixedEntry.Count)
             {
-                bool lostHandle = !_owner.TryGetTarget(out owner);
+                bool lostHandle = !_owner.IsAllocated || _owner.Target == null;
                 if (_getterExtra != null && !lostHandle)
-                    foreach (WeakReference<object> ext in _getterExtra)
-                        if (!ext.TryGetTarget(out _))
+                    foreach (var ext in _getterExtra)
+                        if (!ext.IsAllocated || ext.Target == null)
                         {
                             lostHandle = true;
                             break;
@@ -141,6 +169,7 @@ namespace Profiler.Impl
                     Children.Clear();
                     return false;
                 }
+                owner = _owner.Target;
             }
             else
                 owner = _fixedEntry;
@@ -152,6 +181,7 @@ namespace Profiler.Impl
 
         private bool _childrenUpdateDeferred = false;
         private bool _wasPaged = false;
+
         private void UpdateInternal(object owner, SlimProfilerEntry entry, bool forcePropertyUpdate = false)
         {
             if (entry == null)
@@ -189,7 +219,8 @@ namespace Profiler.Impl
                     var id = 0;
                     foreach (object key in keys)
                     {
-                        if (fat.ChildUpdateTime.TryGetValue(key, out SlimProfilerEntry child) && child.UpdateTime > DisplayTimeThreshold)
+                        if (fat.ChildUpdateTime.TryGetValue(key, out SlimProfilerEntry child) &&
+                            child.UpdateTime > DisplayTimeThreshold)
                         {
                             if (id >= Children.Count)
                             {
@@ -208,10 +239,10 @@ namespace Profiler.Impl
                         Children.RemoveAt(Children.Count - 1);
                     using (ChildrenSorted.DeferredUpdate())
                     {
-                        var sortedEnumerable = Children.OrderBy(x => (int)(-x.UpdateTime / DisplayTimeThreshold));
+                        var sortedEnumerable = Children.OrderBy(x => (int) (-x.UpdateTime / DisplayTimeThreshold));
                         if (Children.Count > PaginationCount)
                         {
-                            var pageCount = (int)Math.Ceiling(Children.Count / (float)PaginationCount);
+                            var pageCount = (int) Math.Ceiling(Children.Count / (float) PaginationCount);
                             if (_wasPaged)
                                 while (ChildrenSorted.Count > pageCount)
                                     ChildrenSorted.RemoveAt(ChildrenSorted.Count - 1);
@@ -247,6 +278,7 @@ namespace Profiler.Impl
             else
             {
                 Children.Clear();
+                ChildrenSorted.Clear();
             }
         }
 
@@ -282,8 +314,8 @@ namespace Profiler.Impl
             }
         }
 
-        private readonly MtObservableEvent<PropertyChangedEventArgs, PropertyChangedEventHandler> _propertyChangedEvent =
-            new MtObservableEvent<PropertyChangedEventArgs, PropertyChangedEventHandler>();
+        private readonly MtObservableEvent<PropertyChangedEventArgs, PropertyChangedEventHandler> _propertyChangedEvent
+            = new MtObservableEvent<PropertyChangedEventArgs, PropertyChangedEventHandler>();
 
         /// <inheritdoc/>
         public event PropertyChangedEventHandler PropertyChanged

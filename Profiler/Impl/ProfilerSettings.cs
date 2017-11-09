@@ -111,10 +111,10 @@ namespace Profiler.Impl
         /// </summary>
         public bool ProfileVoxels
         {
-            get => ProfilerData.ProfilerVoxels;
+            get => ProfilerData.ProfileVoxels;
             set
             {
-                ProfilerData.ProfilerVoxels = value;
+                ProfilerData.ProfileVoxels = value;
                 OnPropertyChanged();
             }
         }

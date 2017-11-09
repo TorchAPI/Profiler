@@ -1,6 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using NLog;
 using Profiler.Api;
@@ -105,13 +107,34 @@ namespace Profiler.Impl
 
         private ProfilerEntityControl CreateView(ProfilerEntityControlViewModel model)
         {
-            return new ProfilerEntityControl() { DataContext = model };
+            return new ProfilerEntityControl() {DataContext = model};
         }
+
+        private ProfilerSettings _settingsBacking;
 
         /// <summary>
         /// Gets the settings associated with this profiler.
         /// </summary>
-        public ProfilerSettings Settings { get; private set; } = new ProfilerSettings();
+        public ProfilerSettings Settings
+        {
+            get => _settingsBacking;
+            private set
+            {
+                if (_settingsBacking != null)
+                    _settingsBacking.PropertyChanged -= SettingsBackingOnPropertyChanged;
+                _settingsBacking = value;
+                if (_settingsBacking != null)
+                {
+                    _settingsBacking.PropertyChanged += SettingsBackingOnPropertyChanged;
+                    SaveConfigAsync();
+                }
+            }
+        }
+
+        private void SettingsBackingOnPropertyChanged(object o, PropertyChangedEventArgs propertyChangedEventArgs)
+        {
+            SaveConfigAsync();
+        }
 
         /// <summary>
         /// Gets the profiler information associated with the given entity.
@@ -167,7 +190,6 @@ namespace Profiler.Impl
             cache = ProfilerData.BindView(cache);
             cache.SetTarget(entry);
             return cache;
-
         }
 
         /// <summary>
@@ -177,6 +199,22 @@ namespace Profiler.Impl
         public void DumpToFile(string path)
         {
             ProfilerData.Dump(path);
+        }
+
+        private Timer _saveConfigTimer;
+
+        private void SaveConfigAsync()
+        {
+            if (_saveConfigTimer == null)
+            {
+                _saveConfigTimer = new Timer((x) => SaveConfig());
+            }
+            _saveConfigTimer.Change(1000, -1);
+        }
+
+        ~ProfilerManager()
+        {
+            _saveConfigTimer?.Dispose();
         }
 
         private void SaveConfig()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using NLog;
@@ -9,6 +10,7 @@ using Sandbox.Game.Multiplayer;
 using Sandbox.Game.World;
 using VRage.Game;
 using VRage.Utils;
+
 // ReSharper disable ConvertIfStatementToReturnStatement
 
 namespace Profiler.Impl
@@ -44,7 +46,9 @@ namespace Profiler.Impl
                 var id = character.GetIdentity();
                 if (ProfilerData.AnonymousProfilingDumps)
                     return $"Character {o.GetHashCode():X}";
-                return id != null ? $"Character {character.EntityId}, Player {Identify(id)}" : $"Character {character.EntityId}";
+                return id != null
+                    ? $"Character {character.EntityId}, Player {Identify(id)}"
+                    : $"Character {character.EntityId}";
             }
             if (o is string str)
             {
@@ -72,7 +76,8 @@ namespace Profiler.Impl
                     return $"Block {o.GetHashCode():X}";
                 var ownership = MySession.Static?.Players?.TryGetIdentity(block.OwnerId) ??
                                 MySession.Static?.Players?.TryGetIdentity(block.BuiltBy);
-                return $"{block.GetType().Name} at {block.Min} owned by {Identify(ownership)} on {block.CubeGrid.DisplayName ?? ($"{block.CubeGrid.GridSizeEnum} {block.CubeGrid.EntityId}")}";
+                return
+                    $"{block.GetType().Name} at {block.Min} owned by {Identify(ownership)} on {block.CubeGrid.DisplayName ?? ($"{block.CubeGrid.GridSizeEnum} {block.CubeGrid.EntityId}")}";
             }
             if (o is MyVoxelBase vox)
             {
@@ -87,6 +92,9 @@ namespace Profiler.Impl
             return WithModName(o?.GetType().Name, o) ?? "unknown";
         }
 
+        private static readonly ConcurrentDictionary<Assembly, MyModContext> _modByAssembly =
+            new ConcurrentDictionary<Assembly, MyModContext>();
+
         private static string WithModName(string baseInfo, object o)
         {
             if (!ProfilerData.DisplayModNames)
@@ -98,34 +106,37 @@ namespace Profiler.Impl
                 ctx = block.BlockDefinition?.Context;
             else if (o is MyDefinitionBase def)
                 ctx = def.Context;
-
-            if (ctx == null && MyScriptManager.Static != null)
+            if (ctx == null)
             {
-                Assembly asmToLookup = null;
-                if (o is Assembly asm)
-                    asmToLookup = asm;
-                else if (o is Type type)
-                    asmToLookup = type.Assembly;
-                else
-                    asmToLookup = o?.GetType().Assembly;
-                if (asmToLookup != null && string.IsNullOrWhiteSpace(asmToLookup.Location)) // real assemblies have a location.
-                {
-                    var asmName = asmToLookup.GetName().Name;
-                    foreach (var kv in MyScriptManager.Static.ScriptsPerMod)
-                    {
-                        if (kv.Value.Any(x => x.String.EndsWith(asmName)))
-                        {
-                            ctx = kv.Key;
-                            break;
-                        }
-                    }
-                }
+                var asm = (o as Assembly) ?? (o as Type)?.Assembly ?? o?.GetType().Assembly;
+                if (asm != null)
+                    ctx = _modByAssembly.GetOrAdd(asm, GetModByAssembly);
             }
 
             if (ctx == MyModContext.BaseGame || ctx == MyModContext.UnknownContext || ctx == null || ctx.IsBaseGame)
                 return baseInfo;
             var tag = !string.IsNullOrWhiteSpace(ctx.ModName) ? ctx.ModName : ctx.ModId;
             return $"{baseInfo} (Mod: {tag})";
+        }
+
+        private static MyModContext GetModByAssembly(Assembly asmToLookup)
+        {
+            if (MyScriptManager.Static != null)
+            {
+                if (asmToLookup != null && string.IsNullOrWhiteSpace(asmToLookup.Location)
+                ) // real assemblies have a location.
+                {
+                    var asmName = asmToLookup.GetName().Name;
+                    foreach (var kv in MyScriptManager.Static.ScriptsPerMod)
+                    {
+                        if (kv.Value.Any(x => x.String.EndsWith(asmName)))
+                        {
+                            return kv.Key;
+                        }
+                    }
+                }
+            }
+            return null;
         }
     }
 }
