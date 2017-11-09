@@ -230,7 +230,7 @@ namespace Profiler.Impl
                                 i++;
                         }
                     }
-                    _log.Debug($"Updated view models in {watch.Elapsed}");
+                    _log.Trace($"Updated view models in {watch.Elapsed}");
                 }
             }
         }
