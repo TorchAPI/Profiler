@@ -163,7 +163,7 @@ namespace Profiler.Impl
             }
         }
 
-        private class AsyncViewModelUpdate : IWork
+        private class AsyncViewModelUpdate : IPrioritizedWork
         {
             private volatile int _offset;
             private int _workers = 0;
@@ -233,6 +233,8 @@ namespace Profiler.Impl
                     _log.Trace($"Updated view models in {watch.Elapsed}");
                 }
             }
+
+            public WorkPriority Priority => WorkPriority.VeryLow;
         }
 
         private static readonly AsyncViewModelUpdate _updateViewModelWork = new AsyncViewModelUpdate();
