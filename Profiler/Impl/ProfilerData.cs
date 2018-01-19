@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -129,7 +130,7 @@ namespace Profiler.Impl
                 RefreshModels();
                 refreshedModels = true;
             }
-            
+
             // we remove == write
             using (_profilingEntriesAllLock.WriteUsing())
             {
@@ -503,6 +504,33 @@ namespace Profiler.Impl
                     return 0;
                 return -x.TimeElapsed.CompareTo(y.TimeElapsed);
             }
+        }
+
+        #endregion
+
+        #region Return top entities by update time
+
+        internal static IEnumerable<Tuple<string, double>> GetTopEntityUpdateTimes()
+        {
+            var tmp = new List<Tuple<string, double>>();
+            FillEntityTimesRecursive(ProfilerFixedEntry.Entities, FixedProfiler(ProfilerFixedEntry.Entities), tmp);
+            return tmp.OrderByDescending(e => e.Item2);
+        }
+
+        private static void FillEntityTimesRecursive(object owner, SlimProfilerEntry entry, IList<Tuple<string, double>> result)
+        {
+            if (entry is FatProfilerEntry fat)
+            {
+                var keys = fat.ChildUpdateKeys();
+                if (keys.Count == 0)
+                    result.Add(new Tuple<string, double>(ProfilerObjectIdentifier.Identify(owner), entry.UpdateTime));
+                foreach (var key in keys)
+                    if (fat.ChildUpdateTime.TryGetValue(key, out SlimProfilerEntry child))
+                        if (child.UpdateTime > 0)
+                            FillEntityTimesRecursive(key, child, result);
+            }
+            else
+                result.Add(new Tuple<string, double>(ProfilerObjectIdentifier.Identify(owner), entry.UpdateTime));
         }
 
         #endregion

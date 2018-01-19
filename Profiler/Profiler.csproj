@@ -141,6 +141,7 @@
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="Api\IProfilerEntryViewModel.cs" />
+    <Compile Include="Impl\ProfilerCommands.cs" />
     <Compile Include="Impl\FatProfilerEntry.cs" />
     <Compile Include="Impl\ProfilerBlock.cs" />
     <Compile Include="Impl\ProfilerData.cs" />
