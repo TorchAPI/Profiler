@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using NLog;
+using Sandbox.Engine.Multiplayer;
 using Sandbox.Engine.Physics;
 using Sandbox.Engine.Voxels;
 using Sandbox.Game.Entities;
@@ -22,6 +23,8 @@ using VRage.Game.Components;
 using VRage.Game.Entity;
 using VRage.Game.Entity.EntityComponents.Interfaces;
 using VRage.ModAPI;
+using VRage.Network;
+using VRage.Replication;
 using VRage.Utils;
 
 namespace Profiler.Impl
@@ -104,6 +107,23 @@ namespace Profiler.Impl
 
         [ReflectedMethodInfo(typeof(MyPlanet), "UpdateFloraAndPhysics")]
         private static readonly MethodInfo _planetUpdateFloraAndPhysics;
+        #endregion
+
+        #region Replication
+        [ReflectedMethodInfo(typeof(MyReplicationServer), nameof(MyReplicationServer.UpdateClientStateGroups))]
+        private static readonly MethodInfo _replicationServerUpdateClientStateGroups;
+
+        [ReflectedMethodInfo(typeof(MyReplicationServer), nameof(MyReplicationServer.UpdateBefore))]
+        private static readonly MethodInfo _replicationServerUpdateBefore;
+
+        [ReflectedMethodInfo(typeof(MyReplicationServer), nameof(MyReplicationServer.UpdateAfter))]
+        private static readonly MethodInfo _replicationServerUpdateAfter;
+
+        [ReflectedMethodInfo(typeof(MyReplicationServer), nameof(MyReplicationServer.SendUpdate))]
+        private static readonly MethodInfo _replicationServerSendUpdate;
+
+        [ReflectedMethodInfo(typeof(MyMultiplayerBase), nameof(MyMultiplayerBase.Tick))]
+        private static readonly MethodInfo _multiplayerTick;
         #endregion
 #pragma warning restore 649
         #endregion
@@ -208,6 +228,12 @@ namespace Profiler.Impl
             ctx.GetPattern(_voxelPhysicsUpdateAfterSimulation10).PostTranspilers.Add(singleMethodProfiler);
             ctx.GetPattern(_voxelPhysicsUpdateBeforeSimulation10).PostTranspilers.Add(singleMethodProfiler);
             ctx.GetPattern(_planetUpdateFloraAndPhysics).PostTranspilers.Add(singleMethodProfiler);
+
+            ctx.GetPattern(_replicationServerUpdateClientStateGroups).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_replicationServerUpdateBefore).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_replicationServerUpdateAfter).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_replicationServerSendUpdate).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_multiplayerTick).Transpilers.Add(singleMethodProfiler);
         }
 
         #region Single Method Transpiler Entry Providers
@@ -237,6 +263,16 @@ namespace Profiler.Impl
         private static SlimProfilerEntry SingleMethodEntryProvider_SlimBlock_Damage(MySlimBlock __instance, MyStringHash damageType, string __key)
         {
             return ProfilerData.EntityEntry(__instance?.CubeGrid)?.GetFat("Damage")?.GetSlim(damageType.String);
+        }
+
+        private static FatProfilerEntry SingleMethodEntryProvider_Multiplayer(MyMultiplayerMinimalBase __instance, string __key)
+        {
+            return ProfilerData.FixedProfiler(Api.ProfilerFixedEntry.Session).GetFat("Multiplayer");
+        }
+
+        private static SlimProfilerEntry SingleMethodEntryProvider_Replication(MyReplicationLayer __instance, string __key)
+        {
+            return ProfilerData.FixedProfiler(Api.ProfilerFixedEntry.Session).GetFat("Multiplayer").GetFat("Replication").GetSlim(__key);
         }
         // ReSharper restore UnusedMember.Local
         #endregion
