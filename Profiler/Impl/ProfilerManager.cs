@@ -23,9 +23,11 @@ namespace Profiler.Impl
         private static readonly Logger _log = LogManager.GetCurrentClassLogger();
 
 #pragma warning disable 649
-        [Dependency(Ordered = false)] private readonly PatchManager _patchMgr;
+        [Dependency(Ordered = false)]
+        private readonly PatchManager _patchMgr;
 
-        [Dependency(Optional = true)] private readonly EntityControlManager _controlMgr;
+        [Dependency(Optional = true)]
+        private readonly EntityControlManager _controlMgr;
 #pragma warning restore 649
 
         public ProfilerManager(ITorchBase torchInstance) : base(torchInstance)
@@ -39,15 +41,19 @@ namespace Profiler.Impl
                     {
                         var settings = serializer.Deserialize(stream) as ProfilerSettings;
                         if (settings != null)
+                        {
                             Settings = settings;
+                            return;
+                        }
                     }
-                else
-                    SaveConfig();
             }
             catch (Exception e)
             {
-                _log.Error(e, "Failed to load profiler config");
+                _log.Error(e, "Failed to load profiler config.  Rewriting");
             }
+
+            Settings = new ProfilerSettings();
+            SaveConfig();
         }
 
         private static bool _patched = false;
@@ -77,6 +83,7 @@ namespace Profiler.Impl
                 _patched = false;
                 _patchMgr.FreeContext(_patchContext);
             }
+
             SaveConfig();
             _controlMgr?.UnregisterModelFactory<EntityViewModel>(CreateModel);
             _controlMgr?.UnregisterControlFactory<ProfilerEntityControlViewModel>(CreateView);
@@ -209,6 +216,7 @@ namespace Profiler.Impl
             {
                 _saveConfigTimer = new Timer((x) => SaveConfig());
             }
+
             _saveConfigTimer.Change(1000, -1);
         }
 
