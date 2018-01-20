@@ -385,6 +385,9 @@ namespace Profiler.Impl
                 _usedStrings++;
             }
 
+            var returnLocal = __methodBase is MethodInfo mi && mi.ReturnType != typeof(void)
+                ? __localCreator(mi.ReturnType)
+                : null;
             var profilerLocal = __localCreator(typeof(SlimProfilerEntry));
 
             _log.Debug($"Attaching profiling to {__methodBase?.DeclaringType?.FullName}#{__methodBase?.Name} with profiler call {profilerCall.DeclaringType?.FullName}#{profilerCall}");
@@ -420,6 +423,8 @@ namespace Profiler.Impl
             {
                 if (i.OpCode == OpCodes.Ret)
                 {
+                    if (returnLocal != null)
+                        yield return returnLocal.AsValueStore();
                     MsilInstruction j = new MsilInstruction(OpCodes.Br).InlineTarget(skipMainMethod);
                     foreach (MsilLabel l in i.Labels)
                         j.Labels.Add(l);
@@ -439,6 +444,13 @@ namespace Profiler.Impl
                 yield return new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.ProfilerEntryStop);
             }
             yield return new MsilInstruction(OpCodes.Nop).LabelWith(skipProfilerTwo);
+
+
+            if (returnLocal != null)
+            {
+                yield return returnLocal.AsValueLoad();
+                yield return new MsilInstruction(OpCodes.Ret);
+            }
         }
         #endregion
 
