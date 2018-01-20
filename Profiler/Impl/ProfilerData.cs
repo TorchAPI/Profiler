@@ -286,15 +286,16 @@ namespace Profiler.Impl
 
         // ReSharper disable ConvertToConstant.Local
         // Don't make these constants.  We need to keep the reference alive and the same for the weak table.
+#pragma warning disable 169
+#pragma warning disable 414
         private static readonly string _blocksKey = "Blocks";
-
         private static readonly string _systemsKey = "Systems";
         private static readonly string _componentsKey = "Components";
         private static readonly string _sessionKey = "Session";
-
         private static readonly string _methodsKey = "Methods";
-
         private static readonly string _rotationKey = "Rotation";
+#pragma warning restore 414
+#pragma warning restore 169
         // ReSharper restore ConvertToConstant.Local
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
