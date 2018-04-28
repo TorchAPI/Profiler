@@ -7,6 +7,7 @@ using NLog;
 using Sandbox.Engine.Multiplayer;
 using Sandbox.Engine.Physics;
 using Sandbox.Engine.Voxels;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Cube;
@@ -18,6 +19,7 @@ using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
 using Torch.Utils;
 using Torch.Utils.Reflected;
+using VRage;
 using VRage.Collections;
 using VRage.Game.Components;
 using VRage.Game.Entity;
@@ -35,6 +37,7 @@ namespace Profiler.Impl
         private static readonly Logger _log = LogManager.GetCurrentClassLogger();
 
         #region Patch Targets
+
 #pragma warning disable 649
         [ReflectedMethodInfo(typeof(MyGameLogic), nameof(MyGameLogic.UpdateBeforeSimulation))]
         private static readonly MethodInfo _gameLogicUpdateBeforeSimulation;
@@ -62,6 +65,7 @@ namespace Profiler.Impl
 
 
         #region CubeGridSystems
+
         [ReflectedMethodInfo(typeof(MyCubeGridSystems), nameof(MyCubeGridSystems.UpdateBeforeSimulation))]
         private static readonly MethodInfo _cubeGridSystemsUpdateBeforeSimulation;
 
@@ -79,12 +83,14 @@ namespace Profiler.Impl
 
         [ReflectedMethodInfo(typeof(MyCubeGridSystems), nameof(MyCubeGridSystems.UpdateAfterSimulation100))]
         private static readonly MethodInfo _cubeGridSystemsUpdateAfterSimulation100;
+
         #endregion
 
         [ReflectedFieldInfo(typeof(MyCubeGridSystems), "m_cubeGrid")]
         private static readonly FieldInfo _gridSystemsCubeGrid;
 
         #region Single Methods
+
         [ReflectedMethodInfo(typeof(MyCubeGrid), "UpdatePhysicsShape")]
         private static readonly MethodInfo _cubeGridUpdatePhysicsShape;
 
@@ -96,20 +102,24 @@ namespace Profiler.Impl
 
         [ReflectedMethodInfo(typeof(MySlimBlock), nameof(MySlimBlock.DoDamageInternal))]
         private static readonly MethodInfo _slimBlockDoDamageInternal;
+
         #endregion
 
         #region Voxels
 
         [ReflectedMethodInfo(typeof(MyVoxelPhysicsBody), "UpdateBeforeSimulation10")]
         private static readonly MethodInfo _voxelPhysicsUpdateBeforeSimulation10;
+
         [ReflectedMethodInfo(typeof(MyVoxelPhysicsBody), "UpdateAfterSimulation10")]
         private static readonly MethodInfo _voxelPhysicsUpdateAfterSimulation10;
 
         [ReflectedMethodInfo(typeof(MyPlanet), "UpdateFloraAndPhysics")]
         private static readonly MethodInfo _planetUpdateFloraAndPhysics;
+
         #endregion
 
         #region Replication
+
         [ReflectedMethodInfo(typeof(MyReplicationServer), nameof(MyReplicationServer.UpdateClientStateGroups))]
         private static readonly MethodInfo _replicationServerUpdateClientStateGroups;
 
@@ -124,8 +134,34 @@ namespace Profiler.Impl
 
         [ReflectedMethodInfo(typeof(MyMultiplayerBase), nameof(MyMultiplayerBase.Tick))]
         private static readonly MethodInfo _multiplayerTick;
+
         #endregion
+
+        #region Conveyor
+
+        [ReflectedMethodInfo(typeof(MyGridConveyorSystem), "ItemPullAll")]
+        private static readonly MethodInfo _conveyorItemPullAll;
+
+        [ReflectedMethodInfo(typeof(MyGridConveyorSystem), "ItemPullRequest")]
+        private static readonly MethodInfo _conveyorItemPullRequest;
+
+        [ReflectedMethodInfo(typeof(MyGridConveyorSystem), "ItemPushRequest")]
+        private static readonly MethodInfo _conveyorItemPushRequest;
+
+        [ReflectedMethodInfo(typeof(MyGridConveyorSystem), "PullAllRequest", Parameters = new[]
+        {
+            typeof(IMyConveyorEndpointBlock), typeof(MyInventory), typeof(long), typeof(MyInventoryConstraint),
+            typeof(MyFixedPoint?)
+        })]
+        private static readonly MethodInfo _conveyorPullAllRequest;
+
+        [ReflectedMethodInfo(typeof(MyInventory), "CanTransferFromTo")]
+        private static readonly MethodInfo _inventoryCanTransferFromTo;
+
+        #endregion
+
 #pragma warning restore 649
+
         #endregion
 
         private static MethodInfo _distributedUpdaterIterate;
@@ -136,7 +172,8 @@ namespace Profiler.Impl
 
             _distributedUpdaterIterate = typeof(MyDistributedUpdater<,>).GetMethod("Iterate");
             ParameterInfo[] duiP = _distributedUpdaterIterate?.GetParameters();
-            if (_distributedUpdaterIterate == null || duiP == null || duiP.Length != 1 || typeof(Action<>) != duiP[0].ParameterType.GetGenericTypeDefinition())
+            if (_distributedUpdaterIterate == null || duiP == null || duiP.Length != 1 ||
+                typeof(Action<>) != duiP[0].ParameterType.GetGenericTypeDefinition())
             {
                 _log.Error(
                     $"Unable to find MyDistributedUpdater.Iterate(Delegate) method.  Profiling will not function.  (Found {_distributedUpdaterIterate}");
@@ -148,7 +185,6 @@ namespace Profiler.Impl
             PatchDistributedUpdate(ctx, _entitiesUpdateBeforeSimulation);
             PatchDistributedUpdate(ctx, _entitiesUpdateAfterSimulation);
 
-            
 
             {
                 MethodInfo patcher = typeof(ProfilerPatch).GetMethod(nameof(TranspilerForUpdate),
@@ -158,6 +194,7 @@ namespace Profiler.Impl
                 {
                     _log.Error($"Failed to make generic patching method for cube grid systems");
                 }
+
                 ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation).PostTranspilers.Add(patcher);
                 ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation10).PostTranspilers.Add(patcher);
                 ctx.GetPattern(_cubeGridSystemsUpdateBeforeSimulation100).PostTranspilers.Add(patcher);
@@ -174,22 +211,24 @@ namespace Profiler.Impl
                 {
                     _log.Error($"Failed to make generic patching method for composite updates");
                 }
+
                 ctx.GetPattern(_gameLogicUpdateOnceBeforeFrame).PostTranspilers.Add(patcher);
-                foreach (var type in new[] { "After", "Before" })
-                    foreach (var timing in new[] { 1, 10, 100 })
+                foreach (var type in new[] {"After", "Before"})
+                foreach (var timing in new[] {1, 10, 100})
+                {
+                    var period = timing == 1 ? "" : timing.ToString();
+                    var name = $"{typeof(IMyGameLogicComponent).FullName}.Update{type}Simulation{period}";
+                    var method = typeof(MyCompositeGameLogicComponent).GetMethod(name,
+                        BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                    if (method == null)
                     {
-                        var period = timing == 1 ? "" : timing.ToString();
-                        var name = $"{typeof(IMyGameLogicComponent).FullName}.Update{type}Simulation{period}";
-                        var method = typeof(MyCompositeGameLogicComponent).GetMethod(name,
-                            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                        if (method == null)
-                        {
-                            _log.Warn(
-                                $"Failed to find {name} in CompositeGameLogicComponent.  Entity component profiling may not work.");
-                            continue;
-                        }
-                        ctx.GetPattern(method).PostTranspilers.Add(patcher);
+                        _log.Warn(
+                            $"Failed to find {name} in CompositeGameLogicComponent.  Entity component profiling may not work.");
+                        continue;
                     }
+
+                    ctx.GetPattern(method).PostTranspilers.Add(patcher);
+                }
             }
 
             {
@@ -200,6 +239,7 @@ namespace Profiler.Impl
                 {
                     _log.Error($"Failed to make generic patching method for entity update before frame");
                 }
+
                 ctx.GetPattern(_entitiesUpdateOnceBeforeFrame).PostTranspilers.Add(patcher);
             }
 
@@ -234,50 +274,84 @@ namespace Profiler.Impl
             ctx.GetPattern(_replicationServerUpdateAfter).Transpilers.Add(singleMethodProfiler);
             ctx.GetPattern(_replicationServerSendUpdate).Transpilers.Add(singleMethodProfiler);
             ctx.GetPattern(_multiplayerTick).Transpilers.Add(singleMethodProfiler);
+
+            ctx.GetPattern(_conveyorItemPullAll).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_conveyorItemPullRequest).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_conveyorItemPushRequest).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_conveyorPullAllRequest).Transpilers.Add(singleMethodProfiler);
+            ctx.GetPattern(_inventoryCanTransferFromTo).Transpilers.Add(singleMethodProfiler);
         }
 
         #region Single Method Transpiler Entry Providers
+
         // ReSharper disable UnusedMember.Local
         private static SlimProfilerEntry SingleMethodEntryProvider_Entity(IMyEntity __instance, string __key)
         {
-            return ProfilerData.EntityEntry(__instance)?.GetSlim(__key);
+            return ProfilerData.EntityEntry(__instance)?.GetFat(__key);
         }
 
-        private static SlimProfilerEntry SingleMethodEntryProvider_EntityComponent(MyEntityComponentBase __instance, string __key)
+        private static SlimProfilerEntry SingleMethodEntryProvider_EntityComponent(MyEntityComponentBase __instance,
+            string __key)
         {
-            return ProfilerData.EntityComponentEntry(__instance)?.GetSlim(__key);
+            return ProfilerData.EntityComponentEntry(__instance)?.GetFat(__key);
         }
 
-        private static SlimProfilerEntry SingleMethodEntryProvider_SessionComponent(MySessionComponentBase __instance, string __key)
+        private static SlimProfilerEntry SingleMethodEntryProvider_SessionComponent(MySessionComponentBase __instance,
+            string __key)
         {
-            return ProfilerData.SessionComponentEntry(__instance)?.GetSlim(__key);
+            return ProfilerData.SessionComponentEntry(__instance)?.GetFat(__key);
         }
 
-        private static SlimProfilerEntry SingleMethodEntryProvider_GridConveyorRequest(IMyConveyorEndpointBlock __anyBlock, string __key)
+        private static SlimProfilerEntry SingleMethodEntryProvider_GridConveyorRequest(
+            IMyConveyorEndpointBlock __anyBlock, string __key)
         {
             if (__anyBlock is IMyEntity entity)
                 return ProfilerData.EntityEntry(entity)?.GetSlim(__key);
             return null;
         }
-        
-        private static SlimProfilerEntry SingleMethodEntryProvider_SlimBlock_Damage(MySlimBlock __instance, MyStringHash damageType, string __key)
+
+        private static SlimProfilerEntry SingleMethodEntryProvider_SlimBlock_Damage(MySlimBlock __instance,
+            MyStringHash damageType, string __key)
         {
             return ProfilerData.EntityEntry(__instance?.CubeGrid)?.GetFat("Damage")?.GetSlim(damageType.String);
         }
 
-        private static FatProfilerEntry SingleMethodEntryProvider_Multiplayer(MyMultiplayerMinimalBase __instance, string __key)
+        private static FatProfilerEntry SingleMethodEntryProvider_Multiplayer(MyMultiplayerMinimalBase __instance,
+            string __key)
         {
             return ProfilerData.FixedProfiler(Api.ProfilerFixedEntry.Session).GetFat("Multiplayer");
         }
 
-        private static SlimProfilerEntry SingleMethodEntryProvider_Replication(MyReplicationLayer __instance, string __key)
+        private static SlimProfilerEntry SingleMethodEntryProvider_Replication(MyReplicationLayer __instance,
+            string __key)
         {
-            return ProfilerData.FixedProfiler(Api.ProfilerFixedEntry.Session).GetFat("Multiplayer").GetFat("Replication").GetSlim(__key);
+            return ProfilerData.FixedProfiler(Api.ProfilerFixedEntry.Session).GetFat("Multiplayer")
+                .GetFat("Replication").GetSlim(__key);
+        }
+
+        private static SlimProfilerEntry SingleMethodEntryProvider_ConveyorPushPull(IMyConveyorEndpointBlock start,
+            string __key)
+        {
+            var active = SlimProfilerEntry.GetActive;
+            if (active is FatProfilerEntry act)
+                return act.GetSlim(__key);
+            return null;
+        }
+
+        private static SlimProfilerEntry SingleMethodEntryProvider_InventoryTransfer(MyInventory srcInventory,
+            MyInventory dstInventory, string __key)
+        {
+            var active = SlimProfilerEntry.GetActive;
+            if (active is FatProfilerEntry act)
+                return act.GetSlim(__key);
+            return null;
         }
         // ReSharper restore UnusedMember.Local
+
         #endregion
 
         #region Single Method Transpiler
+
         private static readonly object _keyedStringPoolLock = new object();
         private static string[] _keyedStringPool = new string[64];
         private static int _usedStrings = 0;
@@ -301,11 +375,12 @@ namespace Profiler.Impl
                 else if (!profilerArg.Name.Equals("__key"))
                 {
                     if (!sargs.Any(sourceArg =>
-                            (sourceArg.Name.Equals(profilerArg.Name) || profilerArg.Name.StartsWith("__any")) &&
-                                                profilerArg.ParameterType.IsAssignableFrom(sourceArg.ParameterType)))
+                        (sourceArg.Name.Equals(profilerArg.Name) || profilerArg.Name.StartsWith("__any")) &&
+                        profilerArg.ParameterType.IsAssignableFrom(sourceArg.ParameterType)))
                         return false;
                 }
             }
+
             return true;
         }
 
@@ -337,10 +412,12 @@ namespace Profiler.Impl
                         }
                 }
             }
+
             yield return new MsilInstruction(OpCodes.Call).InlineValue(profilerCall);
         }
 
-        private static IEnumerable<MsilInstruction> TranspileSingleMethod(IEnumerable<MsilInstruction> insn, Func<Type, MsilLocal> __localCreator, MethodBase __methodBase)
+        private static IEnumerable<MsilInstruction> TranspileSingleMethod(IEnumerable<MsilInstruction> insn,
+            Func<Type, MsilLocal> __localCreator, MethodBase __methodBase)
         {
             MethodInfo profilerCall = null;
             foreach (var method in typeof(ProfilerData).GetMethods(BindingFlags.Static | BindingFlags.NonPublic |
@@ -350,21 +427,25 @@ namespace Profiler.Impl
                     profilerCall = method;
                     break;
                 }
+
             if (profilerCall == null)
                 foreach (var method in typeof(ProfilerPatch).GetMethods(BindingFlags.Static | BindingFlags.NonPublic |
-                                                                       BindingFlags.Public))
+                                                                        BindingFlags.Public))
                     if (IsSingleMethodProfilerCall(__methodBase, method))
                     {
                         profilerCall = method;
                         break;
                     }
+
             if (profilerCall == null)
-                _log.Warn($"Single method profiler for {__methodBase.DeclaringType?.FullName}#{__methodBase.Name} couldn't find a profiler call; will not operate");
+                _log.Warn(
+                    $"Single method profiler for {__methodBase.DeclaringType?.FullName}#{__methodBase.Name} couldn't find a profiler call; will not operate");
 
             FieldInfo stringPool = typeof(ProfilerPatch).GetField(nameof(_keyedStringPool),
                 BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
             if (stringPool == null)
-                _log.Warn($"Single method profiler for {__methodBase.DeclaringType?.FullName}#{__methodBase.Name} couldn't file string pool; will not operate");
+                _log.Warn(
+                    $"Single method profiler for {__methodBase.DeclaringType?.FullName}#{__methodBase.Name} couldn't file string pool; will not operate");
 
 
             if (profilerCall == null || stringPool == null)
@@ -390,27 +471,32 @@ namespace Profiler.Impl
                 : null;
             var profilerLocal = __localCreator(typeof(SlimProfilerEntry));
 
-            _log.Debug($"Attaching profiling to {__methodBase?.DeclaringType?.FullName}#{__methodBase?.Name} with profiler call {profilerCall.DeclaringType?.FullName}#{profilerCall}");
+            _log.Debug(
+                $"Attaching profiling to {__methodBase?.DeclaringType?.FullName}#{__methodBase?.Name} with profiler call {profilerCall.DeclaringType?.FullName}#{profilerCall}");
 
 
             var labelNoProfiling = new MsilLabel();
             var labelStoreProfiling = new MsilLabel();
             yield return new MsilInstruction(OpCodes.Ldsfld).InlineValue(ProfilerData.FieldProfileSingleMethods);
             yield return new MsilInstruction(OpCodes.Brfalse).InlineTarget(labelNoProfiling);
-            { // if (ProfilerData.FieldProfileSingleMethods)
+            {
+                // if (ProfilerData.FieldProfileSingleMethods)
                 foreach (var stub in EmitSingleMethodProfilerCall(__methodBase, profilerCall, stringPool, stringKey))
                     yield return stub;
                 yield return new MsilInstruction(OpCodes.Br).InlineTarget(labelStoreProfiling);
             }
-            { // else
+            {
+                // else
                 yield return new MsilInstruction(OpCodes.Ldnull).LabelWith(labelNoProfiling);
             }
-            yield return new MsilInstruction(OpCodes.Dup).LabelWith(labelStoreProfiling); // Duplicate profiler entry for brnull
+            yield return
+                new MsilInstruction(OpCodes.Dup).LabelWith(labelStoreProfiling); // Duplicate profiler entry for brnull
             yield return profilerLocal.AsValueStore(); // store the profiler entry for later
 
             var skipProfilerOne = new MsilLabel();
             yield return new MsilInstruction(OpCodes.Brfalse).InlineTarget(skipProfilerOne);
-            { // if (profiler != null)
+            {
+                // if (profiler != null)
                 yield return profilerLocal.AsValueLoad();
                 yield return new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.ProfilerEntryStart);
             }
@@ -452,9 +538,11 @@ namespace Profiler.Impl
                 yield return new MsilInstruction(OpCodes.Ret);
             }
         }
+
         #endregion
 
         #region Generalized Update Transpiler
+
         private static bool ShouldProfileMethodCall<T>(MethodBase info)
         {
             if (info.IsStatic)
@@ -462,21 +550,25 @@ namespace Profiler.Impl
 
             if (typeof(T) != typeof(MyCubeGridSystems) &&
                 !typeof(T).IsAssignableFrom(info.DeclaringType) &&
-                (!typeof(MyGameLogicComponent).IsAssignableFrom(typeof(T)) || !typeof(IMyGameLogicComponent).IsAssignableFrom(info.DeclaringType)))
+                (!typeof(MyGameLogicComponent).IsAssignableFrom(typeof(T)) ||
+                 !typeof(IMyGameLogicComponent).IsAssignableFrom(info.DeclaringType)))
                 return false;
-            if (typeof(T) == typeof(MySessionComponentBase) && info.Name.Equals("Simulate", StringComparison.OrdinalIgnoreCase))
+            if (typeof(T) == typeof(MySessionComponentBase) &&
+                info.Name.Equals("Simulate", StringComparison.OrdinalIgnoreCase))
                 return true;
             return info.Name.StartsWith("UpdateBeforeSimulation", StringComparison.OrdinalIgnoreCase) ||
                    info.Name.StartsWith("UpdateAfterSimulation", StringComparison.OrdinalIgnoreCase) ||
                    info.Name.StartsWith("UpdateOnceBeforeFrame", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static IEnumerable<MsilInstruction> TranspilerForUpdate<T>(IEnumerable<MsilInstruction> insn, Func<Type, MsilLocal> __localCreator, MethodBase __methodBase)
+        private static IEnumerable<MsilInstruction> TranspilerForUpdate<T>(IEnumerable<MsilInstruction> insn,
+            Func<Type, MsilLocal> __localCreator, MethodBase __methodBase)
         {
             MethodInfo profilerCall = null;
             if (typeof(IMyEntity).IsAssignableFrom(typeof(T)))
                 profilerCall = ProfilerData.GetEntityProfiler;
-            else if (typeof(MyEntityComponentBase).IsAssignableFrom(typeof(T)) || typeof(T) == typeof(IMyGameLogicComponent))
+            else if (typeof(MyEntityComponentBase).IsAssignableFrom(typeof(T)) ||
+                     typeof(T) == typeof(IMyGameLogicComponent))
                 profilerCall = ProfilerData.GetEntityComponentProfiler;
             else if (typeof(MyCubeGridSystems) == typeof(T))
                 profilerCall = ProfilerData.GetGridSystemProfiler;
@@ -498,7 +590,7 @@ namespace Profiler.Impl
                 if (profilerCall != null && (i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt) &&
                     ShouldProfileMethodCall<T>((i.Operand as MsilOperandInline<MethodBase>)?.Value))
                 {
-                    MethodBase target = ((MsilOperandInline<MethodBase>)i.Operand).Value;
+                    MethodBase target = ((MsilOperandInline<MethodBase>) i.Operand).Value;
                     ParameterInfo[] pams = target.GetParameters();
                     usedLocals.Clear();
                     foreach (ParameterInfo pam in pams)
@@ -510,20 +602,25 @@ namespace Profiler.Impl
                         yield return local.AsValueStore();
                     }
 
-                    _log.Debug($"Attaching profiling to {target?.DeclaringType?.FullName}#{target?.Name} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name} targeting {typeof(T)}");
+                    _log.Debug(
+                        $"Attaching profiling to {target?.DeclaringType?.FullName}#{target?.Name} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name} targeting {typeof(T)}");
                     yield return new MsilInstruction(OpCodes.Dup); // duplicate the object the update is called on
-                    if (typeof(MyCubeGridSystems) == typeof(T) && __methodBase.DeclaringType == typeof(MyCubeGridSystems))
+                    if (typeof(MyCubeGridSystems) == typeof(T) &&
+                        __methodBase.DeclaringType == typeof(MyCubeGridSystems))
                     {
                         yield return new MsilInstruction(OpCodes.Ldarg_0);
                         yield return new MsilInstruction(OpCodes.Ldfld).InlineValue(_gridSystemsCubeGrid);
                     }
 
-                    yield return new MsilInstruction(OpCodes.Call).InlineValue(profilerCall); // consume object the update is called on
+                    yield return
+                        new MsilInstruction(OpCodes.Call)
+                            .InlineValue(profilerCall); // consume object the update is called on
                     yield return new MsilInstruction(OpCodes.Dup); // Duplicate profiler entry for brnull
                     yield return profilerEntry.AsValueStore(); // store the profiler entry for later
 
                     var skipProfilerOne = new MsilLabel();
-                    yield return new MsilInstruction(OpCodes.Brfalse).InlineTarget(skipProfilerOne); // Brfalse == Brnull
+                    yield return
+                        new MsilInstruction(OpCodes.Brfalse).InlineTarget(skipProfilerOne); // Brfalse == Brnull
                     {
                         yield return profilerEntry.AsValueLoad(); // start the profiler
                         yield return new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.ProfilerEntryStart);
@@ -536,11 +633,13 @@ namespace Profiler.Impl
                         yield return usedLocals[j].AsValueLoad();
                         tmpArgument[usedLocals[j].Type].Push(usedLocals[j]);
                     }
+
                     yield return i;
 
                     var skipProfilerTwo = new MsilLabel();
                     yield return profilerEntry.AsValueLoad();
-                    yield return new MsilInstruction(OpCodes.Brfalse).InlineTarget(skipProfilerTwo); // Brfalse == Brnull
+                    yield return
+                        new MsilInstruction(OpCodes.Brfalse).InlineTarget(skipProfilerTwo); // Brfalse == Brnull
                     {
                         yield return profilerEntry.AsValueLoad(); // stop the profiler
                         yield return new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.ProfilerEntryStop);
@@ -549,14 +648,19 @@ namespace Profiler.Impl
                     foundAny = true;
                     continue;
                 }
+
                 yield return i;
             }
+
             if (!foundAny)
-                _log.Warn($"Didn't find any update profiling targets for target {typeof(T)} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name}");
+                _log.Warn(
+                    $"Didn't find any update profiling targets for target {typeof(T)} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name}");
         }
+
         #endregion
 
         #region Distributed Update Targeting
+
         private static void PatchDistUpdateDel(PatchContext ctx, MethodBase method)
         {
             MethodRewritePattern pattern = ctx.GetPattern(method);
@@ -567,6 +671,7 @@ namespace Profiler.Impl
             {
                 _log.Error($"Failed to make generic patching method for {method}");
             }
+
             pattern.PostTranspilers.Add(patcher);
         }
 
@@ -621,22 +726,29 @@ namespace Profiler.Impl
                                 }
                                 else
                                 {
-                                    _log.Debug($"Patching {targetMethod.Value.DeclaringType}#{targetMethod.Value} for {callerMethod.DeclaringType}#{callerMethod}");
+                                    _log.Debug(
+                                        $"Patching {targetMethod.Value.DeclaringType}#{targetMethod.Value} for {callerMethod.DeclaringType}#{callerMethod}");
                                     PatchDistUpdateDel(ctx, targetMethod.Value);
                                 }
+
                                 break;
                             }
                         }
                     }
+
                     if (!foundNewDel)
                     {
-                        _log.Error($"Unable to find new Action() call for Iterate in {callerMethod.DeclaringType}#{callerMethod}");
+                        _log.Error(
+                            $"Unable to find new Action() call for Iterate in {callerMethod.DeclaringType}#{callerMethod}");
                     }
                 }
             }
+
             if (!foundAnyIterate)
-                _log.Error($"Unable to find any calls to {_distributedUpdaterIterate} in {callerMethod.DeclaringType}#{callerMethod}");
+                _log.Error(
+                    $"Unable to find any calls to {_distributedUpdaterIterate} in {callerMethod.DeclaringType}#{callerMethod}");
         }
+
         #endregion
     }
 }

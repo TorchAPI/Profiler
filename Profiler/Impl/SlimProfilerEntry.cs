@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
@@ -22,6 +24,12 @@ namespace Profiler.Impl
             _parents = parents;
         }
 
+        [ThreadStatic]
+        private static Stack<SlimProfilerEntry> _activeStor;
+
+        public static SlimProfilerEntry GetActive =>
+            _activeStor != null && _activeStor.Count > 0 ? _activeStor.Peek() : null;
+
         internal void Start()
         {
             if (Interlocked.Add(ref _watchStarts, 1) == 1)
@@ -29,6 +37,12 @@ namespace Profiler.Impl
                 if (_parents!=null)
                     foreach (var p in _parents)
                         p?.Start();
+
+                var active = _activeStor;
+                if (active == null)
+                    _activeStor = active = new Stack<SlimProfilerEntry>();
+                active.Push(this);
+
                 _updateWatch.Start();
             }
         }
@@ -38,6 +52,22 @@ namespace Profiler.Impl
             if (Interlocked.Add(ref _watchStarts, -1) == 0)
             {
                 _updateWatch.Stop();
+
+                var active = _activeStor;
+                if (active != null && active.Count > 0)
+                {
+                    var p = active.Pop();
+                    if (p != this)
+                    {
+                        active.Push(p);
+                        Console.WriteLine("Bad active head");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No active head");
+                }
+
                 if (_parents != null)
                     foreach (var p in _parents)
                         p?.Stop();
