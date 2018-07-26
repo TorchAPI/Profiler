@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Profiler.Impl;
+using Profiler.Core;
+using Profiler.Util;
 using Torch.Utils;
 using Xunit;
 
