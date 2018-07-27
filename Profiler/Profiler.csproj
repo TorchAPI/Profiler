@@ -88,6 +88,10 @@
       <HintPath>$(SolutionDir)\GameBinaries\VRage.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="HavokWrapper">
+      <HintPath>$(SolutionDir)\GameBinaries\HavokWrapper.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="VRage.Audio">
       <HintPath>$(SolutionDir)\GameBinaries\VRage.Audio.dll</HintPath>
       <Private>False</Private>

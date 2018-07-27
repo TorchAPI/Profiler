@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Havok;
 using NLog;
+using Profiler.Util;
+using Sandbox.Engine.Physics;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
@@ -54,6 +58,12 @@ namespace Profiler.Core
 
         [ReflectedFieldInfo(typeof(MyCubeGridSystems), "m_cubeGrid")]
         private static readonly FieldInfo _gridSystemsCubeGrid;
+
+        [ReflectedMethodInfo(typeof(MyPhysics), "StepWorlds")]
+        private static readonly MethodInfo _physicsStepWorlds;
+
+        [ReflectedMethodInfo(typeof(MyProgrammableBlock), "RunSandboxedProgramAction")]
+        private static readonly MethodInfo _programmableRunSandboxed;
 #pragma warning restore 649
         // ReSharper restore InconsistentNaming
 
@@ -129,8 +139,28 @@ namespace Profiler.Core
                 ctx.GetPattern(_sessionUpdateComponents).PostTranspilers.Add(patcher);
             }
 
+            ctx.GetPattern(_physicsStepWorlds).Prefixes.Add(ProfilerData.HandlePrefixPhysicsStepWorlds);
+
             ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(ProfilerData.DoTick);
+
+            ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(PrefixProfilePb)));
+            ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(SuffixProfilePb)));
         }
+
+        // ReSharper disable InconsistentNaming
+        // ReSharper disable once SuggestBaseTypeForParameter
+        private static void PrefixProfilePb(MyProgrammableBlock __instance, ref MultiProfilerEntry __localProfilerHandle)
+        {
+            __localProfilerHandle = default(MultiProfilerEntry);
+            ProfilerData.EntityEntry(__instance, ref __localProfilerHandle);
+            __localProfilerHandle.Start();
+        }
+
+        private static void SuffixProfilePb(ref MultiProfilerEntry __localProfilerHandle)
+        {
+            __localProfilerHandle.Stop();
+        }
+        // ReSharper restore InconsistentNaming
 
         #region Generalized Update Transpiler
 

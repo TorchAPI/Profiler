@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -6,30 +7,56 @@ namespace Profiler.Core
 {
     public class SlimProfilerEntry
     {
-        private ulong _passes;
-        private ulong _totalTime;
+        private long _passes;
+        private long _totalTime;
         private long _watchStartTime;
         private int _watchStarts;
 
         private ulong _startTick;
         private int _activeCount;
 
+        public readonly string PassUnits;
+        public readonly bool CounterOnly;
+
+        public SlimProfilerEntry(string passUnits = null, bool counterOnly = false)
+        {
+            PassUnits = passUnits;
+            CounterOnly = counterOnly;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void Increment(long count)
+        {
+            Debug.Assert(CounterOnly, "Increment used on non-counter");
+            Interlocked.Add(ref _passes, count);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void FastForward(TimeSpan ts, long passes = 1)
+        {
+            Debug.Assert(!CounterOnly, "Timing used on counter");
+            Interlocked.Add(ref _passes, passes);
+            Interlocked.Add(ref _totalTime, ts.Ticks * Stopwatch.Frequency / System.TimeSpan.TicksPerSecond);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Start()
         {
+            Debug.Assert(!CounterOnly, "Timing used on counter");
             if (Interlocked.Add(ref _watchStarts, 1) == 1)
             {
                 _watchStartTime = Stopwatch.GetTimestamp();
-                _passes++;
+                Interlocked.Increment(ref _passes);
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Stop()
         {
+            Debug.Assert(!CounterOnly, "Timing used on counter");
             Debug.Assert(_watchStarts > 0);
             if (Interlocked.Add(ref _watchStarts, -1) == 0)
-                _totalTime += (ulong) (Stopwatch.GetTimestamp() - _watchStartTime);
+                Interlocked.Add(ref _totalTime, Stopwatch.GetTimestamp() - _watchStartTime);
         }
 
         internal bool IsActive
@@ -57,7 +84,7 @@ namespace Profiler.Core
             Debug.Assert(_activeCount > 0);
             Interlocked.Add(ref _activeCount, -1);
             var deltaTicks = (double) unchecked(tickId - _startTick);
-            hits = _passes / deltaTicks;
+            hits = (ulong) _passes / deltaTicks;
             var loadTimeMs = _totalTime * 1000D / Stopwatch.Frequency;
             return loadTimeMs / deltaTicks;
         }
