@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Profiler.Util;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -96,7 +97,7 @@ namespace Profiler.Core
             if (Type != ProfilerRequestType.Grid)
                 return;
             var grid = MyEntities.GetEntityById(id) as MyCubeGrid;
-            Accept($"{grid?.DisplayName ?? "Unknown"}", grid?.PositionComp.WorldAABB.Center, "ID=" + id, spe);
+            Accept(grid?.DisplayName ?? "Unknown", grid?.PositionComp.WorldAABB.Center, "ID=" + id, spe);
         }
 
         public void AcceptFaction(long id, SlimProfilerEntry spe)
@@ -110,7 +111,7 @@ namespace Profiler.Core
             }
 
             var faction = MySession.Static.Factions?.TryGetFactionById(id);
-            Accept($"{faction?.Tag ?? "Unknown"}", null, "ID=" + id, spe);
+            Accept(faction?.Tag ?? "Unknown", null, "ID=" + id, spe);
         }
 
         public void AcceptPlayer(long id, SlimProfilerEntry spe)
@@ -133,7 +134,7 @@ namespace Profiler.Core
         {
             if (Type != ProfilerRequestType.Mod)
                 return;
-            Accept(mod.ModName, null, "", spe);
+            Accept(mod.ModName ?? mod.ModId ?? mod.ModPath ?? "Unknown Mod", null, "", spe);
         }
 
         private const string TypePrefix = "MyObjectBuilder_";

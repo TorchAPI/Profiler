@@ -292,7 +292,7 @@ namespace Profiler
                     var formattedTime = FormatTime(r.MsPerTick);
                     var hits = results[i].HitsPerTick;
                     var hitsUnit = results[i].HitsUnit;
-                    var formattedName = string.Format(r.Name, i, formattedTime, hits, hitsUnit);
+                    var formattedName = string.Format(r.Name ?? "unknown", i, formattedTime, hits, hitsUnit);
                     var formattedDesc = string.Format(r.Description ?? "", i, formattedTime, hits, hitsUnit);
                     if (reportGPS.HasValue || !r.Position.HasValue)
                     {
