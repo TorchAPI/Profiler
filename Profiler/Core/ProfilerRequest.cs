@@ -134,7 +134,10 @@ namespace Profiler.Core
         {
             if (Type != ProfilerRequestType.Mod)
                 return;
-            Accept(mod.ModName ?? mod.ModId ?? mod.ModPath ?? "Unknown Mod", null, "", spe);
+            var desc = mod.ModName ?? mod.ModId ?? mod.ModPath ?? "Unknown Mod";
+            if (mod == MyModContext.BaseGame)
+                desc = "Base Game";
+            Accept(desc, null, "", spe);
         }
 
         private const string TypePrefix = "MyObjectBuilder_";
