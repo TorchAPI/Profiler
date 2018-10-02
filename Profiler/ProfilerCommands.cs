@@ -259,7 +259,7 @@ namespace Profiler
                     {
                         var ctx = new MyModContext();
                         ctx.Init(mod);
-                        if (ctx.ModId.Equals(nam, StringComparison.OrdinalIgnoreCase) || ctx.ModId.Equals(nam + ".sbm", StringComparison.OrdinalIgnoreCase))
+                        if (ctx.ModId.Equals(nam, StringComparison.OrdinalIgnoreCase) || ctx.ModId.Equals(nam + ".sbm", StringComparison.OrdinalIgnoreCase) || ctx.ModName.Equals(nam, StringComparison.OrdinalIgnoreCase))
                         {
                             modFilter = ctx;
                             break;
