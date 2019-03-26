@@ -38,7 +38,7 @@ namespace Profiler.Util
             
             var asmName = asmToLookup.GetName().Name;
             foreach (var kv in MyScriptManager.Static.ScriptsPerMod)
-            foreach (vas asmTest in kv.Value)
+            foreach (var asmTest in kv.Value)
             if (asmTest.String.EndsWith(asmName))
                 return kv.Key;
             return null;
