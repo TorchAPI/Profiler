@@ -115,7 +115,7 @@ namespace Profiler.Core
                                 return false;
                         }
 
-                        return modMask == null || ModsEqual(block.BlockDefinition?.Context, modMask);
+                        return modMask == null || Equals(block.BlockDefinition?.Context, modMask);
                     }
                     case MyCubeGrid grid:
                     {
@@ -255,7 +255,7 @@ namespace Profiler.Core
             if (_activeProfilers == 0)
                 return;
 
-            if (_modMask != null && !ModsEqual(component.ModContext, _modMask))
+            if (_modMask != null && !Equals(component.ModContext, _modMask))
                 return;
 
             if (_activeProfilersByType[(int) ProfilerRequestType.Mod] > 0)
@@ -469,11 +469,6 @@ namespace Profiler.Core
                     _requests.Remove(kv);
                 _expiredRequests.Clear();
             }
-        }
-
-        private static bool ModsEqual(MyModContext a, MyModContext b)
-        {
-            return a?.ModName == b?.ModName && a?.ModId == b?.ModId && a?.ModPathData == b?.ModPathData;
         }
         #endregion
     }
