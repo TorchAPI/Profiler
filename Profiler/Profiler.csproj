@@ -120,12 +120,8 @@
       <HintPath>$(SolutionDir)\GameBinaries\VRage.Math.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="VRage.Native">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.Native.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="VRage.OpenVRWrapper">
-      <HintPath>$(SolutionDir)\GameBinaries\VRage.OpenVRWrapper.dll</HintPath>
+    <Reference Include="VRage.NativeWrapper">
+      <HintPath>$(SolutionDir)\GameBinaries\VRage.NativeWrapper.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Render">
