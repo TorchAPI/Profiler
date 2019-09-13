@@ -74,7 +74,7 @@ node {
 			bat "IF EXIST ${zipFile} DEL ${zipFile}"
 			bat "IF EXIST ${packageDir} RMDIR /S /Q ${packageDir}"
 
-			bat "xcopy bin\\x64\\${buildMode} ${packageDir}"
+			bat "xcopy bin\\x64\\${buildMode}\\Profiler.* ${packageDir}"
 			powershell "(Get-Content manifest.xml).Replace('\${VERSION}', [System.Diagnostics.FileVersionInfo]::GetVersionInfo(\"\$PWD\\${packageDir}Profiler.dll\").ProductVersion) | Set-Content \"${packageDir}/manifest.xml\""
 			powershell "Add-Type -Assembly System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory(\"\$PWD\\${packageDir}\", \"\$PWD\\${zipFile}\")"
 			archiveArtifacts artifacts: zipFile, caseSensitive: false, onlyIfSuccessful: true
