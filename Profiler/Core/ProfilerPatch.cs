@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using Havok;
 using NLog;
 using Profiler.Util;
@@ -11,6 +13,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.World;
+using SpaceEngineers.Game.Entities.Blocks;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
 using Torch.Utils;
@@ -41,26 +44,8 @@ namespace Profiler.Core
         [ReflectedMethodInfo(typeof(MyGameLogic), nameof(MyGameLogic.UpdateOnceBeforeFrame))]
         private static readonly MethodInfo _gameLogicUpdateOnceBeforeFrame;
 
-        [ReflectedMethodInfo(typeof(MyEntities), nameof(MyEntities.UpdateBeforeSimulation))]
-        private static readonly MethodInfo _entitiesUpdateBeforeSimulation;
-
-        [ReflectedMethodInfo(typeof(MyEntities), nameof(MyEntities.UpdateAfterSimulation))]
-        private static readonly MethodInfo _entitiesUpdateAfterSimulation;
-
-        [ReflectedMethodInfo(typeof(MyEntities), nameof(MyEntities.UpdateOnceBeforeFrame))]
-        private static readonly MethodInfo _entitiesUpdateOnceBeforeFrame;
-
         [ReflectedMethodInfo(typeof(Sandbox.Engine.Platform.Game), nameof(Sandbox.Engine.Platform.Game.RunSingleFrame))]
         private static readonly MethodInfo _gameRunSingleFrame;
-
-        [ReflectedMethodInfo(typeof(MySession), nameof(MySession.UpdateComponents))]
-        private static readonly MethodInfo _sessionUpdateComponents;
-
-        [ReflectedFieldInfo(typeof(MyCubeGridSystems), "m_cubeGrid")]
-        private static readonly FieldInfo _gridSystemsCubeGrid;
-
-        [ReflectedMethodInfo(typeof(MyPhysics), "StepWorlds")]
-        private static readonly MethodInfo _physicsStepWorlds;
 
         [ReflectedMethodInfo(typeof(MyProgrammableBlock), "RunSandboxedProgramAction")]
         private static readonly MethodInfo _programmableRunSandboxed;
@@ -69,79 +54,50 @@ namespace Profiler.Core
 
         #endregion
 
+        private static readonly ListReader<string> ParallelEntityUpdateMethods = new List<string>
+        {
+            "UpdateBeforeSimulation",
+            "UpdateBeforeSimulation10",
+            "UpdateBeforeSimulation100",
+            "ParallelUpdateHandlerAfterSimulation",
+            "UpdateAfterSimulation",
+            "UpdateAfterSimulation10",
+            "UpdateAfterSimulation100",
+            "DispatchOnceBeforeFrame",
+            "DispatchSimulate",
+        };
+
+        private static readonly MethodInfo _generalizedUpdateTranspiler = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(TranspilerForUpdate));
         private static MethodInfo _distributedUpdaterIterate;
 
         public static void Patch(PatchContext ctx)
         {
             ReflectedManager.Process(typeof(ProfilerPatch));
 
+            ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(ProfilerData.DoTick);
+
+            foreach (var parallelUpdateMethod in ParallelEntityUpdateMethods)
+            {
+                var method = typeof(MyParallelEntityUpdateOrchestrator).GetMethod(parallelUpdateMethod,
+                    ReflectionUtils.StaticFlags | ReflectionUtils.InstanceFlags);
+                if (method != null)
+                    ctx.GetPattern(method).PostTranspilers.Add(_generalizedUpdateTranspiler);
+                else
+                    Log.Error($"Unable to find {typeof(MyParallelEntityUpdateOrchestrator)}#{parallelUpdateMethod}.  Some profiling data will be missing");
+            }
+
+            ctx.GetPattern(_gameLogicUpdateOnceBeforeFrame).PostTranspilers.Add(_generalizedUpdateTranspiler);
+
             _distributedUpdaterIterate = typeof(MyDistributedUpdater<,>).GetMethod("Iterate");
             var duiP = _distributedUpdaterIterate?.GetParameters();
-            if (_distributedUpdaterIterate == null || duiP == null || duiP.Length != 1 ||
-                typeof(Action<>) != duiP[0].ParameterType.GetGenericTypeDefinition())
+            if (_distributedUpdaterIterate != null && duiP != null && duiP.Length == 1 && typeof(Action<>) == duiP[0].ParameterType.GetGenericTypeDefinition())
             {
+                PatchDistributedUpdate(ctx, _gameLogicUpdateBeforeSimulation);
+                PatchDistributedUpdate(ctx, _gameLogicUpdateAfterSimulation);
+            }
+            else
                 Log.Error(
-                    $"Unable to find MyDistributedUpdater.Iterate(Delegate) method.  Profiling will not function.  (Found {_distributedUpdaterIterate}");
-                return;
-            }
-
-            PatchDistributedUpdate(ctx, _gameLogicUpdateBeforeSimulation);
-            PatchDistributedUpdate(ctx, _gameLogicUpdateAfterSimulation);
-            PatchDistributedUpdate(ctx, _entitiesUpdateBeforeSimulation);
-            PatchDistributedUpdate(ctx, _entitiesUpdateAfterSimulation);
-
-            {
-                var patcher = typeof(ProfilerPatch).GetMethod(nameof(TranspilerForUpdate),
-                        BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?
-                    .MakeGenericMethod(typeof(MyGameLogicComponent));
-                if (patcher == null)
-                {
-                    Log.Error($"Failed to make generic patching method for composite updates");
-                }
-
-                ctx.GetPattern(_gameLogicUpdateOnceBeforeFrame).PostTranspilers.Add(patcher);
-                foreach (var type in new[] {"After", "Before"})
-                foreach (var timing in new[] {1, 10, 100})
-                {
-                    var period = timing == 1 ? "" : timing.ToString();
-                    var name = $"{typeof(IMyGameLogicComponent).FullName}.Update{type}Simulation{period}";
-                    var method = typeof(MyCompositeGameLogicComponent).GetMethod(name,
-                        BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                    if (method == null)
-                    {
-                        Log.Warn($"Failed to find {name} in CompositeGameLogicComponent.  Entity component profiling may not work.");
-                        continue;
-                    }
-
-                    ctx.GetPattern(method).PostTranspilers.Add(patcher);
-                }
-            }
-
-            {
-                var patcher = typeof(ProfilerPatch).GetMethod(nameof(TranspilerForUpdate),
-                        BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?
-                    .MakeGenericMethod(typeof(MyEntity));
-                if (patcher == null)
-                {
-                    Log.Error($"Failed to make generic patching method for entity update before frame");
-                }
-
-                ctx.GetPattern(_entitiesUpdateOnceBeforeFrame).PostTranspilers.Add(patcher);
-            }
-
-            {
-                var patcher = typeof(ProfilerPatch).GetMethod(nameof(TranspilerForUpdate),
-                        BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?
-                    .MakeGenericMethod(typeof(MySessionComponentBase));
-                if (patcher == null)
-                    Log.Error($"Failed to make generic patching method for session components");
-
-                ctx.GetPattern(_sessionUpdateComponents).PostTranspilers.Add(patcher);
-            }
-
-            ctx.GetPattern(_physicsStepWorlds).Prefixes.Add(ProfilerData.HandlePrefixPhysicsStepWorlds);
-
-            ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(ProfilerData.DoTick);
+                    $"Unable to find MyDistributedUpdater.Iterate(Delegate) method.  Some profiling data will be missing.  (Found {_distributedUpdaterIterate}");
 
             ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(PrefixProfilePb)));
             ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(SuffixProfilePb)));
@@ -149,133 +105,97 @@ namespace Profiler.Core
 
         // ReSharper disable InconsistentNaming
         // ReSharper disable once SuggestBaseTypeForParameter
-        private static void PrefixProfilePb(MyProgrammableBlock __instance, ref MultiProfilerEntry __localProfilerHandle)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void PrefixProfilePb(MyProgrammableBlock __instance, ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = default(MultiProfilerEntry);
-            ProfilerData.EntityEntry(__instance, ref __localProfilerHandle);
-            __localProfilerHandle.Start();
+            __localProfilerHandle = ProfilerData.StartProgrammableBlock(__instance);
         }
 
-        private static void SuffixProfilePb(ref MultiProfilerEntry __localProfilerHandle)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SuffixProfilePb(ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle.Stop();
+            ProfilerData.StopToken(__localProfilerHandle, true);
         }
         // ReSharper restore InconsistentNaming
 
-        #region Generalized Update Transpiler
-
-        private static bool ShouldProfileMethodCall<T>(MethodBase info)
-        {
-            if (info.IsStatic)
-                return false;
-
-            if (typeof(T) != typeof(MyCubeGridSystems) && !typeof(T).IsAssignableFrom(info.DeclaringType) &&
-                (!typeof(MyGameLogicComponent).IsAssignableFrom(typeof(T)) || !typeof(IMyGameLogicComponent).IsAssignableFrom(info.DeclaringType)))
-                return false;
-            if (typeof(T) == typeof(MySessionComponentBase) && info.Name.Equals("Simulate", StringComparison.OrdinalIgnoreCase))
-                return true;
-            return info.Name.StartsWith("UpdateBeforeSimulation", StringComparison.OrdinalIgnoreCase) ||
-                   info.Name.StartsWith("UpdateAfterSimulation", StringComparison.OrdinalIgnoreCase) ||
-                   info.Name.StartsWith("UpdateOnceBeforeFrame", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static IEnumerable<MsilInstruction> TranspilerForUpdate<T>(IEnumerable<MsilInstruction> instructions,
+        private static IEnumerable<MsilInstruction> TranspilerForUpdate(IEnumerable<MsilInstruction> instructions,
             // ReSharper disable once InconsistentNaming
             Func<Type, MsilLocal> __localCreator,
             // ReSharper disable once InconsistentNaming
             MethodBase __methodBase)
         {
-            MethodInfo profilerCall = null;
-            if (typeof(IMyEntity).IsAssignableFrom(typeof(T)))
-                profilerCall = ProfilerData.GetEntityProfiler;
-            else if (typeof(MyEntityComponentBase).IsAssignableFrom(typeof(T)) ||
-                     typeof(T) == typeof(IMyGameLogicComponent))
-                profilerCall = ProfilerData.GetEntityComponentProfiler;
-            else if (typeof(MyCubeGridSystems) == typeof(T))
-                profilerCall = ProfilerData.GetGridSystemProfiler;
-            else if (typeof(MySessionComponentBase) == typeof(T))
-                profilerCall = ProfilerData.GetSessionComponentProfiler;
-            else
-                Log.Warn($"Trying to profile unknown target {typeof(T)}");
+            var profilerEntry = __localCreator(typeof(ProfilerToken?));
 
-            var profilerEntry = profilerCall != null ? __localCreator(typeof(MultiProfilerEntry)) : null;
-
-            var usedLocals = new List<MsilLocal>();
-            var tmpArgument = new Dictionary<Type, Stack<MsilLocal>>();
+            var il = instructions.ToList();
 
             var foundAny = false;
-            foreach (var i in instructions)
+            for (var idx = 0; idx < il.Count; idx++)
             {
-                if (profilerCall != null && (i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt) &&
-                    ShouldProfileMethodCall<T>((i.Operand as MsilOperandInline<MethodBase>)?.Value))
+                var insn = il[idx];
+                if ((insn.OpCode == OpCodes.Call || insn.OpCode == OpCodes.Callvirt) && insn.Operand is MsilOperandInline<MethodBase> methodOperand)
                 {
-                    var target = ((MsilOperandInline<MethodBase>) i.Operand).Value;
-                    var parameters = target.GetParameters();
-                    usedLocals.Clear();
-                    foreach (var pam in parameters)
+                    var method = methodOperand.Value;
+                    if (method.Name.StartsWith("UpdateBeforeSimulation")
+                        || method.Name.StartsWith("UpdateAfterSimulation")
+                        || method.Name == "UpdateOnceBeforeFrame"
+                        || method.Name == "Simulate")
                     {
-                        if (!tmpArgument.TryGetValue(pam.ParameterType, out var stack))
-                            tmpArgument.Add(pam.ParameterType, stack = new Stack<MsilLocal>());
-                        var local = stack.Count > 0 ? stack.Pop() : __localCreator(pam.ParameterType);
-                        usedLocals.Add(local);
-                        yield return local.AsValueStore();
+                        if (method.IsStatic)
+                        {
+                            Log.Error(
+                                $"Failed attaching profiling to {method.DeclaringType?.FullName}#{method.Name} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name}.  It's static");
+                            continue;
+                        }
+
+                        // Valid to inject before this point
+                        var methodCallPoint = idx;
+                        var validInjectionPoint = methodCallPoint;
+                        var additionalStackEntries = method.GetParameters().Length;
+                        while (additionalStackEntries > 0)
+                            additionalStackEntries -= il[--validInjectionPoint].StackChange();
+
+                        if (additionalStackEntries < 0)
+                        {
+                            Log.Error(
+                                $"Failed attaching profiling to {method.DeclaringType?.FullName}#{method.Name} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name}."
+                                + $"  Running back through the parameters left the stack in an invalid state.");
+                            continue;
+                        }
+
+                        foundAny = true;
+                        Log.Debug(
+                            $"Attaching profiling to {method.DeclaringType?.FullName}#{method.Name} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name}");
+                        var startProfiler = new[]
+                        {
+                            new MsilInstruction(OpCodes.Dup), // duplicate the object the update is called on
+                            // Grab a profiling token
+                            new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.GetGenericProfilerToken),
+                            profilerEntry.AsValueStore(),
+                        };
+                        il.InsertRange(validInjectionPoint, startProfiler);
+                        methodCallPoint += startProfiler.Length;
+                        var stopProfiler = new[]
+                        {
+                            // Stop the profiler
+                            profilerEntry.AsReferenceLoad(),
+                            new MsilInstruction(method.Name.EndsWith("Parallel") ? OpCodes.Ldc_I4_0 : OpCodes.Ldc_I4_1), // isMainThread
+                            new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.StopProfilerToken),
+                        };
+                        il.InsertRange(methodCallPoint + 1, stopProfiler);
+                        idx = methodCallPoint + stopProfiler.Length - 1;
                     }
-
-                    Log.Debug(
-                        $"Attaching profiling to {target?.DeclaringType?.FullName}#{target?.Name} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name} targeting {typeof(T)}");
-                    yield return new MsilInstruction(OpCodes.Dup); // duplicate the object the update is called on
-                    if (typeof(MyCubeGridSystems) == typeof(T) && __methodBase.DeclaringType == typeof(MyCubeGridSystems))
-                    {
-                        yield return new MsilInstruction(OpCodes.Ldarg_0);
-                        yield return new MsilInstruction(OpCodes.Ldfld).InlineValue(_gridSystemsCubeGrid);
-                    }
-
-                    yield return profilerEntry.AsReferenceLoad();
-                    yield return new MsilInstruction(OpCodes.Initobj).InlineValue(typeof(MultiProfilerEntry));
-                    yield return profilerEntry.AsReferenceLoad();
-                    yield return new MsilInstruction(OpCodes.Call).InlineValue(profilerCall);
-                    yield return profilerEntry.AsReferenceLoad();
-                    yield return new MsilInstruction(OpCodes.Call).InlineValue(MultiProfilerEntry.ProfilerEntryStart);
-
-                    for (var j = usedLocals.Count - 1; j >= 0; j--)
-                    {
-                        yield return usedLocals[j].AsValueLoad();
-                        tmpArgument[usedLocals[j].Type].Push(usedLocals[j]);
-                    }
-
-                    yield return i;
-
-
-                    yield return profilerEntry.AsReferenceLoad(); // stop the profiler
-                    yield return new MsilInstruction(OpCodes.Call).InlineValue(MultiProfilerEntry.ProfilerEntryStop);
-                    foundAny = true;
-                    continue;
                 }
-
-                yield return i;
             }
 
             if (!foundAny)
-                Log.Warn($"Didn't find any update profiling targets for {typeof(T)} in {__methodBase.DeclaringType?.FullName}#{__methodBase.Name}");
+                Log.Error(
+                    $"Didn't find any update profiling targets for {__methodBase.DeclaringType?.FullName}#{__methodBase.Name}.  Some profiling data will be missing");
+
+            return il;
         }
 
-        #endregion
 
         #region Distributed Update Targeting
-
-        private static void PatchDistUpdateDel(PatchContext ctx, MethodBase method)
-        {
-            var pattern = ctx.GetPattern(method);
-            var patcher = typeof(ProfilerPatch).GetMethod(nameof(TranspilerForUpdate),
-                    BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)?
-                .MakeGenericMethod(method.GetParameters()[0].ParameterType);
-            if (patcher == null)
-            {
-                Log.Error($"Failed to make generic patching method for {method}");
-            }
-
-            pattern.PostTranspilers.Add(patcher);
-        }
 
         private static bool IsDistributedIterate(MethodInfo info)
         {
@@ -327,7 +247,7 @@ namespace Profiler.Core
                     {
                         Log.Debug(
                             $"Patching {targetMethod.Value.DeclaringType}#{targetMethod.Value} for {callerMethod.DeclaringType}#{callerMethod}");
-                        PatchDistUpdateDel(ctx, targetMethod.Value);
+                        ctx.GetPattern(targetMethod.Value).PostTranspilers.Add(_generalizedUpdateTranspiler);
                     }
 
                     break;

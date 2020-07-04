@@ -142,15 +142,14 @@
     <Compile Include="..\Versioning\AssemblyVersion.cs">
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
-    <Compile Include="Core\MultiProfilerEntry.cs" />
     <Compile Include="Core\ProfilerData.cs" />
+    <Compile Include="Core\ProfilerEntry.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerRequest.cs" />
-    <Compile Include="Core\SlimProfilerEntry.cs" />
+    <Compile Include="Core\ProfilerToken.cs" />
     <Compile Include="ProfilerCommands.cs" />
     <Compile Include="Util\IterableWeakTable.cs" />
-    <Compile Include="Util\ModLookupUtils.cs" />
     <Compile Include="Util\ReflectionUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
   </ItemGroup>
