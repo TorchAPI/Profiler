@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using Profiler.Util;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.World;
-using VRage.Game;
 using VRageMath;
 
 namespace Profiler.Core
@@ -16,11 +15,11 @@ namespace Profiler.Core
         public readonly ProfilerRequestType Type;
         public readonly ulong SamplingTicks;
         internal ulong FinalTick;
-        private readonly List<Working> _entries = new List<Working>();
+        private readonly Dictionary<ProfilerEntry, Working> _entries = new Dictionary<ProfilerEntry, Working>();
         public event DelFinished OnFinished;
 
-        public delegate void DelFinished(bool printByPassCount, Result[] results);
-        
+        public delegate void DelFinished(Result[] results);
+
         public ProfilerRequest(ProfilerRequestType type, ulong samplingTicks)
         {
             Type = type;
@@ -32,9 +31,9 @@ namespace Profiler.Core
             public readonly string Name;
             public readonly Vector3D? Position;
             public readonly string Description;
-            public readonly SlimProfilerEntry Profiler;
+            public readonly ProfilerEntry Profiler;
 
-            public Working(string name, Vector3D? ps, string desc, SlimProfilerEntry spe)
+            public Working(string name, Vector3D? ps, string desc, ProfilerEntry spe)
             {
                 Name = name;
                 Position = ps;
@@ -44,8 +43,7 @@ namespace Profiler.Core
 
             public Result Commit()
             {
-                var time = Profiler.PopProfiler(ProfilerData._currentTick, out var hits);
-                return new Result(Name, Position, Description, time, Profiler.PassUnits ?? "upt", hits);
+                return new Result(Name, Position, Description, Profiler);
             }
         }
 
@@ -55,44 +53,49 @@ namespace Profiler.Core
             public readonly string Description;
             public readonly Vector3D? Position;
 
-            public readonly double MsPerTick;
-            public readonly string HitsUnit;
-            public readonly double HitsPerTick;
+            public readonly double MainThreadMsPerTick;
+            public readonly double OffThreadMsPerTick;
 
-            public Result(string name, Vector3D? pos, string desc, double msPerTick, string hitsUnit, double hitsPerTick)
+            public Result(string name, Vector3D? pos, string desc, ProfilerEntry data)
             {
                 Name = name;
                 Position = pos;
                 Description = desc;
-                MsPerTick = msPerTick;
-                HitsUnit = hitsUnit;
-                HitsPerTick = hitsPerTick;
+
+                var deltaTicks = ProfilerData.CurrentTick - data.LastResetTick;
+                MainThreadMsPerTick = CalculateMsPerTick(deltaTicks, data.MainThreadTime);
+                OffThreadMsPerTick = CalculateMsPerTick(deltaTicks, data.OffThreadTime);
+            }
+
+            private static double CalculateMsPerTick(ulong deltaTicks, long time)
+            {
+                return time * 1000.0D / Stopwatch.Frequency / deltaTicks;
             }
         }
 
-        private void Accept(string name, Vector3D? pos, string desc, SlimProfilerEntry entry)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        private void Accept(string name, Vector3D? pos, string desc, ProfilerEntry profilerEntry)
         {
-            entry.PushProfiler(ProfilerData._currentTick);
-            _entries.Add(new Working(name, pos, desc, entry));
+            if (_entries.ContainsKey(profilerEntry))
+                return;
+            profilerEntry.Reset(ProfilerData.CurrentTick);
+            _entries.Add(profilerEntry, new Working(name, pos, desc, profilerEntry));
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         internal void Commit()
         {
             var results = new Result[_entries.Count];
             var i = 0;
-            foreach (var k in _entries)
+            foreach (var k in _entries.Values)
                 results[i++] = k.Commit();
-            var sortByPassCount = _entries.Count > 0 && _entries[0].Profiler.CounterOnly;
             _entries.Clear();
-            if (sortByPassCount)
-                Array.Sort(results, (a, b) => -a.HitsPerTick.CompareTo(b.HitsPerTick));
-            else
-                Array.Sort(results, (a, b) => -a.MsPerTick.CompareTo(b.MsPerTick));
-            OnFinished?.Invoke(sortByPassCount, results);
+            Array.Sort(results, (a, b) => -a.MainThreadMsPerTick.CompareTo(b.MainThreadMsPerTick));
+            OnFinished?.Invoke(results);
             OnFinished = null;
         }
 
-        public void AcceptGrid(long id, SlimProfilerEntry spe)
+        public void AcceptGrid(long id, ProfilerEntry spe)
         {
             if (Type != ProfilerRequestType.Grid)
                 return;
@@ -100,7 +103,16 @@ namespace Profiler.Core
             Accept(grid?.DisplayName ?? "Unknown", grid?.PositionComp.WorldAABB.Center, "ID=" + id, spe);
         }
 
-        public void AcceptFaction(long id, SlimProfilerEntry spe)
+        public void AcceptProgrammableBlock(long id, ProfilerEntry spe)
+        {
+            if (Type != ProfilerRequestType.Scripts)
+                return;
+            var block = MyEntities.GetEntityById(id) as MyProgrammableBlock;
+            Accept($"{block?.CustomName?.ToString() ?? "Unknown"} on {block?.CubeGrid?.DisplayName ?? "Unknown"}", block?.PositionComp.WorldAABB.Center,
+                "ID=" + id, spe);
+        }
+
+        public void AcceptFaction(long id, ProfilerEntry spe)
         {
             if (Type != ProfilerRequestType.Faction)
                 return;
@@ -114,10 +126,8 @@ namespace Profiler.Core
             Accept(faction?.Tag ?? "Unknown", null, "ID=" + id, spe);
         }
 
-        public void AcceptPlayer(long id, SlimProfilerEntry spe)
+        public void AcceptPlayer(long id, ProfilerEntry spe)
         {
-            if (Type != ProfilerRequestType.Players)
-                return;
             if (id == 0)
             {
                 Accept("Nobody", null, null, spe);
@@ -130,30 +140,9 @@ namespace Profiler.Core
             Accept($"{identity?.DisplayName ?? "Unknown"} {factionDesc}", null, "ID=" + id, spe);
         }
 
-        public void AcceptMod(MyModContext mod, SlimProfilerEntry spe)
-        {
-            if (Type != ProfilerRequestType.Mod)
-                return;
-            var desc = mod.ModName ?? mod.ModId ?? mod.ModPath ?? "Unknown Mod";
-            if (mod == MyModContext.BaseGame)
-                desc = "Base Game";
-            Accept(desc, null, "", spe);
-        }
-
         private const string TypePrefix = "MyObjectBuilder_";
 
-        public void AcceptSessionComponent(Type type, SlimProfilerEntry spe)
-        {
-            if (Type != ProfilerRequestType.Session)
-                return;
-            var mod = ModLookupUtils.GetMod(type);
-            var name = type.Name;
-            if (name.StartsWith(TypePrefix))
-                name = name.Substring(TypePrefix.Length);
-            Accept(name, null, "From " + (mod?.ModName ?? "SE"), spe);
-        }
-
-        public void AcceptBlockType(Type type, SlimProfilerEntry spe)
+        public void AcceptBlockType(Type type, ProfilerEntry spe)
         {
             if (Type != ProfilerRequestType.BlockType)
                 return;
@@ -163,7 +152,7 @@ namespace Profiler.Core
             Accept(name, null, "", spe);
         }
 
-        public void AcceptBlockDefinition(MyCubeBlockDefinition def, SlimProfilerEntry spe)
+        public void AcceptBlockDefinition(MyCubeBlockDefinition def, ProfilerEntry spe)
         {
             if (Type != ProfilerRequestType.BlockDef)
                 return;
@@ -174,23 +163,7 @@ namespace Profiler.Core
             Accept(name, null, "", spe);
         }
 
-        public void AcceptPhysicsCluster(BoundingBoxD cluster, SlimProfilerEntry spe)
-        {
-            if (Type != ProfilerRequestType.Physics)
-                return;
-            Accept("Cluster", cluster.Center, "Radius=" + cluster.HalfExtents.Length().ToString(DistanceFormat), spe);
-        }
-
         public const string DistanceFormat = "0.##E+00";
-
-        public void AcceptScript(long id, SlimProfilerEntry spe)
-        {
-            if (Type != ProfilerRequestType.Scripts)
-                return;
-            var block = MyEntities.GetEntityById(id) as MyProgrammableBlock;
-            Accept($"{block?.CustomName?.ToString() ?? "Unknown"} on {block?.CubeGrid?.DisplayName ?? "Unknown"}", block?.PositionComp.WorldAABB.Center,
-                "ID=" + id, spe);
-        }
     }
 
     public enum ProfilerRequestType
@@ -198,12 +171,9 @@ namespace Profiler.Core
         BlockType,
         BlockDef,
         Grid,
-        Players,
+        Player,
         Faction,
-        Mod,
-        Session,
         Scripts,
-        Physics,
         Count
     }
 }

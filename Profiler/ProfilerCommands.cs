@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Contexts;
 using System.Windows.Media;
+using NLog;
 using Profiler.Core;
 using Sandbox.Definitions;
 using Sandbox.Engine.Multiplayer;
@@ -20,6 +21,8 @@ namespace Profiler
     [Category("profile")]
     public class ProfilerCommands : CommandModule
     {
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
         private const ulong SampleTicks = 900;
         private const int Top = 10;
         private const string HelpText = "--ticks=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
@@ -45,20 +48,6 @@ namespace Profiler
             Handle(ProfilerRequestType.Grid);
         }
 
-        [Command("mods", "Profiles performance per mod", HelpText)]
-        [Permission(MyPromoteLevel.Moderator)]
-        public void Mods()
-        {
-            Handle(ProfilerRequestType.Mod);
-        }
-
-        [Command("session", "Profiles performance per session component", HelpText)]
-        [Permission(MyPromoteLevel.Moderator)]
-        public void Session()
-        {
-            Handle(ProfilerRequestType.Session);
-        }
-
         [Command("factions", "Profiles performance per faction", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void Factions()
@@ -70,36 +59,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void Players()
         {
-            Handle(ProfilerRequestType.Players);
-        }
-
-        private static readonly HashSet<ulong> HasRunPhysicsProfiler = new HashSet<ulong>();
-
-        [Command("physics", "Profiles performance per physics world")]
-        [Permission(MyPromoteLevel.Admin)]
-        public void Physics()
-        {
-            ulong id = 0;
-            if (!Context.SentBySelf)
-            {
-                var p = Context.Player;
-                if (p == null)
-                {
-                    Context.Respond($"Must have a player.");
-                    return;
-                }
-
-                id = p.SteamUserId;
-            }
-
-            if (HasRunPhysicsProfiler.Add(id))
-            {
-                Context.Respond(
-                    $"Physics world profiling will negatively affect simulation speed while running, and can cause instability.  If you understand the risks, please repeat the command.");
-                return;
-            }
-
-            Handle(ProfilerRequestType.Physics);
+            Handle(ProfilerRequestType.Player);
         }
 
         [Command("scripts", "Profiles performance of programmable blocks")]
@@ -131,7 +91,6 @@ namespace Profiler
             Context.Respond("Add --player=PlayerName to report values for a single player");
             Context.Respond("Add --faction=FactionTag to report values for a single faction");
             Context.Respond("Add --entity=EntityId to report values for a specific entity");
-            Context.Respond("Add --mod=ModID to report values for a specific mod");
             Context.Respond("Add --this to profile the entity you're currently controlling (players only)");
             Context.Respond("Add --gps to show positional results as GPS points (players only)");
             Context.Respond("Results are reported as entry description, milliseconds per tick (updates per tick)");
@@ -172,8 +131,7 @@ namespace Profiler
             var top = Top;
             long? factionMask = null;
             long? playerMask = null;
-            long? entityMask = null;
-            MyModContext modFilter = null;
+            long? gridMask = null;
             long? reportGPS = null;
             foreach (var arg in Context.Args)
                 if (arg.StartsWith("--ticks="))
@@ -206,13 +164,13 @@ namespace Profiler
                 {
                     var id = long.Parse(arg.Substring("--entity=".Length));
                     var ent = MyEntities.GetEntityById(id);
-                    if (ent == null)
+                    if (!(ent is MyCubeGrid))
                     {
-                        Context.Respond($"Failed to find entity with ID={id}");
+                        Context.Respond($"Failed to find grid with ID={id}");
                         return;
                     }
 
-                    entityMask = ent.EntityId;
+                    gridMask = ent.EntityId;
                 }
                 else if (arg == "--this")
                 {
@@ -239,7 +197,7 @@ namespace Profiler
                         return;
                     }
 
-                    entityMask = grid.EntityId;
+                    gridMask = grid.EntityId;
                 }
                 else if (arg == "--gps")
                 {
@@ -252,57 +210,20 @@ namespace Profiler
 
                     reportGPS = controlled.IdentityId;
                     CleanGPS(reportGPS.Value);
-                }else if (arg.StartsWith("--mod="))
-                {
-                    var nam = arg.Substring("--mod=".Length);
-                    foreach (var mod in MySession.Static.Mods)
-                    {
-                        var ctx = new MyModContext();
-                        ctx.Init(mod);
-                        if (ctx.ModId.Equals(nam, StringComparison.OrdinalIgnoreCase) || ctx.ModId.Equals(nam + ".sbm", StringComparison.OrdinalIgnoreCase) || ctx.ModName.Equals(nam, StringComparison.OrdinalIgnoreCase))
-                        {
-                            modFilter = ctx;
-                            break;
-                        }
-                    }
-                    if (nam.Equals("base", StringComparison.OrdinalIgnoreCase) || nam.Equals("keen", StringComparison.OrdinalIgnoreCase))
-                        modFilter = MyModContext.BaseGame;
-
-                    // ReSharper disable once InvertIf
-                    if (modFilter == null)
-                    {
-                        Context.Respond($"Failed to find mod {nam}");
-                        return;
-                    }
                 }
-
-            if (!ProfilerData.ChangeMask(playerMask, factionMask, entityMask, modFilter))
-            {
-                Context.Respond($"Failed to change profiling mask.  There can only be one.");
-                return;
-            }
 
             var req = new ProfilerRequest(type, ticks);
             var context = Context;
-            req.OnFinished += (printByPassCount, results) =>
+            req.OnFinished += (results) =>
             {
                 for (var i = 0; i < Math.Min(top, results.Length); i++)
                 {
                     var r = results[i];
-                    var formattedTime = FormatTime(r.MsPerTick);
-                    var hits = results[i].HitsPerTick;
-                    var hitsUnit = results[i].HitsUnit;
-                    var formattedName = string.Format(r.Name ?? "unknown", i, formattedTime, hits, hitsUnit);
-                    var formattedDesc = string.Format(r.Description ?? "", i, formattedTime, hits, hitsUnit);
-                    if (reportGPS.HasValue || !r.Position.HasValue)
+                    var mainThreadTime = FormatTime(r.MainThreadMsPerTick);
+                    var offThreadTime = FormatTime(r.OffThreadMsPerTick);
+                    if (reportGPS.HasValue && r.Position.HasValue)
                     {
-                        context.Respond(printByPassCount
-                            ? $"{formattedName} {formattedDesc} took {hits:F1} {hitsUnit}"
-                            : $"{formattedName} {formattedDesc} took {formattedTime} ({hits:F1} {hitsUnit})");
-                        if (!reportGPS.HasValue || !r.Position.HasValue)
-                            continue;
-                        var gpsDisplay = printByPassCount ? $"{hits:F1} {hitsUnit} {formattedName}" : $"{formattedTime} {formattedName}";
-                        var gpsDesc = formattedDesc + $" {hits:F1} {hitsUnit}";
+                        var gpsDisplay = $"{mainThreadTime} / {offThreadTime}: {r.Name}";
                         var gps = new MyGps(new MyObjectBuilder_Gps.Entry
                         {
                             name = gpsDisplay,
@@ -310,7 +231,7 @@ namespace Profiler
                             coords = r.Position.Value,
                             showOnHud = true,
                             color = VRageMath.Color.Purple,
-                            description = gpsDesc,
+                            description = "",
                             entityId = 0,
                             isFinal = false
                         });
@@ -321,35 +242,51 @@ namespace Profiler
                         continue;
                     }
 
-                    var posData =
-                        $"{r.Position.Value.X.ToString(ProfilerRequest.DistanceFormat)},{r.Position.Value.Y.ToString(ProfilerRequest.DistanceFormat)},{r.Position.Value.Z.ToString(ProfilerRequest.DistanceFormat)}";
-                    context.Respond(
-                        printByPassCount
-                            ? $"{formattedName} {formattedDesc} took ({hits:F1} {hitsUnit})  @ {posData}"
-                            : $"{formattedName} {formattedDesc} took {formattedTime} ({hits:F1} {hitsUnit})  @ {posData}");
+                    var msg = $"{r.Name} {r.Description} took {mainThreadTime} main, {offThreadTime} parallel";
+                    if (r.Position.HasValue)
+                    {
+                        msg += " @ " +
+                               r.Position.Value.X.ToString(ProfilerRequest.DistanceFormat) + "," +
+                               r.Position.Value.Y.ToString(ProfilerRequest.DistanceFormat) + "," +
+                               r.Position.Value.Z.ToString(ProfilerRequest.DistanceFormat);
+                    }
+
+                    Log.Debug(msg);
+                    context.Respond(msg);
                 }
 
                 {
-                    var totalUpdates = 0d;
-                    var totalTime = 0d;
-                    string hitsUnit = null;
+                    var otherCount = 0;
+                    var totalMainThreadTime = 0d;
+                    var totalOffThreadTime = 0d;
                     for (var i = Math.Min(top, results.Length) + 1; i < results.Length; i++)
                     {
                         var r = results[i];
-                        totalUpdates += r.HitsPerTick;
-                        totalTime += r.MsPerTick;
-                        hitsUnit = r.HitsUnit;
+                        otherCount++;
+                        totalMainThreadTime += r.MainThreadMsPerTick;
+                        totalOffThreadTime += r.OffThreadMsPerTick;
                     }
 
-                    if (totalUpdates > 0)
-                        context.Respond(printByPassCount
-                            ? $"Others took {totalUpdates:F1} {hitsUnit}"
-                            : $"Others took {FormatTime(totalTime)} ({totalUpdates:F1} {hitsUnit})");
+                    if (otherCount > 0)
+                    {
+                        var msg = $"Others took {FormatTime(totalMainThreadTime)} main, {FormatTime(totalOffThreadTime)} parallel";
+                        context.Respond(msg);
+                        Log.Debug(msg);
+                    }
                 }
+                var finishMsg = $"Finished profiling {req.Type} for {req.SamplingTicks} ticks";
+                context.Respond(finishMsg);
+                Log.Debug(finishMsg);
             };
+
             var timeEstMs = ticks * MyEngineConstants.UPDATE_STEP_SIZE_IN_SECONDS * 1000f / (MyMultiplayer.Static?.ServerSimulationRatio ?? 1);
-            context.Respond($"Profiling for {type} started, results in {ticks} ticks (about {FormatTime(timeEstMs)})");
-            ProfilerData.Submit(req);
+            if (!ProfilerData.Submit(req, gridMask, playerMask, factionMask))
+                Context.Respond("Profiler is already active.  Only one profiling command can be active at a time");
+            else
+            {
+                context.Respond($"Profiling for {type} started, results in {ticks} ticks (about {FormatTime(timeEstMs)})");
+                Log.Debug($"Start profiling {req.Type} for {req.SamplingTicks} ticks");
+            }
         }
 
         private static string FormatTime(double ms)
