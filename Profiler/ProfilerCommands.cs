@@ -259,7 +259,6 @@ namespace Profiler
                     var otherCount = 0;
                     var totalMainThreadTime = 0d;
                     var totalOffThreadTime = 0d;
-                    string hitsUnit = null;
                     for (var i = Math.Min(top, results.Length) + 1; i < results.Length; i++)
                     {
                         var r = results[i];
