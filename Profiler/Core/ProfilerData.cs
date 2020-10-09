@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Profiler.Util;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
@@ -56,6 +57,8 @@ namespace Profiler.Core
         private static long? _factionMask;
         private static long? _playerMask;
         private static long? _gridMask;
+
+        static TaskCompletionSource<ulong> _tickCompletionSource;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
@@ -326,6 +329,20 @@ namespace Profiler.Core
                 var req = Interlocked.Exchange(ref _active, null);
                 req?.Commit();
             }
+
+            var prevSource = _tickCompletionSource;
+            _tickCompletionSource = new TaskCompletionSource<ulong>();
+            prevSource?.SetResult(CurrentTick);
+        }
+
+        public static Task WaitUntilNextFrame()
+        {
+            if (_tickCompletionSource == null)
+            {
+                throw new Exception("Game not started");
+            }
+            
+            return _tickCompletionSource.Task;
         }
     }
 }
