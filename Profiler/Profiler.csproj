@@ -152,6 +152,7 @@
     <Compile Include="..\Versioning\AssemblyVersion.cs">
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
+    <Compile Include="Core\MyDistributedUpdaterReflection.cs" />
     <Compile Include="Core\ProfilerData.cs" />
     <Compile Include="Core\ProfilerEntry.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
