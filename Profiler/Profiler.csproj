@@ -170,6 +170,7 @@
     <Compile Include="Interactive\ProfilerEntry.cs" />
     <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />
+    <Compile Include="Util\Disposable.cs" />
     <Compile Include="Util\IterableWeakTable.cs" />
     <Compile Include="Util\ObjectPool.cs" />
     <Compile Include="Util\ProfilerUtils.cs" />

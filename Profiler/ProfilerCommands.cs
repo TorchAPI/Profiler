@@ -34,24 +34,23 @@ namespace Profiler
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
-                var profiler = new BlockTypeProfiler(mask);
-                ProfilerPatch.AddObserver(profiler);
-                var startTick = ProfilerPatch.CurrentTick;
+                using (var profiler = new BlockTypeProfiler(mask))
+                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                {
+                    var startTick = ProfilerPatch.CurrentTick;
 
-                await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
+                    await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
-                var profilerEntities = profiler.GetProfilerEntries();
+                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
+                    var profilerEntities = profiler.GetProfilerEntries();
 
-                var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                ProfilerPatch.RemoveObserver(profiler);
-                profiler.Dispose();
+                    var data = profilerEntities
+                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .Take(args.Top)
+                        .Select(p => (p.Type.ToString(), p.ProfilerEntry));
 
-                var data = profilerEntities
-                    .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                    .Take(args.Top)
-                    .Select(p => (p.Type.ToString(), p.ProfilerEntry));
-
-                Respond(args.Seconds, totalTicks, data);
+                    Respond(args.Seconds, totalTicks, data);
+                }
             });
         }
 
@@ -66,24 +65,23 @@ namespace Profiler
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
-                var profiler = new BlockDefinitionProfiler(mask);
-                ProfilerPatch.AddObserver(profiler);
-                var startTick = ProfilerPatch.CurrentTick;
+                using (var profiler = new BlockDefinitionProfiler(mask))
+                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                {
+                    var startTick = ProfilerPatch.CurrentTick;
 
-                await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
+                    await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
-                var profilerEntities = profiler.GetProfilerEntries();
+                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
+                    var profilerEntities = profiler.GetProfilerEntries();
 
-                var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                ProfilerPatch.RemoveObserver(profiler);
-                profiler.Dispose();
+                    var data = profilerEntities
+                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .Take(args.Top)
+                        .Select(p => (p.BlockDefinition.BlockPairName, p.ProfilerEntry));
 
-                var data = profilerEntities
-                    .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                    .Take(args.Top)
-                    .Select(p => (p.BlockDefinition.BlockPairName, p.ProfilerEntry));
-
-                Respond(args.Seconds, totalTicks, data);
+                    Respond(args.Seconds, totalTicks, data);
+                }
             });
         }
 
@@ -98,37 +96,36 @@ namespace Profiler
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
-                var profiler = new GridProfiler(mask);
-                ProfilerPatch.AddObserver(profiler);
-                var startTick = ProfilerPatch.CurrentTick;
-
-                await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
-
-                var profilerEntities = profiler.GetProfilerEntries();
-
-                var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                ProfilerPatch.RemoveObserver(profiler);
-                profiler.Dispose();
-
-                var gridProfilerEntries = profilerEntities
-                    .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                    .Select(p => (Grid: (MyCubeGrid) MyEntities.GetEntityById(p.GridId), p.ProfilerEntry))
-                    .Where(p => p.Grid != null)
-                    .Take(args.Top)
-                    .ToArray();
-
-                var data = gridProfilerEntries.Select(p => (p.Grid.DisplayName, p.ProfilerEntry));
-                Respond(args.Seconds, totalTicks, data);
-
-                if (args.SendGpsToPlayer)
+                using (var profiler = new GridProfiler(mask))
+                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
-                    _gpsSendClient.CleanGPS(args.PlayerIdToSendGps);
+                    var startTick = ProfilerPatch.CurrentTick;
 
-                    foreach (var (grid, profilerEntry) in gridProfilerEntries)
+                    await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
+
+                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
+                    var profilerEntities = profiler.GetProfilerEntries();
+
+                    var gridProfilerEntries = profilerEntities
+                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .Select(p => (Grid: (MyCubeGrid) MyEntities.GetEntityById(p.GridId), p.ProfilerEntry))
+                        .Where(p => p.Grid != null)
+                        .Take(args.Top)
+                        .ToArray();
+
+                    var data = gridProfilerEntries.Select(p => (p.Grid.DisplayName, p.ProfilerEntry));
+                    Respond(args.Seconds, totalTicks, data);
+
+                    if (args.SendGpsToPlayer)
                     {
-                        var name = $"{grid.DisplayName} ({(double) profilerEntry.TotalTimeMs / totalTicks:0.00}ms/f)";
-                        var position = grid.PositionComp.WorldAABB.Center;
-                        _gpsSendClient.SendGps(args.PlayerIdToSendGps, name, position);
+                        _gpsSendClient.CleanGPS(args.PlayerIdToSendGps);
+
+                        foreach (var (grid, profilerEntry) in gridProfilerEntries)
+                        {
+                            var name = $"{grid.DisplayName} ({(double) profilerEntry.TotalTimeMs / totalTicks:0.00}ms/f)";
+                            var position = grid.PositionComp.WorldAABB.Center;
+                            _gpsSendClient.SendGps(args.PlayerIdToSendGps, name, position);
+                        }
                     }
                 }
             });
@@ -145,26 +142,25 @@ namespace Profiler
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
-                var profiler = new FactionProfiler(mask);
-                ProfilerPatch.AddObserver(profiler);
-                var startTick = ProfilerPatch.CurrentTick;
+                using (var profiler = new FactionProfiler(mask))
+                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                {
+                    var startTick = ProfilerPatch.CurrentTick;
 
-                await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
+                    await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
-                var profilerEntities = profiler.GetProfilerEntries();
+                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
+                    var profilerEntities = profiler.GetProfilerEntries();
+                    
+                    var data = profilerEntities
+                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .Select(p => (Faction: MySession.Static.Factions.TryGetFactionById(p.FactionId), p.ProfilerEntry))
+                        .Where(p => p.Faction != null)
+                        .Select(p => (p.Faction.Tag, p.ProfilerEntry))
+                        .Take(args.Top);
 
-                var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                ProfilerPatch.RemoveObserver(profiler);
-                profiler.Dispose();
-
-                var data = profilerEntities
-                    .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                    .Select(p => (Faction: MySession.Static.Factions.TryGetFactionById(p.FactionId), p.ProfilerEntry))
-                    .Where(p => p.Faction != null)
-                    .Select(p => (p.Faction.Tag, p.ProfilerEntry))
-                    .Take(args.Top);
-
-                Respond(args.Seconds, totalTicks, data);
+                    Respond(args.Seconds, totalTicks, data);
+                }
             });
         }
 
@@ -179,26 +175,25 @@ namespace Profiler
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
-                var profiler = new PlayerProfiler(mask);
-                ProfilerPatch.AddObserver(profiler);
-                var startTick = ProfilerPatch.CurrentTick;
+                using (var profiler = new PlayerProfiler(mask))
+                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                {
+                    var startTick = ProfilerPatch.CurrentTick;
 
-                await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
+                    await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
-                var profilerEntities = profiler.GetProfilerEntries();
+                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
+                    var profilerEntities = profiler.GetProfilerEntries();
 
-                var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                ProfilerPatch.RemoveObserver(profiler);
-                profiler.Dispose();
+                    var data = profilerEntities
+                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .Select(p => (Player: MySession.Static.Players.TryGetIdentity(p.PlayerId), p.ProfilerEntry))
+                        .Where(p => p.Player != null)
+                        .Select(p => (p.Player.DisplayName, p.ProfilerEntry))
+                        .Take(args.Top);
 
-                var data = profilerEntities
-                    .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                    .Select(p => (Player: MySession.Static.Players.TryGetIdentity(p.PlayerId), p.ProfilerEntry))
-                    .Where(p => p.Player != null)
-                    .Select(p => (p.Player.DisplayName, p.ProfilerEntry))
-                    .Take(args.Top);
-
-                Respond(args.Seconds, totalTicks, data);
+                    Respond(args.Seconds, totalTicks, data);
+                }
             });
         }
 

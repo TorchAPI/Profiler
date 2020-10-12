@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using InfluxDB.Client.Writes;
 using NLog;
@@ -18,7 +19,7 @@ namespace Profiler.Database
 
         static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         readonly InfluxDbClient _dbClient;
-        bool _running;
+        CancellationTokenSource _cancellationTokenSource;
 
         public ProfilerDbClient(InfluxDbClient dbClient)
         {
@@ -27,33 +28,38 @@ namespace Profiler.Database
 
         public async Task StartProfiling()
         {
-            if (_running)
+            if (_cancellationTokenSource != null)
             {
                 _logger.Warn("already running");
                 return;
             }
 
-            _running = true;
+            _cancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = _cancellationTokenSource.Token;
 
-            _logger.Info("Starting profiler...");
-
-            while (_running)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
-                var gridProfiler = new GridProfiler(gameEntityMask);
-                ProfilerPatch.AddObserver(gridProfiler);
-                var startTick = ProfilerPatch.CurrentTick;
+                using (var gridProfiler = new GridProfiler(gameEntityMask))
+                using (ProfilerPatch.AddObserverUntilDisposed(gridProfiler))
+                {
+                    var startTick = ProfilerPatch.CurrentTick;
 
-                _logger.Trace("Profiler round started");
+                    _logger.Trace("Profiler round started");
 
-                await Task.Delay(TimeSpan.FromSeconds(SamplingSeconds));
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(SamplingSeconds), cancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // pass
+                    }
 
-                var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                var profilerEntries = gridProfiler.GetProfilerEntries();
-                OnProfilingFinished(totalTicks, profilerEntries);
-
-                ProfilerPatch.RemoveObserver(gridProfiler);
-                gridProfiler.Dispose();
+                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
+                    var profilerEntries = gridProfiler.GetProfilerEntries();
+                    OnProfilingFinished(totalTicks, profilerEntries);
+                }
 
                 _logger.Trace("Profiler round ended");
             }
@@ -92,7 +98,9 @@ namespace Profiler.Database
 
         public void StopProfiling()
         {
-            _running = false;
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource = null;
         }
     }
 }

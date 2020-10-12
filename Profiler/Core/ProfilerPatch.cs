@@ -255,6 +255,12 @@ namespace Profiler.Core
             }
         }
 
+        public static IDisposable AddObserverUntilDisposed(IProfilerObserver observer)
+        {
+            AddObserver(observer);
+            return new Disposable(() => RemoveObserver(observer));
+        }
+
         static void Tick()
         {
             CurrentTick++;
