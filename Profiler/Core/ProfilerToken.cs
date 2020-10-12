@@ -1,16 +1,18 @@
-using System.Diagnostics;
+using System;
 
 namespace Profiler.Core
 {
     internal readonly struct ProfilerToken
     {
-        public readonly ProfilerEntry Entry;
-        public readonly long Start;
+        public readonly object GameEntity;
+        public readonly ProfileType ProfileType;
+        public readonly DateTime StartTimestamp;
 
-        public ProfilerToken(ProfilerEntry entry)
+        public ProfilerToken(object gameEntity, ProfileType profileType, DateTime startTimestamp)
         {
-            Entry = entry;
-            Start = Stopwatch.GetTimestamp();
+            GameEntity = gameEntity;
+            ProfileType = profileType;
+            StartTimestamp = startTimestamp;
         }
     }
 }

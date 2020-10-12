@@ -40,10 +40,10 @@ namespace Profiler.Core
 
         [ReflectedMethodInfo(typeof(MyProgrammableBlock), "RunSandboxedProgramAction")]
         private static readonly MethodInfo _programmableRunSandboxed;
-#pragma warning restore 649
-        // ReSharper restore InconsistentNaming
 
-        #endregion
+        static readonly MethodInfo GetGenericProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Start));
+        static readonly MethodInfo StopProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(StopToken));
+        static readonly MethodInfo DoTick = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Tick));
 
         private static readonly ListReader<string> ParallelEntityUpdateMethods = new List<string>
         {
@@ -58,13 +58,22 @@ namespace Profiler.Core
             "DispatchSimulate",
         };
 
+#pragma warning restore 649
+        // ReSharper restore InconsistentNaming
+
+        #endregion
+
         private static readonly MethodInfo _generalizedUpdateTranspiler = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(TranspilerForUpdate));
+
+        static readonly List<IProfilerObserver> _observers = new List<IProfilerObserver>();
+        static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
+        public static ulong CurrentTick { get; private set; }
 
         public static void Patch(PatchContext ctx)
         {
             ReflectedManager.Process(typeof(ProfilerPatch));
 
-            ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(ProfilerData.DoTick);
+            ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(DoTick);
 
             foreach (var parallelUpdateMethod in ParallelEntityUpdateMethods)
             {
@@ -107,13 +116,13 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void PrefixProfilePb(MyProgrammableBlock __instance, ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = ProfilerData.StartProgrammableBlock(__instance);
+            __localProfilerHandle = StartProgrammableBlock(__instance);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SuffixProfilePb(ref ProfilerToken? __localProfilerHandle)
         {
-            ProfilerData.StopToken(__localProfilerHandle, true);
+            StopToken(__localProfilerHandle, true);
         }
 
         private static IEnumerable<MsilInstruction> TranspilerForUpdate(
@@ -168,7 +177,7 @@ namespace Profiler.Core
                         {
                             new MsilInstruction(OpCodes.Dup), // duplicate the object the update is called on
                             // Grab a profiling token
-                            new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.GetGenericProfilerToken),
+                            new MsilInstruction(OpCodes.Call).InlineValue(GetGenericProfilerToken),
                             profilerEntry.AsValueStore(),
                         };
 
@@ -180,7 +189,7 @@ namespace Profiler.Core
                             // Stop the profiler
                             profilerEntry.AsReferenceLoad(),
                             new MsilInstruction(method.Name.EndsWith("Parallel") ? OpCodes.Ldc_I4_0 : OpCodes.Ldc_I4_1), // isMainThread
-                            new MsilInstruction(OpCodes.Call).InlineValue(ProfilerData.StopProfilerToken),
+                            new MsilInstruction(OpCodes.Call).InlineValue(StopProfilerToken),
                         };
 
                         il.InsertRange(methodCallPoint + 1, stopProfiler);
@@ -195,6 +204,67 @@ namespace Profiler.Core
             }
 
             return il;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ProfilerToken? Start(object obj)
+        {
+            return new ProfilerToken(obj, ProfileType.Default, DateTime.UtcNow);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void StopToken(in ProfilerToken? tokenOrNull, bool mainThreadUpdate)
+        {
+            if (!(tokenOrNull is ProfilerToken token)) return;
+
+            var result = new ProfilerResult(
+                token.GameEntity,
+                token.ProfileType,
+                token.StartTimestamp,
+                DateTime.UtcNow,
+                mainThreadUpdate);
+
+            lock (_observers)
+            {
+                foreach (var observer in _observers)
+                {
+                    observer.OnProfileComplete(result);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
+        {
+            return new ProfilerToken(block, ProfileType.ProgrammableBlock, DateTime.UtcNow);
+        }
+
+        public static void AddObserver(IProfilerObserver observer)
+        {
+            lock (_observers)
+            {
+                _observers.Add(observer);
+            }
+        }
+
+        public static void RemoveObserver(IProfilerObserver observer)
+        {
+            lock (_observers)
+            {
+                _observers.Remove(observer);
+            }
+        }
+
+        static void Tick()
+        {
+            CurrentTick++;
+
+            _tickTaskSource.Tick(CurrentTick);
+        }
+
+        public static TickTaskSource.TickTask WaitUntilNextFrame()
+        {
+            return _tickTaskSource.GetTask();
         }
     }
 }

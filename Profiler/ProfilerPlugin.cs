@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
+using Profiler.Database;
 using Sandbox.Engine.Multiplayer;
 using Torch;
 using Torch.API;
