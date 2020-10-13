@@ -27,8 +27,7 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            var gameEntity = profilerResult.GetGameEntity();
-            var playerIdOrNull = _mask.ExtractPlayer(gameEntity);
+            var playerIdOrNull = _mask.ExtractPlayer(profilerResult.GameEntity);
             if (!(playerIdOrNull is long playerId)) return;
 
             var identity = MySession.Static.Players.TryGetIdentity(playerId);

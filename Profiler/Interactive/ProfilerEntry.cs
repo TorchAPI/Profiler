@@ -21,11 +21,11 @@ namespace Profiler.Interactive
         {
             if (profilerResult.IsMainThread)
             {
-                Interlocked.Add(ref _totalMainThreadTimeMs, profilerResult.TimeMs);
+                Interlocked.Add(ref _totalMainThreadTimeMs, profilerResult.DeltaTimeMs);
             }
             else
             {
-                Interlocked.Add(ref _totalOffThreadTimeMs, profilerResult.TimeMs);
+                Interlocked.Add(ref _totalOffThreadTimeMs, profilerResult.DeltaTimeMs);
             }
         }
 

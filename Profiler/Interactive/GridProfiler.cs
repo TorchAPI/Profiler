@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Profiler.Core;
+using Profiler.Util;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity;
 
@@ -37,7 +38,7 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            var grid = profilerResult.GetParentEntityOfType<MyCubeGrid>();
+            var grid = profilerResult.GameEntity.GetParentEntityOfType<MyCubeGrid>();
             if (grid == null) return;
             if (!_mask.AcceptGrid(grid)) return;
 

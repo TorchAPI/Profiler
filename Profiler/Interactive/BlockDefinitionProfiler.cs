@@ -29,7 +29,7 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            var block = profilerResult.GetParentEntityOfType<MyCubeBlock>();
+            var block = profilerResult.GameEntity.GetParentEntityOfType<MyCubeBlock>();
             if (block == null) return;
             if (!_mask.AcceptBlock(block)) return;
             if (block.BlockDefinition == null) return;

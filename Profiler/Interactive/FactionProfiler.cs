@@ -28,8 +28,7 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            var gameEntity = profilerResult.GetGameEntity();
-            var player = _mask.ExtractPlayer(gameEntity);
+            var player = _mask.ExtractPlayer(profilerResult.GameEntity);
             if (!player.HasValue) return;
 
             var faction = MySession.Static.Factions.TryGetPlayerFaction(player.Value);

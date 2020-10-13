@@ -13,7 +13,9 @@ using Torch.Managers.PatchManager.MSIL;
 using Torch.Utils;
 using Torch.Utils.Reflected;
 using VRage.Collections;
+using VRage.Game.Components;
 using VRage.Game.Entity;
+using VRage.ModAPI;
 
 namespace Profiler.Core
 {
@@ -161,7 +163,10 @@ namespace Profiler.Core
                         var methodCallPoint = idx;
                         var validInjectionPoint = methodCallPoint;
                         var additionalStackEntries = method.GetParameters().Length;
-                        while (additionalStackEntries > 0) additionalStackEntries -= il[--validInjectionPoint].StackChange();
+                        while (additionalStackEntries > 0)
+                        {
+                            additionalStackEntries -= il[--validInjectionPoint].StackChange();
+                        }
 
                         if (additionalStackEntries < 0)
                         {
@@ -209,7 +214,21 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? Start(object obj)
         {
-            return new ProfilerToken(obj, DateTime.UtcNow);
+            switch (obj)
+            {
+                case MyEntityComponentBase componentBase:
+                {
+                    return new ProfilerToken(componentBase.Entity, DateTime.UtcNow);
+                }
+                case IMyEntity entity:
+                {
+                    return new ProfilerToken(entity, DateTime.UtcNow);
+                }
+                default:
+                {
+                    return null;
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -238,6 +257,10 @@ namespace Profiler.Core
             }
         }
 
+        /// <summary>
+        /// Add an observer to receive profiling data of every update method in the game world.
+        /// </summary>
+        /// <param name="observer">Observer object to receive profiling data until removed.</param>
         public static void AddObserver(IProfilerObserver observer)
         {
             lock (_observers)
@@ -246,6 +269,10 @@ namespace Profiler.Core
             }
         }
 
+        /// <summary>
+        /// Remove an observer to stop receiving profiling data.
+        /// </summary>
+        /// <param name="observer">Observer object to remove from the profiler.</param>
         public static void RemoveObserver(IProfilerObserver observer)
         {
             lock (_observers)
@@ -254,10 +281,15 @@ namespace Profiler.Core
             }
         }
 
+        /// <summary>
+        /// Add an observer and, when the returned IDisposable object is disposed, remove the observer from the profiler.
+        /// </summary>
+        /// <param name="observer">Observer to add/remove.</param>
+        /// <returns>IDisposable object that, when disposed, removes the observer from the profiler.</returns>
         public static IDisposable AddObserverUntilDisposed(IProfilerObserver observer)
         {
             AddObserver(observer);
-            return new Disposable(() => RemoveObserver(observer));
+            return new ActionDisposable(() => RemoveObserver(observer));
         }
 
         static void Tick()
@@ -267,6 +299,10 @@ namespace Profiler.Core
             _tickTaskSource.Tick(CurrentTick);
         }
 
+        /// <summary>
+        /// Waits until the next tick of the game.
+        /// </summary>
+        /// <returns>Awaitable object that retrieves the current tick when the game ticks next time.</returns>
         public static TickTaskSource.TickTask WaitUntilNextGameTick()
         {
             return _tickTaskSource.GetTask();
