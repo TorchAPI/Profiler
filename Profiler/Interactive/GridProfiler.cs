@@ -2,8 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using NLog;
 using Profiler.Core;
-using Profiler.Util;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity;
 
@@ -11,6 +11,7 @@ namespace Profiler.Interactive
 {
     public sealed class GridProfiler : IProfilerObserver, IDisposable
     {
+        static readonly Logger Log = LogManager.GetCurrentClassLogger();
         readonly GameEntityMask _mask;
         readonly ConcurrentDictionary<long, ProfilerEntry> _profilerEntries;
         readonly Func<long, ProfilerEntry> _makeProfilerEntry;

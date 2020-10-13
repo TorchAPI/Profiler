@@ -268,7 +268,7 @@ namespace Profiler.Core
             _tickTaskSource.Tick(CurrentTick);
         }
 
-        public static TickTaskSource.TickTask WaitUntilNextFrame()
+        public static TickTaskSource.TickTask WaitUntilNextGameTick()
         {
             return _tickTaskSource.GetTask();
         }

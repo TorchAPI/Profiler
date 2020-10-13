@@ -91,9 +91,6 @@
       <HintPath>$(SolutionDir)\TorchBinaries\Torch.Server.exe</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="TorchUtils">
-      <HintPath>..\..\HnzTorchPlugins\TorchUtils\bin\Release\TorchUtils.dll</HintPath>
-    </Reference>
     <Reference Include="VRage">
       <HintPath>$(SolutionDir)\GameBinaries\VRage.dll</HintPath>
       <Private>False</Private>

@@ -106,12 +106,15 @@ namespace Profiler
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
                     var profilerEntities = profiler.GetProfilerEntries();
 
+                    await ProfilerPatch.WaitUntilNextGameTick();
+
                     var gridProfilerEntries = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Select(p => (Grid: (MyCubeGrid) MyEntities.GetEntityById(p.GridId), p.ProfilerEntry))
+                        .Select(p => (Grid: MyEntities.GetEntityById(p.GridId), p.ProfilerEntry))
                         .Where(p => p.Grid != null)
-                        .Take(args.Top)
-                        .ToArray();
+                        .Take(args.Top);
+
+                    await TaskUtils.MoveToThreadPool();
 
                     var data = gridProfilerEntries.Select(p => (p.Grid.DisplayName, p.ProfilerEntry));
                     Respond(args.Seconds, totalTicks, data);
@@ -151,7 +154,9 @@ namespace Profiler
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
                     var profilerEntities = profiler.GetProfilerEntries();
-                    
+
+                    await ProfilerPatch.WaitUntilNextGameTick();
+
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Select(p => (Faction: MySession.Static.Factions.TryGetFactionById(p.FactionId), p.ProfilerEntry))
@@ -159,11 +164,13 @@ namespace Profiler
                         .Select(p => (p.Faction.Tag, p.ProfilerEntry))
                         .Take(args.Top);
 
+                    await TaskUtils.MoveToThreadPool();
+
                     Respond(args.Seconds, totalTicks, data);
                 }
             });
         }
-
+        
         [Command("players", "Profiles performance per player", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void Players()
@@ -185,12 +192,16 @@ namespace Profiler
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
                     var profilerEntities = profiler.GetProfilerEntries();
 
+                    await ProfilerPatch.WaitUntilNextGameTick();
+
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Select(p => (Player: MySession.Static.Players.TryGetIdentity(p.PlayerId), p.ProfilerEntry))
                         .Where(p => p.Player != null)
                         .Select(p => (p.Player.DisplayName, p.ProfilerEntry))
                         .Take(args.Top);
+
+                    await TaskUtils.MoveToThreadPool();
 
                     Respond(args.Seconds, totalTicks, data);
                 }
