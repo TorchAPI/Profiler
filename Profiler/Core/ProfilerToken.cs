@@ -1,16 +1,32 @@
-using System.Diagnostics;
+using System;
+using VRage.ModAPI;
 
 namespace Profiler.Core
 {
+    /// <summary>
+    /// Mark the beginning of a method profiling and be consumed in the end of profiling.
+    /// </summary>
     internal readonly struct ProfilerToken
     {
-        public readonly ProfilerEntry Entry;
-        public readonly long Start;
+        /// <summary>
+        /// Game entity responsible for the profiled method.
+        /// </summary>
+        public readonly IMyEntity GameEntity;
+        
+        /// <summary>
+        /// Timestamp of when this profiling started.
+        /// </summary>
+        public readonly DateTime StartTimestamp;
 
-        public ProfilerToken(ProfilerEntry entry)
+        /// <summary>
+        /// Instantiate.
+        /// </summary>
+        /// <param name="gameEntity">Game entity responsible for the profiled method.</param>
+        /// <param name="startTimestamp">Timestamp of when this profiling started.</param>
+        public ProfilerToken(IMyEntity gameEntity, DateTime startTimestamp)
         {
-            Entry = entry;
-            Start = Stopwatch.GetTimestamp();
+            GameEntity = gameEntity;
+            StartTimestamp = startTimestamp;
         }
     }
 }

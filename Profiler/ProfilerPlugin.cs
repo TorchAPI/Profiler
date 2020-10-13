@@ -2,12 +2,13 @@
 using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
+using Profiler.Database;
 using Sandbox.Engine.Multiplayer;
 using Torch;
 using Torch.API;
 using Torch.API.Managers;
 using Torch.Server.InfluxDb;
-using TorchUtils.Utils;
+using Torch.Server.Utils;
 
 namespace Profiler
 {

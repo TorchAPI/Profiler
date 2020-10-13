@@ -91,9 +91,6 @@
       <HintPath>$(SolutionDir)\TorchBinaries\Torch.Server.exe</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="TorchUtils">
-      <HintPath>..\..\HnzTorchPlugins\TorchUtils\bin\Release\TorchUtils.dll</HintPath>
-    </Reference>
     <Reference Include="VRage">
       <HintPath>$(SolutionDir)\GameBinaries\VRage.dll</HintPath>
       <Private>False</Private>
@@ -152,17 +149,31 @@
     <Compile Include="..\Versioning\AssemblyVersion.cs">
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
-    <Compile Include="Core\ProfilerData.cs" />
-    <Compile Include="Core\ProfilerEntry.cs" />
+    <Compile Include="Core\IProfilerObserver.cs" />
+    <Compile Include="Core\ProfilerResult.cs" />
+    <Compile Include="Database\ProfilerDbClient.cs" />
+    <Compile Include="Core\MyDistributedUpdaterReflection.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
-    <Compile Include="Core\ProfilerRequest.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
+    <Compile Include="Interactive\BlockDefinitionProfiler.cs" />
+    <Compile Include="Interactive\BlockTypeProfiler.cs" />
+    <Compile Include="Interactive\FactionProfiler.cs" />
+    <Compile Include="Interactive\GameEntityMask.cs" />
+    <Compile Include="Interactive\GpsSendClient.cs" />
+    <Compile Include="Interactive\GridProfiler.cs" />
+    <Compile Include="Interactive\PlayerProfiler.cs" />
+    <Compile Include="Interactive\ProfilerEntry.cs" />
+    <Compile Include="Interactive\ProgrammableBlockProfiler.cs" />
+    <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />
-    <Compile Include="ProfilerDbClient.cs" />
+    <Compile Include="Util\ActionDisposable.cs" />
     <Compile Include="Util\IterableWeakTable.cs" />
+    <Compile Include="Util\ObjectPool.cs" />
+    <Compile Include="Util\ProfilerUtils.cs" />
     <Compile Include="Util\ReflectionUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
+    <Compile Include="Util\TickTaskSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
