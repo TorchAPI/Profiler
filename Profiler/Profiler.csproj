@@ -165,6 +165,7 @@
     <Compile Include="Interactive\GridProfiler.cs" />
     <Compile Include="Interactive\PlayerProfiler.cs" />
     <Compile Include="Interactive\ProfilerEntry.cs" />
+    <Compile Include="Interactive\ProgrammableBlockProfiler.cs" />
     <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />
     <Compile Include="Util\Disposable.cs" />

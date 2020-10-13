@@ -3,27 +3,27 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Profiler.Core;
-using Profiler.Util;
 using Sandbox.Game.World;
+using VRage.Game.ModAPI;
 
 namespace Profiler.Interactive
 {
     public sealed class FactionProfiler : IProfilerObserver, IDisposable
     {
         readonly GameEntityMask _mask;
-        readonly ConcurrentDictionary<long, ProfilerEntry> _profilerEntries;
-        readonly Func<long, ProfilerEntry> _makeProfilerEntry;
+        readonly ConcurrentDictionary<IMyFaction, ProfilerEntry> _profilerEntries;
+        readonly Func<IMyFaction, ProfilerEntry> _makeProfilerEntry;
 
         public FactionProfiler(GameEntityMask mask)
         {
             _mask = mask;
-            _profilerEntries = new ConcurrentDictionary<long, ProfilerEntry>();
+            _profilerEntries = new ConcurrentDictionary<IMyFaction, ProfilerEntry>();
             _makeProfilerEntry = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
         }
 
-        public IEnumerable<(long FactionId, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        public IEnumerable<(IMyFaction Faction, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
         {
-            return _profilerEntries.Select(kv => (kv.Key, kv.Value));
+            return _profilerEntries.Select(kv => (kv.Key, kv.Value)).ToArray();
         }
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
@@ -35,7 +35,7 @@ namespace Profiler.Interactive
             var faction = MySession.Static.Factions.TryGetPlayerFaction(player.Value);
             if (faction == null) return;
 
-            var profilerEntry = _profilerEntries.GetOrAdd(faction.FactionId, _makeProfilerEntry);
+            var profilerEntry = _profilerEntries.GetOrAdd(faction, _makeProfilerEntry);
             profilerEntry.Add(profilerResult);
         }
 

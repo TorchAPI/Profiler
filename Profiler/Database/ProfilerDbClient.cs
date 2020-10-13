@@ -65,7 +65,7 @@ namespace Profiler.Database
             }
         }
 
-        void OnProfilingFinished(ulong totalTicks, IEnumerable<(long GridID, ProfilerEntry ProfilerEntry)> results)
+        void OnProfilingFinished(ulong totalTicks, IEnumerable<(MyCubeGrid Grid, ProfilerEntry ProfilerEntry)> results)
         {
             var points = new List<PointData>();
 
@@ -74,10 +74,9 @@ namespace Profiler.Database
                 .Take(MaxGridCount)
                 .ToArray();
 
-            foreach (var (gridId, profilerEntry) in topResults)
+            foreach (var (grid, profilerEntry) in topResults)
             {
-                if (!MyEntities.TryGetEntityById(gridId, out var entry)) continue; // deleted by now
-                var grid = (MyCubeGrid) entry;
+                if (grid.Closed) continue; // deleted by now
 
                 var gridName = grid.DisplayName;
                 var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;

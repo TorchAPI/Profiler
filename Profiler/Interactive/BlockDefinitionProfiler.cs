@@ -24,7 +24,7 @@ namespace Profiler.Interactive
 
         public IEnumerable<(MyCubeBlockDefinition BlockDefinition, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
         {
-            return _profilerEntries.Select(kv => (kv.Key, kv.Value));
+            return _profilerEntries.Select(kv => (kv.Key, kv.Value)).ToArray();
         }
 
         public void OnProfileComplete(in ProfilerResult profilerResult)

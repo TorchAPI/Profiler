@@ -3,24 +3,24 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Profiler.Core;
-using Profiler.Util;
+using Sandbox.Game.World;
 
 namespace Profiler.Interactive
 {
     public sealed class PlayerProfiler : IProfilerObserver, IDisposable
     {
         readonly GameEntityMask _mask;
-        readonly ConcurrentDictionary<long, ProfilerEntry> _profilerEntries;
-        readonly Func<long, ProfilerEntry> _makeProfilerEntity;
+        readonly ConcurrentDictionary<MyIdentity, ProfilerEntry> _profilerEntries;
+        readonly Func<MyIdentity, ProfilerEntry> _makeProfilerEntity;
 
         public PlayerProfiler(GameEntityMask mask)
         {
             _mask = mask;
-            _profilerEntries = new ConcurrentDictionary<long, ProfilerEntry>();
+            _profilerEntries = new ConcurrentDictionary<MyIdentity, ProfilerEntry>();
             _makeProfilerEntity = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
         }
 
-        public IEnumerable<(long PlayerId, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        public IEnumerable<(MyIdentity Player, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
         {
             return _profilerEntries.Select(kv => (kv.Key, kv.Value));
         }
@@ -28,10 +28,13 @@ namespace Profiler.Interactive
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
             var gameEntity = profilerResult.GetGameEntity();
-            var playerOrNull = _mask.ExtractPlayer(gameEntity);
-            if (!(playerOrNull is long player)) return;
+            var playerIdOrNull = _mask.ExtractPlayer(gameEntity);
+            if (!(playerIdOrNull is long playerId)) return;
 
-            var profilerEntry = _profilerEntries.GetOrAdd(player, _makeProfilerEntity);
+            var identity = MySession.Static.Players.TryGetIdentity(playerId);
+            if (identity == null) return;
+
+            var profilerEntry = _profilerEntries.GetOrAdd(identity, _makeProfilerEntity);
             profilerEntry.Add(profilerResult);
         }
 

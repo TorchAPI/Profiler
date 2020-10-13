@@ -23,7 +23,7 @@ namespace Profiler.Interactive
 
         public IEnumerable<(Type Type, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
         {
-            return _profilerEntries.Select(kv => (kv.Key, kv.Value));
+            return _profilerEntries.Select(kv => (kv.Key, kv.Value)).ToArray();
         }
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
