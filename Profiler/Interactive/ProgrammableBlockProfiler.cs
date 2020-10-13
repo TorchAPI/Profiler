@@ -27,9 +27,7 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            if (profilerResult.ProfileType != ProfileType.ProgrammableBlock) return;
-
-            var programmableBlock = (MyProgrammableBlock) profilerResult.GameEntity;
+            if (!(profilerResult.GameEntity is MyProgrammableBlock programmableBlock)) return;
             if (programmableBlock.Closed) return;
             if (!_mask.AcceptBlock(programmableBlock)) return;
 

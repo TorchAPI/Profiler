@@ -121,13 +121,7 @@ namespace Profiler
 
                         foreach (var (grid, profilerEntry) in gridProfilerEntries)
                         {
-                            var biggestGrid = grid.GetBiggestGridInGroup();
-
-                            var gridName = (grid == biggestGrid)
-                                ? grid.DisplayName
-                                : $"{grid.DisplayName} ({biggestGrid.DisplayName})";
-
-                            var gpsName = $"{gridName} ({(double) profilerEntry.TotalTimeMs / totalTicks:0.00}ms/f)";
+                            var gpsName = $"{grid.DisplayName} ({(double) profilerEntry.TotalTimeMs / totalTicks:0.0000}ms/f)";
                             var gpsPosition = grid.PositionComp.WorldAABB.Center;
                             _gpsSendClient.SendGps(args.PlayerIdToSendGps, gpsName, gpsPosition);
                         }

@@ -6,13 +6,14 @@ namespace Profiler.Interactive
 {
     public sealed class ProfilerEntry
     {
+        long _totalMainThreadTimeMs;
         long _totalOffThreadTimeMs;
 
         ProfilerEntry()
         {
         }
 
-        public long TotalMainThreadTimeMs { get; private set; }
+        public long TotalMainThreadTimeMs => _totalMainThreadTimeMs;
         public long TotalOffThreadTimeMs => _totalOffThreadTimeMs;
         public long TotalTimeMs => TotalMainThreadTimeMs + TotalOffThreadTimeMs;
 
@@ -20,8 +21,7 @@ namespace Profiler.Interactive
         {
             if (profilerResult.IsMainThread)
             {
-                // Always called from the main thread, no Interlocked necessary
-                TotalMainThreadTimeMs += profilerResult.TimeMs;
+                Interlocked.Add(ref _totalMainThreadTimeMs, profilerResult.TimeMs);
             }
             else
             {
@@ -29,9 +29,9 @@ namespace Profiler.Interactive
             }
         }
 
-        public void Reset()
+        void Reset()
         {
-            TotalMainThreadTimeMs = 0;
+            _totalMainThreadTimeMs = 0;
             _totalOffThreadTimeMs = 0;
         }
 

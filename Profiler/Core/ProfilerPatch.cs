@@ -209,7 +209,13 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? Start(object obj)
         {
-            return new ProfilerToken(obj, ProfileType.Default, DateTime.UtcNow);
+            return new ProfilerToken(obj, DateTime.UtcNow);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
+        {
+            return new ProfilerToken(block, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -219,7 +225,6 @@ namespace Profiler.Core
 
             var result = new ProfilerResult(
                 token.GameEntity,
-                token.ProfileType,
                 token.StartTimestamp,
                 DateTime.UtcNow,
                 mainThreadUpdate);
@@ -231,12 +236,6 @@ namespace Profiler.Core
                     observer.OnProfileComplete(result);
                 }
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
-        {
-            return new ProfilerToken(block, ProfileType.ProgrammableBlock, DateTime.UtcNow);
         }
 
         public static void AddObserver(IProfilerObserver observer)

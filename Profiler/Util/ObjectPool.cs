@@ -5,11 +5,11 @@ namespace Profiler.Util
 {
     public abstract class ObjectPool<T>
     {
-        readonly List<T> _pooledObjects;
+        readonly Queue<T> _pooledObjects;
 
         protected ObjectPool()
         {
-            _pooledObjects = new List<T>();
+            _pooledObjects = new Queue<T>();
         }
 
         protected abstract T CreateNew();
@@ -20,14 +20,10 @@ namespace Profiler.Util
         {
             if (_pooledObjects.Count == 0)
             {
-                var newObj = CreateNew();
-                _pooledObjects.Add(newObj);
-                return newObj;
+                return CreateNew();
             }
 
-            var lastIndex = _pooledObjects.Count - 1;
-            var pooledObject = _pooledObjects[lastIndex];
-            _pooledObjects.RemoveAt(lastIndex);
+            var pooledObject = _pooledObjects.Dequeue();
             return pooledObject;
         }
 
@@ -35,7 +31,7 @@ namespace Profiler.Util
         public void Pool(T obj)
         {
             Reset(obj);
-            _pooledObjects.Add(obj);
+            _pooledObjects.Enqueue(obj);
         }
 
         public void PoolAll(IEnumerable<T> objs)

@@ -14,7 +14,7 @@ namespace Profiler.Database
 {
     public sealed class ProfilerDbClient
     {
-        const int SamplingSeconds = 20;
+        const int SamplingSeconds = 10;
         const int MaxGridCount = 7;
 
         static readonly Logger _logger = LogManager.GetCurrentClassLogger();
@@ -78,21 +78,15 @@ namespace Profiler.Database
             {
                 if (grid.Closed) continue; // deleted by now
 
-                var biggestGrid = grid.GetBiggestGridInGroup();
                 var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
 
                 var point = _dbClient.MakePointIn("profiler")
-                    .Tag("biggest_grid_name", biggestGrid.DisplayName)
-                    .Field("grid_name", grid.DisplayName)
+                    .Tag("grid_name", grid.DisplayName)
                     .Field("main_ms", deltaTime);
 
                 points.Add(point);
 
-                var debugName = (grid == biggestGrid)
-                    ? grid.DisplayName
-                    : $"{grid.DisplayName} ({biggestGrid.DisplayName})";
-
-                _logger.Trace($"point added: '{debugName}' {deltaTime:0.00}");
+                _logger.Trace($"point added: '{grid.DisplayName}' {deltaTime:0.0000}ms/f");
             }
 
             _dbClient.WritePoints(points.ToArray());

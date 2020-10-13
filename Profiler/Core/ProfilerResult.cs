@@ -11,15 +11,13 @@ namespace Profiler.Core
     public readonly struct ProfilerResult
     {
         public readonly object GameEntity;
-        public readonly ProfileType ProfileType;
         public readonly DateTime StartTimestamp;
         public readonly DateTime StopTimestamp;
         public readonly bool IsMainThread;
 
-        internal ProfilerResult(object gameEntity, ProfileType profileType, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
+        internal ProfilerResult(object gameEntity, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
         {
             GameEntity = gameEntity;
-            ProfileType = profileType;
             StartTimestamp = startTimestamp;
             StopTimestamp = stopTimestamp;
             IsMainThread = isMainThread;
