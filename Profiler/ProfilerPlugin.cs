@@ -8,7 +8,7 @@ using Torch;
 using Torch.API;
 using Torch.API.Managers;
 using Torch.Server.InfluxDb;
-using TorchUtils.Utils;
+using Torch.Server.Utils;
 
 namespace Profiler
 {
