@@ -38,6 +38,8 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
+            if (profilerResult.Entrypoint != Entrypoint.General) return;
+            
             var grid = profilerResult.GameEntity.GetParentEntityOfType<MyCubeGrid>();
             if (grid == null) return;
             if (!_mask.AcceptGrid(grid)) return;

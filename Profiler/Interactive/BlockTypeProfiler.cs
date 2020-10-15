@@ -28,6 +28,8 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
+            if (profilerResult.Entrypoint != Entrypoint.General) return;
+            
             var block = profilerResult.GameEntity.GetParentEntityOfType<MyCubeBlock>();
             if (block == null) return;
             if (!_mask.AcceptBlock(block)) return;

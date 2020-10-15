@@ -7,13 +7,13 @@ using Sandbox.Game.Entities.Blocks;
 
 namespace Profiler.Interactive
 {
-    public sealed class ProgrammableBlockProfiler : IProfilerObserver, IDisposable
+    public sealed class UserScriptProfiler : IProfilerObserver, IDisposable
     {
         readonly GameEntityMask _mask;
         readonly ConcurrentDictionary<MyProgrammableBlock, ProfilerEntry> _profilerEntries;
         readonly Func<MyProgrammableBlock, ProfilerEntry> _makeProfilerEntity;
 
-        public ProgrammableBlockProfiler(GameEntityMask mask)
+        public UserScriptProfiler(GameEntityMask mask)
         {
             _mask = mask;
             _profilerEntries = new ConcurrentDictionary<MyProgrammableBlock, ProfilerEntry>();
@@ -27,7 +27,8 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            if (!(profilerResult.GameEntity is MyProgrammableBlock programmableBlock)) return;
+            if (profilerResult.Entrypoint != Entrypoint.Script) return;
+            if (!(profilerResult.GameEntity is MyProgrammableBlock programmableBlock)) return; // shouldn't happen
             if (programmableBlock.Closed) return;
             if (!_mask.AcceptBlock(programmableBlock)) return;
 

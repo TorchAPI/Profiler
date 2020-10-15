@@ -16,6 +16,7 @@ namespace Profiler.Database
     {
         const int SamplingSeconds = 10;
         const int MaxGridCount = 7;
+        const int MaxBlockTypeCount = 7;
 
         static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         readonly InfluxDbClient _dbClient;
@@ -42,6 +43,8 @@ namespace Profiler.Database
                 var gameEntityMask = new GameEntityMask(null, null, null);
                 using (var gridProfiler = new GridProfiler(gameEntityMask))
                 using (ProfilerPatch.AddObserverUntilDisposed(gridProfiler))
+                using (var blockTypeProfiler = new BlockTypeProfiler(gameEntityMask))
+                using (ProfilerPatch.AddObserverUntilDisposed(blockTypeProfiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
 
@@ -57,19 +60,23 @@ namespace Profiler.Database
                     }
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                    var profilerEntries = gridProfiler.GetProfilerEntries();
-                    OnProfilingFinished(totalTicks, profilerEntries);
+
+                    var gridProfilerEntries = gridProfiler.GetProfilerEntries();
+                    OnGridProfilingFinished(totalTicks, gridProfilerEntries);
+
+                    var blockTypeProfilerEntities = blockTypeProfiler.GetProfilerEntries();
+                    OnBlockTypeProfilingFinished(totalTicks, blockTypeProfilerEntities);
                 }
 
                 _logger.Trace("Profiler round ended");
             }
         }
 
-        void OnProfilingFinished(ulong totalTicks, IEnumerable<(MyCubeGrid Grid, ProfilerEntry ProfilerEntry)> results)
+        void OnGridProfilingFinished(ulong totalTicks, IEnumerable<(MyCubeGrid Grid, ProfilerEntry ProfilerEntry)> entities)
         {
             var points = new List<PointData>();
 
-            var topResults = results
+            var topResults = entities
                 .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
                 .Take(MaxGridCount)
                 .ToArray();
@@ -87,6 +94,33 @@ namespace Profiler.Database
                 points.Add(point);
 
                 _logger.Trace($"point added: '{grid.DisplayName}' {deltaTime:0.0000}ms/f");
+            }
+
+            _dbClient.WritePoints(points.ToArray());
+
+            _logger.Trace($"Finished profiling & sending to DB; count: {topResults.Length}");
+        }
+
+        void OnBlockTypeProfilingFinished(ulong totalTicks, IEnumerable<(Type Type, ProfilerEntry ProfilerEntry)> entities)
+        {
+            var points = new List<PointData>();
+
+            var topResults = entities
+                .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
+                .Take(MaxBlockTypeCount)
+                .ToArray();
+
+            foreach (var (blockType, profilerEntry) in topResults)
+            {
+                var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
+
+                var point = _dbClient.MakePointIn("profiler_block_types")
+                    .Tag("block_type", blockType.Name)
+                    .Field("main_ms", deltaTime);
+
+                points.Add(point);
+
+                _logger.Trace($"point added: '{blockType.Name}' {deltaTime:0.0000}ms/f");
             }
 
             _dbClient.WritePoints(points.ToArray());

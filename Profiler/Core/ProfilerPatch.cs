@@ -218,11 +218,11 @@ namespace Profiler.Core
             {
                 case MyEntityComponentBase componentBase:
                 {
-                    return new ProfilerToken(componentBase.Entity, DateTime.UtcNow);
+                    return new ProfilerToken(componentBase.Entity, Entrypoint.General, DateTime.UtcNow);
                 }
                 case IMyEntity entity:
                 {
-                    return new ProfilerToken(entity, DateTime.UtcNow);
+                    return new ProfilerToken(entity, Entrypoint.General, DateTime.UtcNow);
                 }
                 default:
                 {
@@ -234,7 +234,7 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
         {
-            return new ProfilerToken(block, DateTime.UtcNow);
+            return new ProfilerToken(block, Entrypoint.Script, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -244,6 +244,7 @@ namespace Profiler.Core
 
             var result = new ProfilerResult(
                 token.GameEntity,
+                token.Entrypoint,
                 token.StartTimestamp,
                 DateTime.UtcNow,
                 mainThreadUpdate);
@@ -265,6 +266,12 @@ namespace Profiler.Core
         {
             lock (_observers)
             {
+                if (_observers.Contains(observer))
+                {
+                    Log.Warn($"Observer already added: {observer}");
+                    return;
+                }
+
                 _observers.Add(observer);
             }
         }

@@ -28,6 +28,8 @@ namespace Profiler.Interactive
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
+            if (profilerResult.Entrypoint != Entrypoint.General) return;
+            
             var player = _mask.ExtractPlayer(profilerResult.GameEntity);
             if (!player.HasValue) return;
 

@@ -205,7 +205,7 @@ namespace Profiler
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
-                using (var profiler = new ProgrammableBlockProfiler(mask))
+                using (var profiler = new UserScriptProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
