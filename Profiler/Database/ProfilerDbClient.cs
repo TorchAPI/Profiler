@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using InfluxDB.Client.Writes;
 using NLog;
+using Profiler.Basics;
 using Profiler.Core;
 using Profiler.Interactive;
 using Sandbox.Game.Entities;

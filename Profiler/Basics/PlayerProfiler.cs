@@ -5,7 +5,7 @@ using System.Linq;
 using Profiler.Core;
 using Sandbox.Game.World;
 
-namespace Profiler.Interactive
+namespace Profiler.Basics
 {
     public sealed class PlayerProfiler : IProfilerObserver, IDisposable
     {

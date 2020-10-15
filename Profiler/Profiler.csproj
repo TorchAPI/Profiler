@@ -149,6 +149,14 @@
     <Compile Include="..\Versioning\AssemblyVersion.cs">
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
+    <Compile Include="Basics\BlockDefinitionProfiler.cs" />
+    <Compile Include="Basics\BlockTypeProfiler.cs" />
+    <Compile Include="Basics\FactionProfiler.cs" />
+    <Compile Include="Basics\GameEntityMask.cs" />
+    <Compile Include="Basics\GridProfiler.cs" />
+    <Compile Include="Basics\PlayerProfiler.cs" />
+    <Compile Include="Basics\ProfilerEntry.cs" />
+    <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core\IProfilerObserver.cs" />
     <Compile Include="Core\Entrypoint.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
@@ -157,16 +165,8 @@
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
-    <Compile Include="Interactive\BlockDefinitionProfiler.cs" />
-    <Compile Include="Interactive\BlockTypeProfiler.cs" />
-    <Compile Include="Interactive\FactionProfiler.cs" />
-    <Compile Include="Interactive\GameEntityMask.cs" />
     <Compile Include="Interactive\GpsSendClient.cs" />
-    <Compile Include="Interactive\GridProfiler.cs" />
-    <Compile Include="Interactive\PlayerProfiler.cs" />
-    <Compile Include="Interactive\ProfilerEntry.cs" />
     <Compile Include="Interactive\RequestParamParser.cs" />
-    <Compile Include="Interactive\UserScriptProfiler.cs" />
     <Compile Include="ProfilerCommands.cs" />
     <Compile Include="Util\ActionDisposable.cs" />
     <Compile Include="Util\IterableWeakTable.cs" />
@@ -181,9 +181,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="postbuild.bat" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Basics" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

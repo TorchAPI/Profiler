@@ -7,7 +7,7 @@ using Profiler.Util;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity;
 
-namespace Profiler.Interactive
+namespace Profiler.Basics
 {
     public sealed class GridProfiler : IProfilerObserver, IDisposable
     {

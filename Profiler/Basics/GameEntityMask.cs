@@ -3,7 +3,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.World;
 using VRage.ModAPI;
 
-namespace Profiler.Interactive
+namespace Profiler.Basics
 {
     public sealed class GameEntityMask
     {

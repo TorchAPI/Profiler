@@ -4,25 +4,24 @@ using System.Collections.Generic;
 using System.Linq;
 using Profiler.Core;
 using Profiler.Util;
-using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 
-namespace Profiler.Interactive
+namespace Profiler.Basics
 {
-    public sealed class BlockDefinitionProfiler : IProfilerObserver, IDisposable
+    public sealed class BlockTypeProfiler : IProfilerObserver, IDisposable
     {
         readonly GameEntityMask _mask;
-        readonly ConcurrentDictionary<MyCubeBlockDefinition, ProfilerEntry> _profilerEntries;
-        readonly Func<MyCubeBlockDefinition, ProfilerEntry> _makeProfilerEntity;
+        readonly ConcurrentDictionary<Type, ProfilerEntry> _profilerEntries;
+        readonly Func<Type, ProfilerEntry> _makeProfilerEntity;
 
-        public BlockDefinitionProfiler(GameEntityMask mask)
+        public BlockTypeProfiler(GameEntityMask mask)
         {
             _mask = mask;
-            _profilerEntries = new ConcurrentDictionary<MyCubeBlockDefinition, ProfilerEntry>();
+            _profilerEntries = new ConcurrentDictionary<Type, ProfilerEntry>();
             _makeProfilerEntity = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
         }
 
-        public IEnumerable<(MyCubeBlockDefinition BlockDefinition, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        public IEnumerable<(Type Type, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
         {
             return _profilerEntries.Select(kv => (kv.Key, kv.Value)).ToArray();
         }
@@ -36,7 +35,7 @@ namespace Profiler.Interactive
             if (!_mask.AcceptBlock(block)) return;
             if (block.BlockDefinition == null) return;
 
-            var profilerEntry = _profilerEntries.GetOrAdd(block.BlockDefinition, _makeProfilerEntity);
+            var profilerEntry = _profilerEntries.GetOrAdd(block.GetType(), _makeProfilerEntity);
             profilerEntry.Add(profilerResult);
         }
 

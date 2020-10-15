@@ -6,7 +6,7 @@ using Profiler.Core;
 using Sandbox.Game.World;
 using VRage.Game.ModAPI;
 
-namespace Profiler.Interactive
+namespace Profiler.Basics
 {
     public sealed class FactionProfiler : IProfilerObserver, IDisposable
     {

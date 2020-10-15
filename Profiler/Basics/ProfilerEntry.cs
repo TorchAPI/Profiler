@@ -2,7 +2,7 @@ using System.Threading;
 using Profiler.Core;
 using Profiler.Util;
 
-namespace Profiler.Interactive
+namespace Profiler.Basics
 {
     public sealed class ProfilerEntry
     {

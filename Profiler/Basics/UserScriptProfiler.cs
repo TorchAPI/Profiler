@@ -5,7 +5,7 @@ using System.Linq;
 using Profiler.Core;
 using Sandbox.Game.Entities.Blocks;
 
-namespace Profiler.Interactive
+namespace Profiler.Basics
 {
     public sealed class UserScriptProfiler : IProfilerObserver, IDisposable
     {
