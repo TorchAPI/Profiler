@@ -182,6 +182,9 @@
   <ItemGroup>
     <Content Include="postbuild.bat" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Tree" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
