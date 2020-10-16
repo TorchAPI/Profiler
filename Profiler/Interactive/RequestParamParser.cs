@@ -24,7 +24,7 @@ namespace Profiler.Interactive
             var args = new Dictionary<string, string>();
             foreach (var argument in arguments)
             {
-                if (!argument.StartsWith("==")) continue;
+                if (!argument.StartsWith("--")) continue;
 
                 var arg = argument.Substring(2, argument.Length - 2);
                 var keyValuePair = arg.Split('=');
