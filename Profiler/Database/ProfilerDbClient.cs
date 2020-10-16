@@ -7,7 +7,6 @@ using InfluxDB.Client.Writes;
 using NLog;
 using Profiler.Basics;
 using Profiler.Core;
-using Profiler.Interactive;
 using Sandbox.Game.Entities;
 using Torch.Server.InfluxDb;
 
@@ -16,8 +15,8 @@ namespace Profiler.Database
     public sealed class ProfilerDbClient
     {
         const int SamplingSeconds = 10;
-        const int MaxGridCount = 7;
-        const int MaxBlockTypeCount = 7;
+        const int MaxGridCount = 4;
+        const int MaxBlockTypeCount = 4;
 
         static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         readonly InfluxDbClient _dbClient;
