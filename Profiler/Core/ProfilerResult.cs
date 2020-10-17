@@ -16,7 +16,7 @@ namespace Profiler.Core
         /// <summary>
         /// Entrypoint of the profiled method.
         /// </summary>
-        public readonly Entrypoint Entrypoint;
+        public readonly string Entrypoint;
 
         /// <summary>
         /// Timestamp of when the profiling started for the profiled method.
@@ -41,7 +41,7 @@ namespace Profiler.Core
         /// <param name="startTimestamp">Timestamp of when the profiling started for the profiled method.</param>
         /// <param name="stopTimestamp">Timestamp of when the profiling ended for the profiled method.</param>
         /// <param name="isMainThread">True if the profiled method was executed in the main thread, otherwise false.</param>
-        internal ProfilerResult(IMyEntity gameEntity, Entrypoint entrypoint, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
+        internal ProfilerResult(IMyEntity gameEntity, string entrypoint, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
         {
             GameEntity = gameEntity;
             Entrypoint = entrypoint;

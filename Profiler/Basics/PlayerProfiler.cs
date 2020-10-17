@@ -27,7 +27,7 @@ namespace Profiler.Basics
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            if (profilerResult.Entrypoint != Entrypoint.General) return;
+            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return;
             
             var playerIdOrNull = _mask.ExtractPlayer(profilerResult.GameEntity);
             if (!(playerIdOrNull is long playerId)) return;

@@ -27,7 +27,8 @@ namespace Profiler.Basics
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            if (profilerResult.Entrypoint != Entrypoint.Script) return;
+            if (profilerResult.Entrypoint != ProfilerPatch.ScriptsEntrypoint) return;
+
             if (!(profilerResult.GameEntity is MyProgrammableBlock programmableBlock)) return; // shouldn't happen
             if (programmableBlock.Closed) return;
             if (!_mask.AcceptBlock(programmableBlock)) return;

@@ -159,7 +159,6 @@
     <Compile Include="Basics\TotalProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core\IProfilerObserver.cs" />
-    <Compile Include="Core\Entrypoint.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
     <Compile Include="Database\ProfilerDbClient.cs" />
     <Compile Include="Core\MyDistributedUpdaterReflection.cs" />

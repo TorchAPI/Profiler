@@ -71,6 +71,9 @@ namespace Profiler.Core
         static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
         public static ulong CurrentTick { get; private set; }
 
+        public const string GeneralEntrypoint = "General";
+        public const string ScriptsEntrypoint = "Scripts";
+
         public static void Patch(PatchContext ctx)
         {
             ReflectedManager.Process(typeof(ProfilerPatch));
@@ -219,11 +222,11 @@ namespace Profiler.Core
             {
                 case MyEntityComponentBase componentBase:
                 {
-                    return new ProfilerToken(componentBase.Entity, Entrypoint.General, DateTime.UtcNow);
+                    return new ProfilerToken(componentBase.Entity, GeneralEntrypoint, DateTime.UtcNow);
                 }
                 case IMyEntity entity:
                 {
-                    return new ProfilerToken(entity, Entrypoint.General, DateTime.UtcNow);
+                    return new ProfilerToken(entity, GeneralEntrypoint, DateTime.UtcNow);
                 }
                 default:
                 {
@@ -235,7 +238,7 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
         {
-            return new ProfilerToken(block, Entrypoint.Script, DateTime.UtcNow);
+            return new ProfilerToken(block, ScriptsEntrypoint, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
