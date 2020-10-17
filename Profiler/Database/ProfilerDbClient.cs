@@ -9,14 +9,14 @@ using Profiler.Basics;
 using Profiler.Core;
 using Sandbox.Game.Entities;
 using Torch.Server.InfluxDb;
+using VRage.Game.ModAPI;
 
 namespace Profiler.Database
 {
     public sealed class ProfilerDbClient
     {
         const int SamplingSeconds = 10;
-        const int MaxGridCount = 4;
-        const int MaxBlockTypeCount = 4;
+        const int MaxDisplayCount = 4;
 
         static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         readonly InfluxDbClient _dbClient;
@@ -41,10 +41,14 @@ namespace Profiler.Database
             while (!cancellationToken.IsCancellationRequested)
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
+                var totalProfiler = new TotalProfiler();
+                using (ProfilerPatch.AddObserverUntilDisposed(totalProfiler))
                 using (var gridProfiler = new GridProfiler(gameEntityMask))
                 using (ProfilerPatch.AddObserverUntilDisposed(gridProfiler))
                 using (var blockTypeProfiler = new BlockTypeProfiler(gameEntityMask))
                 using (ProfilerPatch.AddObserverUntilDisposed(blockTypeProfiler))
+                using (var factionProfiler = new FactionProfiler(gameEntityMask))
+                using (ProfilerPatch.AddObserverUntilDisposed(factionProfiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
 
@@ -61,15 +65,29 @@ namespace Profiler.Database
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
 
+                    OnTotalProfilingFinished(totalTicks, totalProfiler.MainThreadMs, totalProfiler.OffThreadMs);
+
                     var gridProfilerEntries = gridProfiler.GetProfilerEntries();
                     OnGridProfilingFinished(totalTicks, gridProfilerEntries);
 
                     var blockTypeProfilerEntities = blockTypeProfiler.GetProfilerEntries();
                     OnBlockTypeProfilingFinished(totalTicks, blockTypeProfilerEntities);
+
+                    var factionProfilerEntities = factionProfiler.GetProfilerEntries();
+                    OnFactionProfilingFinished(totalTicks, factionProfilerEntities);
                 }
 
                 _logger.Trace("Profiler round ended");
             }
+        }
+
+        void OnTotalProfilingFinished(ulong totalTicks, long totalMainThreadMs, long totalOffThreadMs)
+        {
+            var point = _dbClient.MakePointIn("profiler_total")
+                .Field("main_thread", (float) totalMainThreadMs / totalTicks)
+                .Field("off_thread", (float) totalOffThreadMs / totalTicks);
+
+            _dbClient.WritePoints(point);
         }
 
         void OnGridProfilingFinished(ulong totalTicks, IEnumerable<(MyCubeGrid Grid, ProfilerEntry ProfilerEntry)> entities)
@@ -78,7 +96,7 @@ namespace Profiler.Database
 
             var topResults = entities
                 .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
-                .Take(MaxGridCount)
+                .Take(MaxDisplayCount)
                 .ToArray();
 
             foreach (var (grid, profilerEntry) in topResults)
@@ -92,13 +110,9 @@ namespace Profiler.Database
                     .Field("main_ms", deltaTime);
 
                 points.Add(point);
-
-                _logger.Trace($"point added: '{grid.DisplayName}' {deltaTime:0.0000}ms/f");
             }
 
             _dbClient.WritePoints(points.ToArray());
-
-            _logger.Trace($"Finished profiling & sending to DB; count: {topResults.Length}");
         }
 
         void OnBlockTypeProfilingFinished(ulong totalTicks, IEnumerable<(Type Type, ProfilerEntry ProfilerEntry)> entities)
@@ -107,7 +121,7 @@ namespace Profiler.Database
 
             var topResults = entities
                 .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
-                .Take(MaxBlockTypeCount)
+                .Take(MaxDisplayCount)
                 .ToArray();
 
             foreach (var (blockType, profilerEntry) in topResults)
@@ -119,13 +133,32 @@ namespace Profiler.Database
                     .Field("main_ms", deltaTime);
 
                 points.Add(point);
-
-                _logger.Trace($"point added: '{blockType.Name}' {deltaTime:0.0000}ms/f");
             }
 
             _dbClient.WritePoints(points.ToArray());
+        }
 
-            _logger.Trace($"Finished profiling & sending to DB; count: {topResults.Length}");
+        void OnFactionProfilingFinished(ulong totalTicks, IEnumerable<(IMyFaction Faction, ProfilerEntry ProfilerEntry)> entities)
+        {
+            var points = new List<PointData>();
+
+            var topResults = entities
+                .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
+                .Take(MaxDisplayCount)
+                .ToArray();
+
+            foreach (var (faction, profilerEntry) in topResults)
+            {
+                var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
+
+                var point = _dbClient.MakePointIn("profiler_factions")
+                    .Tag("faction_name", faction.Tag)
+                    .Field("main_ms", deltaTime);
+
+                points.Add(point);
+            }
+
+            _dbClient.WritePoints(points.ToArray());
         }
 
         public void StopProfiling()

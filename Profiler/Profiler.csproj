@@ -156,6 +156,7 @@
     <Compile Include="Basics\GridProfiler.cs" />
     <Compile Include="Basics\PlayerProfiler.cs" />
     <Compile Include="Basics\ProfilerEntry.cs" />
+    <Compile Include="Basics\TotalProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core\IProfilerObserver.cs" />
     <Compile Include="Core\Entrypoint.cs" />
