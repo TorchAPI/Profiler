@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using Profiler.Core;
 using Profiler.Util;
 using Sandbox.Game.Entities;
@@ -9,49 +6,41 @@ using VRage.Game.Entity;
 
 namespace Profiler.Basics
 {
-    public sealed class GridProfiler : IProfilerObserver, IDisposable
+    public sealed class GridProfiler : BaseProfiler<MyCubeGrid>
     {
         readonly GameEntityMask _mask;
-        readonly ConcurrentDictionary<MyCubeGrid, ProfilerEntry> _profilerEntries;
-        readonly Func<MyCubeGrid, ProfilerEntry> _makeProfilerEntry;
         readonly Action<MyEntity> _onGameEntityRemoved;
 
         public GridProfiler(GameEntityMask mask)
         {
             _mask = mask;
-            _profilerEntries = new ConcurrentDictionary<MyCubeGrid, ProfilerEntry>();
-            _makeProfilerEntry = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
 
             _onGameEntityRemoved = gameEntity =>
             {
                 if (!(gameEntity is MyCubeGrid grid)) return;
-                _profilerEntries.Remove(grid);
+                RemoveEntry(grid);
             };
 
             MyEntities.OnEntityRemove += _onGameEntityRemoved;
         }
 
-        public IEnumerable<(MyCubeGrid Grid, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        protected override bool TryAccept(ProfilerResult profilerResult, out MyCubeGrid key)
         {
-            return _profilerEntries.Select(kv => (kv.Key, kv.Value)).ToArray();
-        }
+            key = null;
 
-        public void OnProfileComplete(in ProfilerResult profilerResult)
-        {
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return;
-            
+            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
+
             var grid = profilerResult.GameEntity.GetParentEntityOfType<MyCubeGrid>();
-            if (grid == null) return;
-            if (!_mask.AcceptGrid(grid)) return;
+            if (grid == null) return false;
+            if (!_mask.AcceptGrid(grid)) return false;
 
-            var profilerEntry = _profilerEntries.GetOrAdd(grid, _makeProfilerEntry);
-            profilerEntry.Add(profilerResult);
+            key = grid;
+            return true;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
-            ProfilerEntry.Pool.Instance.PoolAll(_profilerEntries.Values);
-
+            base.Dispose();
             MyEntities.OnEntityRemove -= _onGameEntityRemoved;
         }
     }

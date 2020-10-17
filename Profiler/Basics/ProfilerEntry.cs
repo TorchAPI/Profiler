@@ -4,6 +4,9 @@ using Profiler.Util;
 
 namespace Profiler.Basics
 {
+    /// <summary>
+    /// Paired with BaseProfiler, provide a summary of computation time per a key object. 
+    /// </summary>
     public sealed class ProfilerEntry
     {
         long _totalMainThreadTimeMs;
@@ -13,11 +16,22 @@ namespace Profiler.Basics
         {
         }
 
+        /// <summary>
+        /// Total main-thread computation time of the game associated with the key object in milliseconds.
+        /// </summary>
         public long TotalMainThreadTimeMs => _totalMainThreadTimeMs;
+
+        /// <summary>
+        /// Total not-main-thread computation time of the game associated with the key object in milliseconds.
+        /// </summary>
         public long TotalOffThreadTimeMs => _totalOffThreadTimeMs;
+
+        /// <summary>
+        /// Total computation time of the game associated with the key object in milliseconds.
+        /// </summary>
         public long TotalTimeMs => TotalMainThreadTimeMs + TotalOffThreadTimeMs;
 
-        public void Add(ProfilerResult profilerResult)
+        internal void Add(ProfilerResult profilerResult)
         {
             if (profilerResult.IsMainThread)
             {
@@ -35,7 +49,7 @@ namespace Profiler.Basics
             _totalOffThreadTimeMs = 0;
         }
 
-        public sealed class Pool : ObjectPool<ProfilerEntry>
+        internal sealed class Pool : ObjectPool<ProfilerEntry>
         {
             public static readonly Pool Instance = new Pool();
 

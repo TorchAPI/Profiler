@@ -49,7 +49,7 @@ namespace Profiler
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Take(args.Top)
-                        .Select(p => (BlockTypeToString(p.Type), p.ProfilerEntry));
+                        .Select(p => (BlockTypeToString(p.Key), p.ProfilerEntry));
 
                     Respond(args.Seconds, totalTicks, data);
                 }
@@ -85,7 +85,7 @@ namespace Profiler
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Take(args.Top)
-                        .Select(p => (p.BlockDefinition.BlockPairName, p.ProfilerEntry));
+                        .Select(p => (p.Key.BlockPairName, p.ProfilerEntry));
 
                     Respond(args.Seconds, totalTicks, data);
                 }
@@ -115,10 +115,10 @@ namespace Profiler
 
                     var gridProfilerEntries = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Where(p => !p.Grid.Closed)
+                        .Where(p => !p.Key.Closed)
                         .Take(args.Top);
 
-                    var data = gridProfilerEntries.Select(p => (p.Grid.DisplayName, p.ProfilerEntry));
+                    var data = gridProfilerEntries.Select(p => (p.Key.DisplayName, p.ProfilerEntry));
                     Respond(args.Seconds, totalTicks, data);
 
                     if (args.SendGpsToPlayer)
@@ -159,9 +159,9 @@ namespace Profiler
 
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Where(p => p.Faction != null)
+                        .Where(p => p.Key != null)
                         .Take(args.Top)
-                        .Select(p => (p.Faction.Tag, p.ProfilerEntry));
+                        .Select(p => (p.Key.Tag, p.ProfilerEntry));
 
                     Respond(args.Seconds, totalTicks, data);
                 }
@@ -223,9 +223,9 @@ namespace Profiler
 
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Where(p => !p.PB.Closed)
+                        .Where(p => !p.Key.Closed)
                         .Take(args.Top)
-                        .Select(p => (PbToString(p.PB), p.ProfilerEntry));
+                        .Select(p => (PbToString(p.Key), p.ProfilerEntry));
 
                     Respond(args.Seconds, totalTicks, data);
                 }
