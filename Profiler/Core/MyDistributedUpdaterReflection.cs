@@ -35,7 +35,7 @@ namespace Profiler.Core
             return true;
         }
 
-        public static IEnumerable<MethodBase> GetUpdateMethods(PatchContext ctx, MethodBase callerMethod)
+        public static IEnumerable<MethodBase> GetUpdateMethods(MethodBase callerMethod)
         {
             var updateMethods = new List<MethodBase>();
 

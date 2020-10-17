@@ -27,7 +27,7 @@ namespace Profiler
 
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void BlockType()
+        public void ProfileBlockType()
         {
             RunThread(async () =>
             {
@@ -49,16 +49,21 @@ namespace Profiler
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Take(args.Top)
-                        .Select(p => (p.Type.ToString(), p.ProfilerEntry));
+                        .Select(p => (BlockTypeToString(p.Type), p.ProfilerEntry));
 
                     Respond(args.Seconds, totalTicks, data);
                 }
             });
         }
 
+        static string BlockTypeToString(Type type)
+        {
+            return type.ToString().Split('.').LastOrDefault() ?? "unknown";
+        }
+
         [Command("blocks", "Profiles performance per block definition", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Block()
+        public void ProfileBlock()
         {
             RunThread(async () =>
             {
@@ -89,7 +94,7 @@ namespace Profiler
 
         [Command("grids", "Profiles performance per grid", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Grids()
+        public void ProfileGrids()
         {
             RunThread(async () =>
             {
@@ -133,7 +138,7 @@ namespace Profiler
 
         [Command("factions", "Profiles performance per faction", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Factions()
+        public void ProfileFactions()
         {
             RunThread(async () =>
             {
@@ -165,7 +170,7 @@ namespace Profiler
 
         [Command("players", "Profiles performance per player", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Players()
+        public void ProfilePlayers()
         {
             RunThread(async () =>
             {
@@ -197,7 +202,7 @@ namespace Profiler
 
         [Command("scripts", "Profiles performance of programmable blocks")]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Scripts()
+        public void ProfileScripts()
         {
             RunThread(async () =>
             {
@@ -220,14 +225,14 @@ namespace Profiler
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Where(p => !p.PB.Closed)
                         .Take(args.Top)
-                        .Select(p => (NameProgrammableBlock(p.PB), p.ProfilerEntry));
+                        .Select(p => (PbToString(p.PB), p.ProfilerEntry));
 
                     Respond(args.Seconds, totalTicks, data);
                 }
             });
         }
 
-        static string NameProgrammableBlock(MyProgrammableBlock pb)
+        static string PbToString(MyProgrammableBlock pb)
         {
             var blockName = pb.DisplayName;
             var gridName = pb.GetParentEntityOfType<MyCubeGrid>()?.DisplayName ?? "<none>";

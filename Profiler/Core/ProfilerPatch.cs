@@ -94,12 +94,12 @@ namespace Profiler.Core
 
             if (MyDistributedUpdaterReflection.ApiExists())
             {
-                foreach (var updateMethod in MyDistributedUpdaterReflection.GetUpdateMethods(ctx, _gameLogicUpdateBeforeSimulation))
+                foreach (var updateMethod in MyDistributedUpdaterReflection.GetUpdateMethods(_gameLogicUpdateBeforeSimulation))
                 {
                     ctx.GetPattern(updateMethod).PostTranspilers.Add(_generalizedUpdateTranspiler);
                 }
 
-                foreach (var updateMethod in MyDistributedUpdaterReflection.GetUpdateMethods(ctx, _gameLogicUpdateAfterSimulation))
+                foreach (var updateMethod in MyDistributedUpdaterReflection.GetUpdateMethods(_gameLogicUpdateAfterSimulation))
                 {
                     ctx.GetPattern(updateMethod).PostTranspilers.Add(_generalizedUpdateTranspiler);
                 }
@@ -177,6 +177,7 @@ namespace Profiler.Core
                         }
 
                         foundAny = true;
+                        
                         Log.Debug($"Attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}");
                         var startProfiler = new[]
                         {
