@@ -23,7 +23,7 @@ namespace Profiler
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly GpsSendClient _gpsSendClient = new GpsSendClient();
 
-        const string HelpText = "--ticks=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
+        const string HelpText = "--secs=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
 
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
@@ -31,14 +31,14 @@ namespace Profiler
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling by block type");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new BlockTypeProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling by block type, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -51,7 +51,7 @@ namespace Profiler
                         .Take(args.Top)
                         .Select(p => (BlockTypeToString(p.Key), p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
@@ -67,14 +67,14 @@ namespace Profiler
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling by block definition");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new BlockDefinitionProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling by block definition, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -87,7 +87,7 @@ namespace Profiler
                         .Take(args.Top)
                         .Select(p => (p.Key.BlockPairName, p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
@@ -98,14 +98,14 @@ namespace Profiler
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling grids");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new GridProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling grids, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -119,7 +119,7 @@ namespace Profiler
                         .Take(args.Top);
 
                     var data = gridProfilerEntries.Select(p => (p.Key.DisplayName, p.ProfilerEntry));
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
 
                     if (args.SendGpsToPlayer)
                     {
@@ -142,14 +142,14 @@ namespace Profiler
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling factions");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new FactionProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling factions, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -163,7 +163,7 @@ namespace Profiler
                         .Take(args.Top)
                         .Select(p => (p.Key.Tag, p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
@@ -174,14 +174,14 @@ namespace Profiler
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling players");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new PlayerProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling players, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -195,7 +195,7 @@ namespace Profiler
                         .Select(p => (p.Player.DisplayName, p.ProfilerEntry))
                         .Take(args.Top);
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
@@ -206,14 +206,14 @@ namespace Profiler
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling by block definition");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new UserScriptProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling scripts, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -227,7 +227,7 @@ namespace Profiler
                         .Take(args.Top)
                         .Select(p => (PbToString(p.Key), p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
@@ -243,17 +243,18 @@ namespace Profiler
         {
             Task.Factory.StartNew(task).Forget(Log);
         }
-
-        void Respond(ulong totalSeconds, ulong totalTicks, IEnumerable<(string, ProfilerEntry)> data)
+        
+        void Respond(ulong totalTicks, IEnumerable<(string, ProfilerEntry)> data)
         {
             var messageBuilder = new StringBuilder();
-            messageBuilder.AppendLine($"Finished profiling for {totalSeconds}s");
+            messageBuilder.AppendLine($"Finished profiling, {totalTicks} ticks past");
 
             foreach (var (name, profilerEntry) in data)
             {
+                var totalTime = $"{profilerEntry.TotalTimeMs:0.00}ms";
                 var mainThreadTime = $"{(double) profilerEntry.TotalMainThreadTimeMs / totalTicks:0.00}ms/f";
                 var offThreadTime = $"{(double) profilerEntry.TotalOffThreadTimeMs / totalTicks:0.00}ms/f";
-                messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel");
+                messageBuilder.AppendLine($"'{name}' took total {totalTime}, {mainThreadTime} main, {offThreadTime} parallel");
             }
 
             Context.Respond(messageBuilder.ToString());

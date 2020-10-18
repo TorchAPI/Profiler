@@ -12,6 +12,7 @@ namespace Profiler.Basics
         long _totalMainThreadTimeMs;
         long _totalOffThreadTimeMs;
 
+        // Use Pool
         ProfilerEntry()
         {
         }

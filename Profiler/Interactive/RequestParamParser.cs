@@ -33,7 +33,7 @@ namespace Profiler.Interactive
                 args[key] = value;
             }
 
-            if (args.TryGetValue("ticks", out var tickStr))
+            if (args.TryGetValue("secs", out var tickStr))
             {
                 if (!uint.TryParse(tickStr, out var tick))
                 {
