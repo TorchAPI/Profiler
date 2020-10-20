@@ -161,7 +161,13 @@
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core\IProfilerObserver.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
-    <Compile Include="Database\ProfilerDbClient.cs" />
+    <Compile Include="Database\DbBlockTypeProfiler.cs" />
+    <Compile Include="Database\DbFactionGridProfiler.cs" />
+    <Compile Include="Database\DbFactionProfiler.cs" />
+    <Compile Include="Database\DbProfilerConfig.cs" />
+    <Compile Include="Database\DbTotalProfiler.cs" />
+    <Compile Include="Database\IDbProfiler.cs" />
+    <Compile Include="Database\DbGridProfiler.cs" />
     <Compile Include="Core\MyDistributedUpdaterReflection.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />

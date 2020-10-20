@@ -286,21 +286,5 @@ namespace Profiler
             Context.Respond("Add --gps to show positional results as GPS points (players only)");
             Context.Respond("Results are reported as entry description, milliseconds per tick (updates per tick)");
         }
-
-        [Command("dbstop", "Stops database reporting")]
-        [Permission(MyPromoteLevel.Moderator)]
-        public void DbStop()
-        {
-            var plugin = (ProfilerPlugin) Context.Plugin;
-            plugin.StopDbReporting();
-        }
-
-        [Command("dbrestart", "Restarts database reporting")]
-        [Permission(MyPromoteLevel.Moderator)]
-        public void DbRestart()
-        {
-            var plugin = (ProfilerPlugin) Context.Plugin;
-            plugin.StartDbReporting();
-        }
     }
 }

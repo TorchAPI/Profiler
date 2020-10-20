@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
@@ -17,9 +19,15 @@ namespace Profiler
     /// </summary>
     public class ProfilerPlugin : TorchPluginBaseEx
     {
-        static readonly Logger _logger = LogManager.GetCurrentClassLogger();
+        static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        ProfilerDbClient _dbClient;
+        readonly List<IDbProfiler> _dbProfilers;
+        CancellationTokenSource _dbProfilersCanceller;
+
+        public ProfilerPlugin()
+        {
+            _dbProfilers = new List<IDbProfiler>();
+        }
 
         /// <inheritdoc cref="TorchPluginBase.Init"/>
         public override void Init(ITorchBase torch)
@@ -32,39 +40,60 @@ namespace Profiler
 
         protected override void OnGameLoaded()
         {
+            Task.Factory.StartNew(StartDbProfilers).Forget(Log);
+
+            MyMultiplayer.Static.Tick();
+        }
+
+        void StartDbProfilers()
+        {
+            // config
+            const string ConfigFileName = "Profiler.config";
+            if (!TryFindConfigFile<DbProfilerConfig>(ConfigFileName, out var config))
+            {
+                Log.Info("Creating a new DbProfiler config file with default content");
+                CreateConfigFile(ConfigFileName, new DbProfilerConfig());
+                TryFindConfigFile(ConfigFileName, out config);
+            }
+
+            // database endpoint
             var dbManager = Torch.Managers.GetManager<InfluxDbManager>();
             if (dbManager == null)
             {
                 throw new Exception($"{nameof(InfluxDbManager)} not found");
             }
 
-            _dbClient = new ProfilerDbClient(dbManager.Client);
-
-            StartThread(async () =>
+            _dbProfilers.AddRange(new IDbProfiler[]
             {
-                await Task.Delay(TimeSpan.FromSeconds(120));
-                await _dbClient.StartProfiling();
+                new DbTotalProfiler(dbManager.Client),
+                new DbGridProfiler(dbManager.Client),
+                new DbFactionProfiler(dbManager.Client),
+                new DbBlockTypeProfiler(dbManager.Client),
+                new DbFactionGridProfiler(dbManager.Client, config),
             });
 
-            MyMultiplayer.Static.Tick();
-        }
-
-        public void StartDbReporting()
-        {
-            StartThread(async () =>
+            _dbProfilersCanceller = new CancellationTokenSource();
+            foreach (var dbProfiler in _dbProfilers)
             {
-                await _dbClient.StartProfiling();
-            });
+                try
+                {
+                    dbProfiler.StartProfiling(_dbProfilersCanceller.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // pass
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
         }
 
-        public void StopDbReporting()
+        protected override void OnGameUnloading()
         {
-            _dbClient.StopProfiling();
-        }
-
-        static void StartThread(Func<Task> f)
-        {
-            Task.Factory.StartNew(f).Forget(_logger);
+            _dbProfilersCanceller.Cancel();
+            _dbProfilersCanceller.Dispose();
         }
     }
 }
