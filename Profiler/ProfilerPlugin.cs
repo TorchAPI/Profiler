@@ -40,7 +40,7 @@ namespace Profiler
 
         protected override void OnGameLoaded()
         {
-            Task.Factory.StartNew(StartDbProfilers).Forget(Log);
+            StartDbProfilers();
 
             MyMultiplayer.Static.Tick();
         }
@@ -73,21 +73,26 @@ namespace Profiler
             });
 
             _dbProfilersCanceller = new CancellationTokenSource();
-            foreach (var dbProfiler in _dbProfilers)
-            {
-                try
+
+            Task.Factory
+                .StartNew(() =>
                 {
-                    dbProfiler.StartProfiling(_dbProfilersCanceller.Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    // pass
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e);
-                }
-            }
+                    Parallel.ForEach(_dbProfilers, dbProfiler =>
+                    {
+                        try
+                        {
+                            dbProfiler.StartProfiling(_dbProfilersCanceller.Token);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // pass
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Warn(e);
+                        }
+                    });
+                }).Forget(Log);
         }
 
         protected override void OnGameUnloading()
