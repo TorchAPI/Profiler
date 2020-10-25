@@ -76,6 +76,8 @@ namespace Profiler.Core
 
         public static void Patch(PatchContext ctx)
         {
+            Log.Trace("Profiler patch started");
+            
             ReflectedManager.Process(typeof(ProfilerPatch));
 
             ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(DoTick);
@@ -114,6 +116,8 @@ namespace Profiler.Core
 
             ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(PrefixProfilePb)));
             ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(SuffixProfilePb)));
+            
+            Log.Trace("Profiler patch ended");
         }
 
         // ReSharper disable InconsistentNaming
@@ -138,6 +142,8 @@ namespace Profiler.Core
             MethodBase __methodBase)
         {
             var methodBaseName = $"{__methodBase.DeclaringType?.FullName}#{__methodBase.Name}";
+            Log.Trace($"Starting TranspilerForUpdate for method {methodBaseName}");
+            
             var profilerEntry = __localCreator(typeof(ProfilerToken?));
 
             var il = instructions.ToList();
@@ -149,12 +155,15 @@ namespace Profiler.Core
                 if ((insn.OpCode == OpCodes.Call || insn.OpCode == OpCodes.Callvirt) && insn.Operand is MsilOperandInline<MethodBase> methodOperand)
                 {
                     var method = methodOperand.Value;
+                    Log.Trace($"Found method {method.Name} (may not patch)");
+
                     if (method.Name.StartsWith("UpdateBeforeSimulation")
                         || method.Name.StartsWith("UpdateAfterSimulation")
                         || method.Name == "UpdateOnceBeforeFrame"
                         || method.Name == "Simulate")
                     {
                         var methodName = $"{method.DeclaringType?.FullName}#{method.Name}";
+                        Log.Trace($"Matched method name {methodName} (may not patch)");
 
                         if (method.IsStatic)
                         {
@@ -181,7 +190,7 @@ namespace Profiler.Core
 
                         foundAny = true;
                         
-                        Log.Debug($"Attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}");
+                        Log.Trace($"Attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}");
                         var startProfiler = new[]
                         {
                             new MsilInstruction(OpCodes.Dup), // duplicate the object the update is called on
@@ -211,6 +220,8 @@ namespace Profiler.Core
             {
                 Log.Error($"Didn't find any update profiling targets for {methodBaseName}.  Some profiling data will be missing");
             }
+            
+            Log.Trace($"Finished TranspilerForUpdate for method {methodBaseName}");
 
             return il;
         }
