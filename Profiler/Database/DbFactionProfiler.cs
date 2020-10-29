@@ -13,7 +13,6 @@ namespace Profiler.Database
     public sealed class DbFactionProfiler : IDbProfiler
     {
         const int SamplingSeconds = 10;
-        const int MaxDisplayCount = 4;
         readonly InfluxDbClient _dbClient;
 
         public DbFactionProfiler(InfluxDbClient dbClient)
@@ -47,7 +46,6 @@ namespace Profiler.Database
 
             var topResults = entities
                 .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
-                .Take(MaxDisplayCount)
                 .ToArray();
 
             foreach (var (faction, profilerEntry) in topResults)
@@ -55,7 +53,7 @@ namespace Profiler.Database
                 var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
 
                 var point = _dbClient.MakePointIn("profiler_factions")
-                    .Tag("faction_name", faction.Tag)
+                    .Tag("faction_tag", faction.Tag)
                     .Field("main_ms", deltaTime);
 
                 points.Add(point);
