@@ -149,6 +149,7 @@
     <Compile Include="..\Versioning\AssemblyVersion.cs">
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
+    <Compile Include="Basics\BaseProfiler.cs" />
     <Compile Include="Basics\BlockDefinitionProfiler.cs" />
     <Compile Include="Basics\BlockTypeProfiler.cs" />
     <Compile Include="Basics\FactionProfiler.cs" />
@@ -156,11 +157,17 @@
     <Compile Include="Basics\GridProfiler.cs" />
     <Compile Include="Basics\PlayerProfiler.cs" />
     <Compile Include="Basics\ProfilerEntry.cs" />
+    <Compile Include="Basics\TotalProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core\IProfilerObserver.cs" />
-    <Compile Include="Core\Entrypoint.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
-    <Compile Include="Database\ProfilerDbClient.cs" />
+    <Compile Include="Database\DbBlockTypeProfiler.cs" />
+    <Compile Include="Database\DbFactionGridProfiler.cs" />
+    <Compile Include="Database\DbFactionProfiler.cs" />
+    <Compile Include="Database\DbProfilerConfig.cs" />
+    <Compile Include="Database\DbTotalProfiler.cs" />
+    <Compile Include="Database\IDbProfiler.cs" />
+    <Compile Include="Database\DbGridProfiler.cs" />
     <Compile Include="Core\MyDistributedUpdaterReflection.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
@@ -181,6 +188,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="postbuild.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Tree" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -1,47 +1,31 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using Profiler.Core;
 using Profiler.Util;
 using Sandbox.Game.Entities;
 
 namespace Profiler.Basics
 {
-    public sealed class BlockTypeProfiler : IProfilerObserver, IDisposable
+    public sealed class BlockTypeProfiler : BaseProfiler<Type>
     {
         readonly GameEntityMask _mask;
-        readonly ConcurrentDictionary<Type, ProfilerEntry> _profilerEntries;
-        readonly Func<Type, ProfilerEntry> _makeProfilerEntity;
 
         public BlockTypeProfiler(GameEntityMask mask)
         {
             _mask = mask;
-            _profilerEntries = new ConcurrentDictionary<Type, ProfilerEntry>();
-            _makeProfilerEntity = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
         }
 
-        public IEnumerable<(Type Type, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        protected override bool TryAccept(ProfilerResult profilerResult, out Type key)
         {
-            return _profilerEntries.Select(kv => (kv.Key, kv.Value)).ToArray();
-        }
+            key = null;
+            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
 
-        public void OnProfileComplete(in ProfilerResult profilerResult)
-        {
-            if (profilerResult.Entrypoint != Entrypoint.General) return;
-            
             var block = profilerResult.GameEntity.GetParentEntityOfType<MyCubeBlock>();
-            if (block == null) return;
-            if (!_mask.AcceptBlock(block)) return;
-            if (block.BlockDefinition == null) return;
+            if (block == null) return false;
+            if (!_mask.AcceptBlock(block)) return false;
+            if (block.BlockDefinition == null) return false;
 
-            var profilerEntry = _profilerEntries.GetOrAdd(block.GetType(), _makeProfilerEntity);
-            profilerEntry.Add(profilerResult);
-        }
-
-        public void Dispose()
-        {
-            ProfilerEntry.Pool.Instance.PoolAll(_profilerEntries.Values);
+            key = block.GetType();
+            return true;
         }
     }
 }

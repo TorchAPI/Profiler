@@ -23,22 +23,22 @@ namespace Profiler
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly GpsSendClient _gpsSendClient = new GpsSendClient();
 
-        const string HelpText = "--ticks=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
+        const string HelpText = "--secs=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
 
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void BlockType()
+        public void ProfileBlockType()
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling by block type");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new BlockTypeProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling by block type, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -49,27 +49,32 @@ namespace Profiler
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Take(args.Top)
-                        .Select(p => (p.Type.ToString(), p.ProfilerEntry));
+                        .Select(p => (BlockTypeToString(p.Key), p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
 
+        static string BlockTypeToString(Type type)
+        {
+            return type.ToString().Split('.').LastOrDefault() ?? "unknown";
+        }
+
         [Command("blocks", "Profiles performance per block definition", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Block()
+        public void ProfileBlock()
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling by block definition");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new BlockDefinitionProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling by block definition, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -80,27 +85,27 @@ namespace Profiler
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
                         .Take(args.Top)
-                        .Select(p => (p.BlockDefinition.BlockPairName, p.ProfilerEntry));
+                        .Select(p => (p.Key.BlockPairName, p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
 
         [Command("grids", "Profiles performance per grid", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Grids()
+        public void ProfileGrids()
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling grids");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new GridProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling grids, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -110,11 +115,11 @@ namespace Profiler
 
                     var gridProfilerEntries = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Where(p => !p.Grid.Closed)
+                        .Where(p => !p.Key.Closed)
                         .Take(args.Top);
 
-                    var data = gridProfilerEntries.Select(p => (p.Grid.DisplayName, p.ProfilerEntry));
-                    Respond(args.Seconds, totalTicks, data);
+                    var data = gridProfilerEntries.Select(p => (p.Key.DisplayName, p.ProfilerEntry));
+                    Respond(totalTicks, data);
 
                     if (args.SendGpsToPlayer)
                     {
@@ -133,18 +138,18 @@ namespace Profiler
 
         [Command("factions", "Profiles performance per faction", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Factions()
+        public void ProfileFactions()
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling factions");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new FactionProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling factions, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -154,29 +159,29 @@ namespace Profiler
 
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Where(p => p.Faction != null)
+                        .Where(p => p.Key != null)
                         .Take(args.Top)
-                        .Select(p => (p.Faction.Tag, p.ProfilerEntry));
+                        .Select(p => (p.Key.Tag, p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
 
         [Command("players", "Profiles performance per player", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Players()
+        public void ProfilePlayers()
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling players");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new PlayerProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling players, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -190,25 +195,25 @@ namespace Profiler
                         .Select(p => (p.Player.DisplayName, p.ProfilerEntry))
                         .Take(args.Top);
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
 
         [Command("scripts", "Profiles performance of programmable blocks")]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Scripts()
+        public void ProfileScripts()
         {
             RunThread(async () =>
             {
-                Context.Respond("Started profiling by block definition");
-
                 var args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new UserScriptProfiler(mask))
                 using (ProfilerPatch.AddObserverUntilDisposed(profiler))
                 {
+                    Context.Respond($"Started profiling scripts, result in {args.Seconds}s");
+
                     var startTick = ProfilerPatch.CurrentTick;
 
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
@@ -218,16 +223,16 @@ namespace Profiler
 
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Where(p => !p.PB.Closed)
+                        .Where(p => !p.Key.Closed)
                         .Take(args.Top)
-                        .Select(p => (NameProgrammableBlock(p.PB), p.ProfilerEntry));
+                        .Select(p => (PbToString(p.Key), p.ProfilerEntry));
 
-                    Respond(args.Seconds, totalTicks, data);
+                    Respond(totalTicks, data);
                 }
             });
         }
 
-        static string NameProgrammableBlock(MyProgrammableBlock pb)
+        static string PbToString(MyProgrammableBlock pb)
         {
             var blockName = pb.DisplayName;
             var gridName = pb.GetParentEntityOfType<MyCubeGrid>()?.DisplayName ?? "<none>";
@@ -238,17 +243,18 @@ namespace Profiler
         {
             Task.Factory.StartNew(task).Forget(Log);
         }
-
-        void Respond(ulong totalSeconds, ulong totalTicks, IEnumerable<(string, ProfilerEntry)> data)
+        
+        void Respond(ulong totalTicks, IEnumerable<(string, ProfilerEntry)> data)
         {
             var messageBuilder = new StringBuilder();
-            messageBuilder.AppendLine($"Finished profiling for {totalSeconds}s");
+            messageBuilder.AppendLine($"Finished profiling, {totalTicks} ticks past");
 
             foreach (var (name, profilerEntry) in data)
             {
+                var totalTime = $"{profilerEntry.TotalTimeMs:0.00}ms";
                 var mainThreadTime = $"{(double) profilerEntry.TotalMainThreadTimeMs / totalTicks:0.00}ms/f";
                 var offThreadTime = $"{(double) profilerEntry.TotalOffThreadTimeMs / totalTicks:0.00}ms/f";
-                messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel");
+                messageBuilder.AppendLine($"'{name}' took total {totalTime}, {mainThreadTime} main, {offThreadTime} parallel");
             }
 
             Context.Respond(messageBuilder.ToString());
@@ -279,22 +285,6 @@ namespace Profiler
             Context.Respond("Add --this to profile the entity you're currently controlling (players only)");
             Context.Respond("Add --gps to show positional results as GPS points (players only)");
             Context.Respond("Results are reported as entry description, milliseconds per tick (updates per tick)");
-        }
-
-        [Command("dbstop", "Stops database reporting")]
-        [Permission(MyPromoteLevel.Moderator)]
-        public void DbStop()
-        {
-            var plugin = (ProfilerPlugin) Context.Plugin;
-            plugin.StopDbReporting();
-        }
-
-        [Command("dbrestart", "Restarts database reporting")]
-        [Permission(MyPromoteLevel.Moderator)]
-        public void DbRestart()
-        {
-            var plugin = (ProfilerPlugin) Context.Plugin;
-            plugin.StartDbReporting();
         }
     }
 }
