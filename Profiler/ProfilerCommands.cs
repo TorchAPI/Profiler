@@ -6,13 +6,11 @@ using System.Threading.Tasks;
 using NLog;
 using Profiler.Basics;
 using Profiler.Core;
-using Profiler.Interactive;
 using Profiler.Util;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
-using Torch.Server.Utils;
 using VRage.Game.ModAPI;
 
 namespace Profiler
@@ -254,7 +252,7 @@ namespace Profiler
                 var totalTime = $"{profilerEntry.TotalTimeMs:0.00}ms";
                 var mainThreadTime = $"{(double) profilerEntry.TotalMainThreadTimeMs / totalTicks:0.00}ms/f";
                 var offThreadTime = $"{(double) profilerEntry.TotalOffThreadTimeMs / totalTicks:0.00}ms/f";
-                messageBuilder.AppendLine($"'{name}' took total {totalTime}, {mainThreadTime} main, {offThreadTime} parallel");
+                messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel (total {totalTime}");
             }
 
             Context.Respond(messageBuilder.ToString());

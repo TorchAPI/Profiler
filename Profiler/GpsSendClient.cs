@@ -6,7 +6,7 @@ using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
 
-namespace Profiler.Interactive
+namespace Profiler
 {
     public sealed class GpsSendClient
     {

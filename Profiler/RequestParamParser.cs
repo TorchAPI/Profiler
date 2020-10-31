@@ -4,7 +4,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.World;
 using VRage.Game.ModAPI;
 
-namespace Profiler.Interactive
+namespace Profiler
 {
     public sealed class RequestParamParser
     {

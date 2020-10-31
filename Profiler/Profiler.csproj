@@ -39,12 +39,6 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="PresentationFramework.Aero" />
-    <Reference Include="InfluxDB.Client">
-      <HintPath>$(SolutionDir)\TorchBinaries\InfluxDB.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="InfluxDB.Client.Core">
-      <HintPath>$(SolutionDir)\TorchBinaries\InfluxDB.Client.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Sandbox.Common">
       <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Common.dll</HintPath>
       <Private>False</Private>
@@ -161,38 +155,23 @@
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core\IProfiler.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
-    <Compile Include="Database\DbBlockTypeProfiler.cs" />
-    <Compile Include="Database\DbFactionGridProfiler.cs" />
-    <Compile Include="Database\DbFactionProfiler.cs" />
-    <Compile Include="Database\DbProfilerConfig.cs" />
-    <Compile Include="Database\DbTotalProfiler.cs" />
-    <Compile Include="Database\IDbProfiler.cs" />
-    <Compile Include="Database\DbGridProfiler.cs" />
     <Compile Include="Core\MyDistributedUpdaterReflection.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
-    <Compile Include="Interactive\GpsSendClient.cs" />
-    <Compile Include="Interactive\RequestParamParser.cs" />
+    <Compile Include="GpsSendClient.cs" />
     <Compile Include="ProfilerCommands.cs" />
+    <Compile Include="RequestParamParser.cs" />
     <Compile Include="Util\ActionDisposable.cs" />
     <Compile Include="Util\IterableWeakTable.cs" />
     <Compile Include="Util\ObjectPool.cs" />
     <Compile Include="Util\ProfilerUtils.cs" />
     <Compile Include="Util\ReflectionUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
-    <Compile Include="Util\TickTaskSource.cs" />
+    <Compile Include="Util\TaskUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="postbuild.bat" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>
-      [ -z "$NoDeploy" ] || $(ProjectDir)postbuild.bat $(ProjectName) $(SolutionDir)
-    </PostBuildEvent>
-  </PropertyGroup>
 </Project>

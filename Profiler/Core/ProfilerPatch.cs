@@ -68,7 +68,6 @@ namespace Profiler.Core
         private static readonly MethodInfo _generalizedUpdateTranspiler = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(TranspilerForUpdate));
 
         static readonly List<IProfiler> _observers = new List<IProfiler>();
-        static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
         public static ulong CurrentTick { get; private set; }
 
         public const string GeneralEntrypoint = "General";
@@ -317,17 +316,6 @@ namespace Profiler.Core
         static void Tick()
         {
             CurrentTick++;
-
-            _tickTaskSource.Tick(CurrentTick);
-        }
-
-        /// <summary>
-        /// Waits until the next tick of the game.
-        /// </summary>
-        /// <returns>Awaitable object that retrieves the current tick when the game ticks next time.</returns>
-        public static TickTaskSource.TickTask WaitUntilNextGameTick()
-        {
-            return _tickTaskSource.GetTask();
         }
     }
 }

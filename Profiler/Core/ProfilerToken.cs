@@ -27,6 +27,7 @@ namespace Profiler.Core
         /// Instantiate.
         /// </summary>
         /// <param name="gameEntity">Game entity responsible for the profiled method.</param>
+        /// <param name="entrypoint">Category of the profiled method.</param>
         /// <param name="startTimestamp">Timestamp of when this profiling started.</param>
         public ProfilerToken(IMyEntity gameEntity, string entrypoint, DateTime startTimestamp)
         {

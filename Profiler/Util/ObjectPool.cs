@@ -5,7 +5,6 @@ namespace Profiler.Util
 {
     /// <summary>
     /// Typical object pool with thread-safe pooling/unpooling functions.
-    /// O(1) for pooling and unpooling.
     /// </summary>
     /// <typeparam name="T">Type of objects to be stored in this pool.</typeparam>
     public abstract class ObjectPool<T>
