@@ -22,7 +22,7 @@ namespace Profiler.Database
             while (!canceller.IsCancellationRequested)
             {
                 var profiler = new TotalProfiler();
-                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
 

@@ -3,8 +3,8 @@
     /// <summary>
     /// Receive and consume profiling data.
     /// </summary>
-    /// <remarks>Should be implemented and fed to ProfilerPatch.AddObserver() to receive profiling data of the game.</remarks>
-    public interface IProfilerObserver
+    /// <remarks>Should be implemented and fed to ProfilerPatch.AddProfiler() to receive profiling data of the game.</remarks>
+    public interface IProfiler
     {
         /// <summary>
         /// Called when a profiled method finished running.

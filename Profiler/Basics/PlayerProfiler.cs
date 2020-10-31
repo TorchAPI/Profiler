@@ -7,7 +7,7 @@ using Sandbox.Game.World;
 
 namespace Profiler.Basics
 {
-    public sealed class PlayerProfiler : IProfilerObserver, IDisposable
+    public sealed class PlayerProfiler : IProfiler, IDisposable
     {
         readonly GameEntityMask _mask;
         readonly ConcurrentDictionary<MyIdentity, ProfilerEntry> _profilerEntries;

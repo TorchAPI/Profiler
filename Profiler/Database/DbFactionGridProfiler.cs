@@ -35,7 +35,7 @@ namespace Profiler.Database
                 var gameEntityMask = new GameEntityMask(null, null, factionId);
 
                 using (var gridProfiler = new GridProfiler(gameEntityMask))
-                using (ProfilerPatch.AddObserverUntilDisposed(gridProfiler))
+                using (ProfilerPatch.Profile(gridProfiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
 

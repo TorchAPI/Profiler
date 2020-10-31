@@ -35,7 +35,7 @@ namespace Profiler
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new BlockTypeProfiler(mask))
-                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     Context.Respond($"Started profiling by block type, result in {args.Seconds}s");
 
@@ -71,7 +71,7 @@ namespace Profiler
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new BlockDefinitionProfiler(mask))
-                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     Context.Respond($"Started profiling by block definition, result in {args.Seconds}s");
 
@@ -102,7 +102,7 @@ namespace Profiler
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new GridProfiler(mask))
-                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     Context.Respond($"Started profiling grids, result in {args.Seconds}s");
 
@@ -146,7 +146,7 @@ namespace Profiler
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new FactionProfiler(mask))
-                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     Context.Respond($"Started profiling factions, result in {args.Seconds}s");
 
@@ -178,7 +178,7 @@ namespace Profiler
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new PlayerProfiler(mask))
-                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     Context.Respond($"Started profiling players, result in {args.Seconds}s");
 
@@ -210,7 +210,7 @@ namespace Profiler
                 var mask = new GameEntityMask(args.PlayerMask, args.GridMask, args.FactionMask);
 
                 using (var profiler = new UserScriptProfiler(mask))
-                using (ProfilerPatch.AddObserverUntilDisposed(profiler))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     Context.Respond($"Started profiling scripts, result in {args.Seconds}s");
 

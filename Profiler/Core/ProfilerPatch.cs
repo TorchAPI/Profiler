@@ -67,7 +67,7 @@ namespace Profiler.Core
 
         private static readonly MethodInfo _generalizedUpdateTranspiler = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(TranspilerForUpdate));
 
-        static readonly List<IProfilerObserver> _observers = new List<IProfilerObserver>();
+        static readonly List<IProfiler> _observers = new List<IProfiler>();
         static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
         public static ulong CurrentTick { get; private set; }
 
@@ -277,7 +277,7 @@ namespace Profiler.Core
         /// Add an observer to receive profiling data of every update method in the game world.
         /// </summary>
         /// <param name="observer">Observer object to receive profiling data until removed.</param>
-        public static void AddObserver(IProfilerObserver observer)
+        public static void AddProfiler(IProfiler observer)
         {
             lock (_observers)
             {
@@ -295,7 +295,7 @@ namespace Profiler.Core
         /// Remove an observer to stop receiving profiling data.
         /// </summary>
         /// <param name="observer">Observer object to remove from the profiler.</param>
-        public static void RemoveObserver(IProfilerObserver observer)
+        public static void RemoveProfiler(IProfiler observer)
         {
             lock (_observers)
             {
@@ -308,10 +308,10 @@ namespace Profiler.Core
         /// </summary>
         /// <param name="observer">Observer to add/remove.</param>
         /// <returns>IDisposable object that, when disposed, removes the observer from the profiler.</returns>
-        public static IDisposable AddObserverUntilDisposed(IProfilerObserver observer)
+        public static IDisposable Profile(IProfiler observer)
         {
-            AddObserver(observer);
-            return new ActionDisposable(() => RemoveObserver(observer));
+            AddProfiler(observer);
+            return new ActionDisposable(() => RemoveProfiler(observer));
         }
 
         static void Tick()

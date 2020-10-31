@@ -10,7 +10,7 @@ namespace Profiler.Basics
     /// Implement basic features of a profiler that makes use of ProfilerEntry.
     /// </summary>
     /// <remarks>You can use ProfilerPatch without this class.</remarks>
-    public abstract class BaseProfiler<K> : IProfilerObserver, IDisposable
+    public abstract class BaseProfiler<K> : IProfiler, IDisposable
     {
         // Thread-safe dictionary of ProfilerEntry with an arbitrary type of keys.
         readonly ConcurrentDictionary<K, ProfilerEntry> _profilerEntries;

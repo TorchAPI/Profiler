@@ -4,7 +4,7 @@ using Profiler.Core;
 
 namespace Profiler.Basics
 {
-    public sealed class TotalProfiler : IProfilerObserver
+    public sealed class TotalProfiler : IProfiler
     {
         long _mainThreadMs;
         long _offThreadMs;

@@ -159,7 +159,7 @@
     <Compile Include="Basics\ProfilerEntry.cs" />
     <Compile Include="Basics\TotalProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
-    <Compile Include="Core\IProfilerObserver.cs" />
+    <Compile Include="Core\IProfiler.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
     <Compile Include="Database\DbBlockTypeProfiler.cs" />
     <Compile Include="Database\DbFactionGridProfiler.cs" />
@@ -188,9 +188,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="postbuild.bat" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Tree" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

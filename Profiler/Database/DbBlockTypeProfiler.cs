@@ -27,7 +27,7 @@ namespace Profiler.Database
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
                 using (var blockTypeProfiler = new BlockTypeProfiler(gameEntityMask))
-                using (ProfilerPatch.AddObserverUntilDisposed(blockTypeProfiler))
+                using (ProfilerPatch.Profile(blockTypeProfiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
 
