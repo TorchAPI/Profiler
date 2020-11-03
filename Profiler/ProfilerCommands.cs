@@ -41,6 +41,7 @@ namespace Profiler
 
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
@@ -77,6 +78,7 @@ namespace Profiler
 
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
@@ -108,6 +110,7 @@ namespace Profiler
 
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
@@ -152,6 +155,7 @@ namespace Profiler
 
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
@@ -184,6 +188,7 @@ namespace Profiler
 
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
@@ -191,8 +196,8 @@ namespace Profiler
 
                     var data = profilerEntities
                         .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
-                        .Where(p => p.Player != null)
-                        .Select(p => (p.Player.DisplayName, p.ProfilerEntry))
+                        .Where(p => p.Key != null)
+                        .Select(p => (p.Key.DisplayName, p.ProfilerEntry))
                         .Take(args.Top);
 
                     Respond(totalTicks, data);
@@ -216,6 +221,7 @@ namespace Profiler
 
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;

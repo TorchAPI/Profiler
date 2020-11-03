@@ -26,16 +26,17 @@ namespace Profiler.Database
             while (!canceller.IsCancellationRequested)
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
-                using (var blockTypeProfiler = new BlockTypeProfiler(gameEntityMask))
-                using (ProfilerPatch.Profile(blockTypeProfiler))
+                using (var profiler = new BlockTypeProfiler(gameEntityMask))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
 
-                    var blockTypeProfilerEntities = blockTypeProfiler.GetProfilerEntries();
+                    var blockTypeProfilerEntities = profiler.GetProfilerEntries();
                     OnProfilingFinished(totalTicks, blockTypeProfilerEntities);
                 }
             }

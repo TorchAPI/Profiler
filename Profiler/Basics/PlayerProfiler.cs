@@ -1,47 +1,30 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using Profiler.Core;
+﻿using Profiler.Core;
 using Sandbox.Game.World;
 
 namespace Profiler.Basics
 {
-    public sealed class PlayerProfiler : IProfiler, IDisposable
+    public sealed class PlayerProfiler : BaseProfiler<MyIdentity>
     {
         readonly GameEntityMask _mask;
-        readonly ConcurrentDictionary<MyIdentity, ProfilerEntry> _profilerEntries;
-        readonly Func<MyIdentity, ProfilerEntry> _makeProfilerEntity;
 
         public PlayerProfiler(GameEntityMask mask)
         {
             _mask = mask;
-            _profilerEntries = new ConcurrentDictionary<MyIdentity, ProfilerEntry>();
-            _makeProfilerEntity = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
         }
 
-        public IEnumerable<(MyIdentity Player, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        protected override bool TryAccept(ProfilerResult profilerResult, out MyIdentity key)
         {
-            return _profilerEntries.Select(kv => (kv.Key, kv.Value));
-        }
+            key = null;
+            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
 
-        public void OnProfileComplete(in ProfilerResult profilerResult)
-        {
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return;
-            
             var playerIdOrNull = _mask.ExtractPlayer(profilerResult.GameEntity);
-            if (!(playerIdOrNull is long playerId)) return;
+            if (!(playerIdOrNull is long playerId)) return false;
 
             var identity = MySession.Static.Players.TryGetIdentity(playerId);
-            if (identity == null) return;
+            if (identity == null) return false;
 
-            var profilerEntry = _profilerEntries.GetOrAdd(identity, _makeProfilerEntity);
-            profilerEntry.Add(profilerResult);
-        }
-
-        public void Dispose()
-        {
-            ProfilerEntry.Pool.Instance.PoolAll(_profilerEntries.Values);
+            key = identity;
+            return true;
         }
     }
 }

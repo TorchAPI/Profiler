@@ -25,16 +25,17 @@ namespace Profiler.Database
             while (!canceller.IsCancellationRequested)
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
-                using (var factionProfiler = new FactionProfiler(gameEntityMask))
-                using (ProfilerPatch.Profile(factionProfiler))
+                using (var profiler = new FactionProfiler(gameEntityMask))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
 
+                    profiler.StartProcessQueue();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
 
-                    var factionProfilerEntities = factionProfiler.GetProfilerEntries();
+                    var factionProfilerEntities = profiler.GetProfilerEntries();
                     OnProfilingFinished(totalTicks, factionProfilerEntities);
                 }
             }

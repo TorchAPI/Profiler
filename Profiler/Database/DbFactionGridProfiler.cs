@@ -34,16 +34,17 @@ namespace Profiler.Database
                 var factionId = faction?.FactionId;
                 var gameEntityMask = new GameEntityMask(null, null, factionId);
 
-                using (var gridProfiler = new GridProfiler(gameEntityMask))
-                using (ProfilerPatch.Profile(gridProfiler))
+                using (var profiler = new GridProfiler(gameEntityMask))
+                using (ProfilerPatch.Profile(profiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
-
+                    
+                    profiler.StartProcessQueue();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
 
-                    var gridProfilerEntries = gridProfiler.GetProfilerEntries();
+                    var gridProfilerEntries = profiler.GetProfilerEntries();
                     OnProfilingFinished(totalTicks, gridProfilerEntries);
                 }
             }
