@@ -59,31 +59,44 @@ namespace Profiler.Basics
 
         void ProcessQueue()
         {
+            var queueCancellerToken = _queueCanceller.Token;
             while (!_queueCanceller.IsCancellationRequested)
             {
+                while (_queuedProfilerResults.TryDequeue(out var profilerResult))
+                {
+                    OnProfilerResultDequeued(profilerResult);
+                }
+
                 try
                 {
-                    while (_queuedProfilerResults.TryDequeue(out var profilerResult))
-                    {
-                        if (TryAccept(profilerResult, out var key))
-                        {
-                            var profilerEntry = _profilerEntries.GetOrAdd(key, _makeProfilerEntity);
-                            profilerEntry.Add(profilerResult);
-                        }
-                    }
-
                     // wait for the next interval, or throws if cancelled
-                    _queueCanceller.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(0.1f));
+                    queueCancellerToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(0.1f));
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
                 }
                 catch (OperationCanceledException)
                 {
-                    // pass
+                    return;
                 }
-                catch (Exception e)
+            }
+        }
+
+        void OnProfilerResultDequeued(in ProfilerResult profilerResult)
+        {
+            try
+            {
+                if (TryAccept(profilerResult, out var key))
                 {
-                    // catches exceptions in `TryAccept()`.
-                    LogManager.GetLogger(GetType().FullName).Error(e);
+                    var profilerEntry = _profilerEntries.GetOrAdd(key, _makeProfilerEntity);
+                    profilerEntry.Add(profilerResult);
                 }
+            }
+            catch (Exception e)
+            {
+                // catches exceptions in `TryAccept()`.
+                LogManager.GetLogger(GetType().FullName).Error(e);
             }
         }
 
