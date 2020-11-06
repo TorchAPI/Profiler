@@ -12,7 +12,7 @@ using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
-using Torch.Server.Utils;
+using TorchUtils;
 using VRage.Game.ModAPI;
 
 namespace Profiler

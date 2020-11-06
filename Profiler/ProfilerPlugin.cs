@@ -8,14 +8,14 @@ using Profiler.Database;
 using Sandbox.Engine.Multiplayer;
 using Torch;
 using Torch.API;
-using Torch.Server.Utils;
+using TorchUtils;
 
 namespace Profiler
 {
     /// <summary>
     /// Plugin that lets you profile entities 
     /// </summary>
-    public class ProfilerPlugin : TorchPluginBaseEx
+    public class ProfilerPlugin : TorchPluginBase
     {
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -31,12 +31,14 @@ namespace Profiler
         public override void Init(ITorchBase torch)
         {
             base.Init(torch);
+            this.ListenOnGameLoaded(() => OnGameLoaded());
+            this.ListenOnGameUnloading(() => OnGameUnloading());
 
             var pgmr = new ProfilerManager(torch);
             torch.Managers.AddManager(pgmr);
         }
 
-        protected override void OnGameLoaded()
+        void OnGameLoaded()
         {
             StartDbProfilers();
 
@@ -47,11 +49,11 @@ namespace Profiler
         {
             // config
             const string ConfigFileName = "Profiler.config";
-            if (!TryFindConfigFile<DbProfilerConfig>(ConfigFileName, out var config))
+            if (!this.TryFindConfigFile<DbProfilerConfig>(ConfigFileName, out var config))
             {
                 Log.Info("Creating a new DbProfiler config file with default content");
-                CreateConfigFile(ConfigFileName, new DbProfilerConfig());
-                TryFindConfigFile(ConfigFileName, out config);
+                this.CreateConfigFile(ConfigFileName, new DbProfilerConfig());
+                this.TryFindConfigFile(ConfigFileName, out config);
             }
 
             _dbProfilers.AddRange(new IDbProfiler[]
@@ -86,7 +88,7 @@ namespace Profiler
                 }).Forget(Log);
         }
 
-        protected override void OnGameUnloading()
+        void OnGameUnloading()
         {
             _dbProfilersCanceller.Cancel();
             _dbProfilersCanceller.Dispose();
