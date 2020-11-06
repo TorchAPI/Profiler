@@ -32,6 +32,9 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="TorchDatabaseIntegration">
+      <HintPath>$(SolutionDir)\..\TorchDatabaseIntegration\TorchDatabaseIntegration\bin\Release\TorchDatabaseIntegration.dll</HintPath>
+    </Reference>
     <Reference Include="NLog">
       <HintPath>$(SolutionDir)\TorchBinaries\NLog.dll</HintPath>
       <Private>False</Private>
@@ -39,12 +42,6 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="PresentationFramework.Aero" />
-    <Reference Include="InfluxDB.Client">
-      <HintPath>$(SolutionDir)\TorchBinaries\InfluxDB.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="InfluxDB.Client.Core">
-      <HintPath>$(SolutionDir)\TorchBinaries\InfluxDB.Client.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Sandbox.Common">
       <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Common.dll</HintPath>
       <Private>False</Private>

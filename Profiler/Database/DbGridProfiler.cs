@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using InfluxDB.Client.Writes;
 using Profiler.Basics;
 using Profiler.Core;
 using Sandbox.Game.Entities;
-using Torch.Server.InfluxDb;
+using TorchDatabaseIntegration.InfluxDB;
 
 namespace Profiler.Database
 {
@@ -14,13 +13,6 @@ namespace Profiler.Database
     {
         const int SamplingSeconds = 10;
         const int MaxDisplayCount = 4;
-
-        readonly InfluxDbClient _dbClient;
-
-        public DbGridProfiler(InfluxDbClient dbClient)
-        {
-            _dbClient = dbClient;
-        }
 
         public void StartProfiling(CancellationToken canceller)
         {
@@ -31,7 +23,7 @@ namespace Profiler.Database
                 using (ProfilerPatch.Profile(profiler))
                 {
                     var startTick = ProfilerPatch.CurrentTick;
-                    
+
                     profiler.StartProcessQueue();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
@@ -45,8 +37,6 @@ namespace Profiler.Database
 
         void OnProfilingFinished(ulong totalTicks, IEnumerable<(MyCubeGrid Grid, ProfilerEntry ProfilerEntry)> entities)
         {
-            var points = new List<PointData>();
-
             var topResults = entities
                 .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
                 .Take(MaxDisplayCount)
@@ -58,14 +48,12 @@ namespace Profiler.Database
 
                 var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
 
-                var point = _dbClient.MakePointIn("profiler")
+                InfluxDbPointFactory
+                    .Measurement("profiler")
                     .Tag("grid_name", grid.DisplayName)
-                    .Field("main_ms", deltaTime);
-
-                points.Add(point);
+                    .Field("main_ms", deltaTime)
+                    .Write();
             }
-
-            _dbClient.WritePoints(points.ToArray());
         }
     }
 }

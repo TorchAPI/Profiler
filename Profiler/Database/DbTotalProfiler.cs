@@ -2,20 +2,13 @@
 using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
-using Torch.Server.InfluxDb;
+using TorchDatabaseIntegration.InfluxDB;
 
 namespace Profiler.Database
 {
     public sealed class DbTotalProfiler : IDbProfiler
     {
         const int SamplingSeconds = 10;
-
-        readonly InfluxDbClient _dbClient;
-
-        public DbTotalProfiler(InfluxDbClient dbClient)
-        {
-            _dbClient = dbClient;
-        }
 
         public void StartProfiling(CancellationToken canceller)
         {
@@ -37,11 +30,11 @@ namespace Profiler.Database
 
         void OnProfilingFinished(ulong totalTicks, long totalMainThreadMs, long totalOffThreadMs)
         {
-            var point = _dbClient.MakePointIn("profiler_total")
+            InfluxDbPointFactory
+                .Measurement("profiler_total")
                 .Field("main_thread", (float) totalMainThreadMs / totalTicks)
-                .Field("off_thread", (float) totalOffThreadMs / totalTicks);
-
-            _dbClient.WritePoints(point);
+                .Field("off_thread", (float) totalOffThreadMs / totalTicks)
+                .Write();
         }
     }
 }

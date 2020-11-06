@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using InfluxDB.Client.Writes;
 using Profiler.Basics;
 using Profiler.Core;
-using Torch.Server.InfluxDb;
+using TorchDatabaseIntegration.InfluxDB;
 
 namespace Profiler.Database
 {
@@ -13,13 +12,6 @@ namespace Profiler.Database
     {
         const int SamplingSeconds = 10;
         const int MaxDisplayCount = 4;
-
-        readonly InfluxDbClient _dbClient;
-
-        public DbBlockTypeProfiler(InfluxDbClient dbClient)
-        {
-            _dbClient = dbClient;
-        }
 
         public void StartProfiling(CancellationToken canceller)
         {
@@ -44,8 +36,6 @@ namespace Profiler.Database
 
         void OnProfilingFinished(ulong totalTicks, IEnumerable<(Type Type, ProfilerEntry ProfilerEntry)> entities)
         {
-            var points = new List<PointData>();
-
             var topResults = entities
                 .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
                 .Take(MaxDisplayCount)
@@ -55,14 +45,12 @@ namespace Profiler.Database
             {
                 var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
 
-                var point = _dbClient.MakePointIn("profiler_block_types")
+                InfluxDbPointFactory
+                    .Measurement("profiler_block_types")
                     .Tag("block_type", blockType.Name)
-                    .Field("main_ms", deltaTime);
-
-                points.Add(point);
+                    .Field("main_ms", deltaTime)
+                    .Write();
             }
-
-            _dbClient.WritePoints(points.ToArray());
         }
     }
 }
