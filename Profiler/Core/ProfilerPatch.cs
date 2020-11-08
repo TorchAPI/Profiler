@@ -40,7 +40,9 @@ namespace Profiler.Core
         [ReflectedMethodInfo(typeof(Sandbox.Engine.Platform.Game), nameof(Sandbox.Engine.Platform.Game.RunSingleFrame))]
         private static readonly MethodInfo _gameRunSingleFrame;
 
-        [ReflectedMethodInfo(typeof(MyProgrammableBlock), "RunSandboxedProgramAction")]
+        const string ProgrammableBlockActionName = "RunSandboxedProgramAction";
+
+        [ReflectedMethodInfo(typeof(MyProgrammableBlock), ProgrammableBlockActionName)]
         private static readonly MethodInfo _programmableRunSandboxed;
 
         static readonly MethodInfo GetGenericProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Start));
@@ -77,7 +79,7 @@ namespace Profiler.Core
         public static void Patch(PatchContext ctx)
         {
             Log.Trace("Profiler patch started");
-            
+
             ReflectedManager.Process(typeof(ProfilerPatch));
 
             ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(DoTick);
@@ -116,7 +118,7 @@ namespace Profiler.Core
 
             ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(PrefixProfilePb)));
             ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(SuffixProfilePb)));
-            
+
             Log.Trace("Profiler patch ended");
         }
 
@@ -143,7 +145,7 @@ namespace Profiler.Core
         {
             var methodBaseName = $"{__methodBase.DeclaringType?.FullName}#{__methodBase.Name}";
             Log.Trace($"Starting TranspilerForUpdate for method {methodBaseName}");
-            
+
             var profilerEntry = __localCreator(typeof(ProfilerToken?));
 
             var il = instructions.ToList();
@@ -189,11 +191,14 @@ namespace Profiler.Core
                         }
 
                         foundAny = true;
-                        
+
+                        var mappingIndex = ProfiledMethodIndexMapping.Instance.GetOrCreateIndexOf(methodName);
+
                         Log.Trace($"Attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}");
                         var startProfiler = new[]
                         {
                             new MsilInstruction(OpCodes.Dup), // duplicate the object the update is called on
+                            new MsilInstruction(OpCodes.Ldc_I4).InlineValue(mappingIndex), // pass the method name
                             // Grab a profiling token
                             new MsilInstruction(OpCodes.Call).InlineValue(GetGenericProfilerToken),
                             profilerEntry.AsValueStore(),
@@ -220,24 +225,26 @@ namespace Profiler.Core
             {
                 Log.Error($"Didn't find any update profiling targets for {methodBaseName}.  Some profiling data will be missing");
             }
-            
+
             Log.Trace($"Finished TranspilerForUpdate for method {methodBaseName}");
 
             return il;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? Start(object obj)
+        static ProfilerToken? Start(object obj, int mappingIndex)
         {
+            var methodName = ProfiledMethodIndexMapping.Instance.GetMethodNameOf(mappingIndex);
+
             switch (obj)
             {
                 case MyEntityComponentBase componentBase:
                 {
-                    return new ProfilerToken(componentBase.Entity, GeneralEntrypoint, DateTime.UtcNow);
+                    return new ProfilerToken(componentBase.Entity, methodName, GeneralEntrypoint, DateTime.UtcNow);
                 }
                 case IMyEntity entity:
                 {
-                    return new ProfilerToken(entity, GeneralEntrypoint, DateTime.UtcNow);
+                    return new ProfilerToken(entity, methodName, GeneralEntrypoint, DateTime.UtcNow);
                 }
                 default:
                 {
@@ -249,7 +256,7 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
         {
-            return new ProfilerToken(block, ScriptsEntrypoint, DateTime.UtcNow);
+            return new ProfilerToken(block, ProgrammableBlockActionName, ScriptsEntrypoint, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -259,6 +266,7 @@ namespace Profiler.Core
 
             var result = new ProfilerResult(
                 token.GameEntity,
+                token.MethodName,
                 token.Entrypoint,
                 token.StartTimestamp,
                 DateTime.UtcNow,
