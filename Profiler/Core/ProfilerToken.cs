@@ -13,6 +13,8 @@ namespace Profiler.Core
         /// </summary>
         public readonly IMyEntity GameEntity;
 
+        public readonly string MethodName;
+
         /// <summary>
         /// Entrypoint of the profiled method.
         /// </summary>
@@ -27,10 +29,13 @@ namespace Profiler.Core
         /// Instantiate.
         /// </summary>
         /// <param name="gameEntity">Game entity responsible for the profiled method.</param>
+        /// <param name="methodName">Name of the profiled method.</param>
+        /// <param name="entrypoint">Entrypoint type of the profiled method.</param>
         /// <param name="startTimestamp">Timestamp of when this profiling started.</param>
-        public ProfilerToken(IMyEntity gameEntity, string entrypoint, DateTime startTimestamp)
+        public ProfilerToken(IMyEntity gameEntity, string methodName, string entrypoint, DateTime startTimestamp)
         {
             GameEntity = gameEntity;
+            MethodName = methodName;
             Entrypoint = entrypoint;
             StartTimestamp = startTimestamp;
         }

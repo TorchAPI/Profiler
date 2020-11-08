@@ -63,6 +63,7 @@ namespace Profiler
                 new DbFactionProfiler(),
                 new DbBlockTypeProfiler(),
                 new DbFactionGridProfiler(config),
+                new DbMethodNameProfiler(),
             });
 
             _dbProfilersCanceller = new CancellationTokenSource();
