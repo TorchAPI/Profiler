@@ -46,6 +46,9 @@
       <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Common.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(SolutionDir)\TorchBinaries\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="Sandbox.Game">
       <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Game.dll</HintPath>
       <Private>False</Private>
@@ -172,17 +175,21 @@
     <Compile Include="Interactive\GpsSendClient.cs" />
     <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />
+    <Compile Include="TorchUtils\AbsJsonConverter.cs" />
     <Compile Include="TorchUtils\ActionDisposable.cs" />
     <Compile Include="TorchUtils\CollectionUtils.cs" />
+    <Compile Include="TorchUtils\CommandErrorResponseGenerator.cs" />
     <Compile Include="TorchUtils\DebugUtils.cs" />
     <Compile Include="TorchUtils\DisposableCollection.cs" />
     <Compile Include="TorchUtils\DisposableUtils.cs" />
+    <Compile Include="TorchUtils\StringFloatConverter.cs" />
     <Compile Include="TorchUtils\TaskUtils.cs" />
     <Compile Include="TorchUtils\ThreadPoolTask.cs" />
     <Compile Include="TorchUtils\ThreadSafeThrottle.cs" />
     <Compile Include="TorchUtils\TorchPluginUtils.cs" />
     <Compile Include="TorchUtils\TorchUtils.cs" />
     <Compile Include="TorchUtils\VRageUtils.cs" />
+    <Compile Include="TorchUtils\XmlUtils.cs" />
     <Compile Include="Util\ActionDisposable.cs" />
     <Compile Include="Util\IterableWeakTable.cs" />
     <Compile Include="Util\ObjectPool.cs" />
