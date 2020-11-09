@@ -6,7 +6,7 @@ using Profiler.Basics;
 using Profiler.Core;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using TorchDatabaseIntegration.InfluxDB;
+using InfluxDb;
 
 namespace Profiler.Database
 {

@@ -2,7 +2,7 @@
 using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
-using TorchDatabaseIntegration.InfluxDB;
+using InfluxDb;
 
 namespace Profiler.Database
 {

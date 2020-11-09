@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
-using TorchDatabaseIntegration.InfluxDB;
+using InfluxDb;
 using VRage.Game.ModAPI;
 
 namespace Profiler.Database

@@ -1,9 +1,12 @@
 ﻿using System;
 using System.IO;
+using System.Windows.Controls;
 using Torch;
 using Torch.Session;
 using Torch.API.Managers;
+using Torch.API.Plugins;
 using Torch.API.Session;
+using Torch.Views;
 
 namespace TorchUtils
 {
@@ -48,6 +51,18 @@ namespace TorchUtils
                     f();
                 }
             };
+        }
+
+        public static UserControl GetOrCreateUserControl<T>(this Persistent<T> self, ref UserControl userControl) where T : class, new()
+        {
+            if (userControl != null) return userControl;
+
+            userControl = new PropertyGrid
+            {
+                DataContext = self.Data,
+            };
+
+            return userControl;
         }
     }
 }

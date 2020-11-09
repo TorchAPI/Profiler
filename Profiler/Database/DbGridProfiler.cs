@@ -5,7 +5,7 @@ using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
 using Sandbox.Game.Entities;
-using TorchDatabaseIntegration.InfluxDB;
+using InfluxDb;
 
 namespace Profiler.Database
 {
