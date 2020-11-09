@@ -5,6 +5,8 @@ using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
 using InfluxDb;
+using Sandbox.Game.World;
+using TorchUtils;
 using VRage.Game.ModAPI;
 
 namespace Profiler.Database
@@ -40,14 +42,27 @@ namespace Profiler.Database
                 .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
                 .ToArray();
 
+            // get online players per faction
+            var onlineFactions = new Dictionary<string, int>();
+            var onlinePlayers = MySession.Static.Players.GetOnlinePlayers();
+            foreach (var onlinePlayer in onlinePlayers)
+            {
+                var faction = MySession.Static.Factions.TryGetPlayerFaction(onlinePlayer.PlayerId());
+                if (faction == null) continue;
+
+                onlineFactions.Increment(faction.Tag);
+            }
+
             foreach (var (faction, profilerEntry) in topResults)
             {
                 var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
+                onlineFactions.TryGetValue(faction.Tag, out var onlinePlayerCount);
 
                 InfluxDbPointFactory
                     .Measurement("profiler_factions")
                     .Tag("faction_tag", faction.Tag)
                     .Field("main_ms", deltaTime)
+                    .Field("online_player_count", onlinePlayerCount)
                     .Write();
             }
         }
