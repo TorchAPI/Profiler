@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Profiler.Core
 {
-    internal sealed class ProfiledMethodIndexMapping
+    internal sealed class MethodIndexer
     {
-        public static readonly ProfiledMethodIndexMapping Instance = new ProfiledMethodIndexMapping();
+        public static readonly MethodIndexer Instance = new MethodIndexer();
 
         readonly List<string> _mapping;
 
-        ProfiledMethodIndexMapping()
+        MethodIndexer()
         {
             _mapping = new List<string>();
         }

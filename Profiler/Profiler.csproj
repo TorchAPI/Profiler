@@ -161,7 +161,7 @@
     <Compile Include="Basics\TotalProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core\IProfiler.cs" />
-    <Compile Include="Core\ProfiledMethodIndexMapping.cs" />
+    <Compile Include="Core\MethodIndexer.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
     <Compile Include="Database\DbBlockTypeProfiler.cs" />
     <Compile Include="Database\DbFactionGridProfiler.cs" />

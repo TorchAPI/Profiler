@@ -71,6 +71,8 @@ namespace Profiler.Core
 
         static readonly List<IProfiler> _observers = new List<IProfiler>();
         static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
+        static int _programmableBlockActionMethodIndex;
+        
         public static ulong CurrentTick { get; private set; }
 
         public const string GeneralEntrypoint = "General";
@@ -119,6 +121,8 @@ namespace Profiler.Core
             ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(PrefixProfilePb)));
             ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(SuffixProfilePb)));
 
+            _programmableBlockActionMethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(ProgrammableBlockActionName);
+            
             Log.Trace("Profiler patch ended");
         }
 
@@ -192,7 +196,7 @@ namespace Profiler.Core
 
                         foundAny = true;
 
-                        var mappingIndex = ProfiledMethodIndexMapping.Instance.GetOrCreateIndexOf(methodName);
+                        var mappingIndex = MethodIndexer.Instance.GetOrCreateIndexOf(methodName);
 
                         Log.Trace($"Attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}");
                         var startProfiler = new[]
@@ -234,17 +238,15 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? Start(object obj, int mappingIndex)
         {
-            var methodName = ProfiledMethodIndexMapping.Instance.GetMethodNameOf(mappingIndex);
-
             switch (obj)
             {
                 case MyEntityComponentBase componentBase:
                 {
-                    return new ProfilerToken(componentBase.Entity, methodName, GeneralEntrypoint, DateTime.UtcNow);
+                    return new ProfilerToken(componentBase.Entity, mappingIndex, GeneralEntrypoint, DateTime.UtcNow);
                 }
                 case IMyEntity entity:
                 {
-                    return new ProfilerToken(entity, methodName, GeneralEntrypoint, DateTime.UtcNow);
+                    return new ProfilerToken(entity, mappingIndex, GeneralEntrypoint, DateTime.UtcNow);
                 }
                 default:
                 {
@@ -256,7 +258,7 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
         {
-            return new ProfilerToken(block, ProgrammableBlockActionName, ScriptsEntrypoint, DateTime.UtcNow);
+            return new ProfilerToken(block, _programmableBlockActionMethodIndex, ScriptsEntrypoint, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -266,7 +268,7 @@ namespace Profiler.Core
 
             var result = new ProfilerResult(
                 token.GameEntity,
-                token.MethodName,
+                token.MethodIndex,
                 token.Entrypoint,
                 token.StartTimestamp,
                 DateTime.UtcNow,
