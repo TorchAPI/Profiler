@@ -155,6 +155,7 @@
     <Compile Include="Basics\FactionProfiler.cs" />
     <Compile Include="Basics\GameEntityMask.cs" />
     <Compile Include="Basics\GridProfiler.cs" />
+    <Compile Include="Basics\BaseProfilerResult.cs" />
     <Compile Include="Basics\MethodNameProfiler.cs" />
     <Compile Include="Basics\PlayerProfiler.cs" />
     <Compile Include="Basics\ProfilerEntry.cs" />

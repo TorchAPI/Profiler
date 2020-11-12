@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Profiler.Basics;
@@ -22,36 +21,24 @@ namespace Profiler.Database
                 using (var profiler = new GridProfiler(gameEntityMask))
                 using (ProfilerPatch.Profile(profiler))
                 {
-                    var startTick = ProfilerPatch.CurrentTick;
-
                     profiler.StartProcessQueue();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
-                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
-
-                    var gridProfilerEntries = profiler.GetProfilerEntries();
-                    OnProfilingFinished(totalTicks, gridProfilerEntries);
+                    var result = profiler.GetResult();
+                    OnProfilingFinished(result);
                 }
             }
         }
 
-        void OnProfilingFinished(ulong totalTicks, IEnumerable<(MyCubeGrid Grid, ProfilerEntry ProfilerEntry)> entities)
+        void OnProfilingFinished(BaseProfilerResult<MyCubeGrid> result)
         {
-            var topResults = entities
-                .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
-                .Take(MaxDisplayCount)
-                .ToArray();
-
-            foreach (var (grid, profilerEntry) in topResults)
+            var results = result.GetTopAverageTotalTimesWithRemainder(k => k.DisplayName);
+            foreach (var (name, timeMs) in results.Take(MaxDisplayCount))
             {
-                if (grid.Closed) continue; // deleted by now
-
-                var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
-
                 InfluxDbPointFactory
                     .Measurement("profiler")
-                    .Tag("grid_name", grid.DisplayName)
-                    .Field("main_ms", deltaTime)
+                    .Tag("grid_name", name)
+                    .Field("main_ms", timeMs)
                     .Write();
             }
         }

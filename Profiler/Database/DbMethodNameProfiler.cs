@@ -18,29 +18,24 @@ namespace Profiler.Database
                 using (var profiler = new MethodNameProfiler())
                 using (ProfilerPatch.Profile(profiler))
                 {
-                    var startTick = ProfilerPatch.CurrentTick;
-
                     profiler.StartProcessQueue();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
-                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
-
-                    var methodNameEntities = profiler.GetProfilerEntries();
-                    OnProfilingFinished(totalTicks, methodNameEntities);
+                    var result = profiler.GetResult();
+                    OnProfilingFinished(result);
                 }
             }
         }
 
-        void OnProfilingFinished(ulong totalTicks, IEnumerable<(string Key, ProfilerEntry ProfilerEntry)> entities)
+        void OnProfilingFinished(BaseProfilerResult<string> result)
         {
-            foreach (var (methodName, profilerEntry) in entities)
+            var results = result.GetTopAverageTotalTimesWithRemainder();
+            foreach (var (methodName, timeMs) in results)
             {
-                var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
-
                 InfluxDbPointFactory
                     .Measurement("profiler_method_names")
                     .Tag("method_name", methodName)
-                    .Field("ms", deltaTime)
+                    .Field("ms", timeMs)
                     .Write();
             }
         }

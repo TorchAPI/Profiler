@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
@@ -23,25 +22,17 @@ namespace Profiler.Database
                 using (var profiler = new FactionProfiler(gameEntityMask))
                 using (ProfilerPatch.Profile(profiler))
                 {
-                    var startTick = ProfilerPatch.CurrentTick;
-
                     profiler.StartProcessQueue();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
-                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
-
-                    var factionProfilerEntities = profiler.GetProfilerEntries();
-                    OnProfilingFinished(totalTicks, factionProfilerEntities);
+                    var result = profiler.GetResult();
+                    OnProfilingFinished(result);
                 }
             }
         }
 
-        void OnProfilingFinished(ulong totalTicks, IEnumerable<(IMyFaction Faction, ProfilerEntry ProfilerEntry)> entities)
+        void OnProfilingFinished(BaseProfilerResult<IMyFaction> result)
         {
-            var topResults = entities
-                .OrderByDescending(r => r.ProfilerEntry.TotalTimeMs)
-                .ToArray();
-
             // get online players per faction
             var onlineFactions = new Dictionary<string, int>();
             var onlinePlayers = MySession.Static.Players.GetOnlinePlayers();
@@ -53,15 +44,15 @@ namespace Profiler.Database
                 onlineFactions.Increment(faction.Tag);
             }
 
-            foreach (var (faction, profilerEntry) in topResults)
+            var results = result.GetTopAverageTotalTimesWithRemainder(k => k.Tag);
+            foreach (var (name, timeMs) in results)
             {
-                var deltaTime = (float) profilerEntry.TotalTimeMs / totalTicks;
-                onlineFactions.TryGetValue(faction.Tag, out var onlinePlayerCount);
+                onlineFactions.TryGetValue(name, out var onlinePlayerCount);
 
                 InfluxDbPointFactory
                     .Measurement("profiler_factions")
-                    .Tag("faction_tag", faction.Tag)
-                    .Field("main_ms", deltaTime)
+                    .Tag("faction_tag", name)
+                    .Field("main_ms", timeMs)
                     .Field("online_player_count", onlinePlayerCount)
                     .Write();
             }

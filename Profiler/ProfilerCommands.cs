@@ -45,12 +45,12 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                    var profilerEntities = profiler.GetProfilerEntries();
+                    var result = profiler.GetResult();
 
-                    var data = profilerEntities
-                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                    var data = result
+                        .GetTopEntities()
                         .Take(args.Top)
-                        .Select(p => (BlockTypeToString(p.Key), p.ProfilerEntry));
+                        .Select(p => (BlockTypeToString(p.Key), p.Entity));
 
                     Respond(totalTicks, data);
                 }
@@ -82,12 +82,12 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                    var profilerEntities = profiler.GetProfilerEntries();
+                    var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .GetTopEntities()
                         .Take(args.Top)
-                        .Select(p => (p.Key.BlockPairName, p.ProfilerEntry));
+                        .Select(p => (p.Key.BlockPairName, p.Entity));
 
                     Respond(totalTicks, data);
                 }
@@ -114,14 +114,14 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                    var profilerEntities = profiler.GetProfilerEntries();
+                    var profilerEntities = profiler.GetResult();
 
                     var gridProfilerEntries = profilerEntities
-                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .GetTopEntities()
                         .Where(p => !p.Key.Closed)
                         .Take(args.Top);
 
-                    var data = gridProfilerEntries.Select(p => (p.Key.DisplayName, p.ProfilerEntry));
+                    var data = gridProfilerEntries.Select(p => (p.Key.DisplayName, p.Entity));
                     Respond(totalTicks, data);
 
                     if (args.SendGpsToPlayer)
@@ -159,13 +159,13 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                    var profilerEntities = profiler.GetProfilerEntries();
+                    var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .GetTopEntities()
                         .Where(p => p.Key != null)
                         .Take(args.Top)
-                        .Select(p => (p.Key.Tag, p.ProfilerEntry));
+                        .Select(p => (p.Key.Tag, p.Entity));
 
                     Respond(totalTicks, data);
                 }
@@ -192,12 +192,12 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                    var profilerEntities = profiler.GetProfilerEntries();
+                    var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .GetTopEntities()
                         .Where(p => p.Key != null)
-                        .Select(p => (p.Key.DisplayName, p.ProfilerEntry))
+                        .Select(p => (p.Key.DisplayName, p.Entity))
                         .Take(args.Top);
 
                     Respond(totalTicks, data);
@@ -225,13 +225,13 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(args.Seconds));
 
                     var totalTicks = ProfilerPatch.CurrentTick - startTick;
-                    var profilerEntities = profiler.GetProfilerEntries();
+                    var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .OrderByDescending(p => p.ProfilerEntry.TotalTimeMs)
+                        .GetTopEntities()
                         .Where(p => !p.Key.Closed)
                         .Take(args.Top)
-                        .Select(p => (PbToString(p.Key), p.ProfilerEntry));
+                        .Select(p => (PbToString(p.Key), p.Entity));
 
                     Respond(totalTicks, data);
                 }

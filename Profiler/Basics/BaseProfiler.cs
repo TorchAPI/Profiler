@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using NLog;
 using Profiler.Core;
@@ -28,6 +27,9 @@ namespace Profiler.Basics
         // Cached function to unpool (or create) a new ProfilerEntity instance.
         readonly Func<K, ProfilerEntry> _makeProfilerEntity;
 
+        ulong _startTick;
+        DateTime _startTime;
+        
         bool _disposed;
 
         protected BaseProfiler()
@@ -59,6 +61,9 @@ namespace Profiler.Basics
 
         void ProcessQueue()
         {
+            _startTick = ProfilerPatch.CurrentTick;
+            _startTime = DateTime.UtcNow;
+            
             var queueCancellerToken = _queueCanceller.Token;
             while (!_queueCanceller.IsCancellationRequested)
             {
@@ -113,9 +118,11 @@ namespace Profiler.Basics
         /// Generate a key-value-pair collection of the key objects and ProfilerEntries.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<(K Key, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        public BaseProfilerResult<K> GetResult()
         {
-            return _profilerEntries.Select(p => (p.Key, p.Value));
+            var totalTick = ProfilerPatch.CurrentTick - _startTick;
+            var totalTime = DateTime.UtcNow - _startTime;
+            return new BaseProfilerResult<K>(totalTick, totalTime, _profilerEntries);
         }
 
         /// <summary>
