@@ -2,8 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
+using TorchUtils;
 
 namespace Profiler.Basics
 {
@@ -13,6 +15,8 @@ namespace Profiler.Basics
     /// <remarks>You can use ProfilerPatch without this class.</remarks>
     public abstract class BaseProfiler<K> : IProfiler, IDisposable
     {
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+
         // Holds onto ProfileResults until processed.
         readonly ConcurrentQueue<ProfilerResult> _queuedProfilerResults;
 
@@ -29,7 +33,7 @@ namespace Profiler.Basics
 
         ulong _startTick;
         DateTime _startTime;
-        
+
         bool _disposed;
 
         protected BaseProfiler()
@@ -56,35 +60,37 @@ namespace Profiler.Basics
                 throw new ObjectDisposedException(GetType().FullName);
             }
 
-            ThreadPool.QueueUserWorkItem(_ => ProcessQueue());
+            Task.Factory
+                .StartNew(ProcessQueue)
+                .Forget(Log);
         }
 
         void ProcessQueue()
         {
-            _startTick = ProfilerPatch.CurrentTick;
-            _startTime = DateTime.UtcNow;
-            
-            var queueCancellerToken = _queueCanceller.Token;
-            while (!_queueCanceller.IsCancellationRequested)
+            try
             {
-                while (_queuedProfilerResults.TryDequeue(out var profilerResult))
-                {
-                    OnProfilerResultDequeued(profilerResult);
-                }
+                _startTick = ProfilerPatch.CurrentTick;
+                _startTime = DateTime.UtcNow;
 
-                try
+                var queueCancellerToken = _queueCanceller.Token;
+                while (!_queueCanceller.IsCancellationRequested)
                 {
+                    while (_queuedProfilerResults.TryDequeue(out var profilerResult))
+                    {
+                        OnProfilerResultDequeued(profilerResult);
+                    }
+
                     // wait for the next interval, or throws if cancelled
                     queueCancellerToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(0.1f));
                 }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // pass
+            }
+            catch (OperationCanceledException)
+            {
+                // pass
             }
         }
 
