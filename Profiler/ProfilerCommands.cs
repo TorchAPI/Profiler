@@ -25,6 +25,20 @@ namespace Profiler
 
         const string HelpText = "--secs=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
 
+        [Command("on", "Enable profiling", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void Enable()
+        {
+            ProfilerPatch.Enabled = true;
+        }
+
+        [Command("off", "Disable profiling", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void Disable()
+        {
+            ProfilerPatch.Enabled = false;
+        }
+
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlockType()
@@ -249,7 +263,7 @@ namespace Profiler
         {
             Task.Factory.StartNew(task).Forget(Log);
         }
-        
+
         void Respond(ulong totalTicks, IEnumerable<(string, ProfilerEntry)> data)
         {
             var messageBuilder = new StringBuilder();

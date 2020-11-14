@@ -77,6 +77,8 @@ namespace Profiler.Core
 
         public static ulong CurrentTick { get; private set; }
 
+        public static bool Enabled { get; set; } = true;
+
         public const string GeneralEntrypoint = "General";
         public const string ScriptsEntrypoint = "Scripts";
         public const string TotalEntrypoint = Game_UpdateInternal.Entrypoint;
@@ -269,6 +271,8 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void StopToken(in ProfilerToken? tokenOrNull, bool mainThreadUpdate)
         {
+            if (!Enabled) return;
+
             if (!(tokenOrNull is ProfilerToken token)) return;
 
             var result = new ProfilerResult(
