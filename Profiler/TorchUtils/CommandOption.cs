@@ -4,9 +4,9 @@ namespace TorchUtils
 {
     internal class CommandOption
     {
-        const string OptionPrefix = "-";
-        static readonly Regex _optionRegex = new Regex($@"{OptionPrefix}(\w+?)=(.+?)(?: |$)");
-        static readonly Regex _parameterlessOptionRegex = new Regex($@"{OptionPrefix}(\w+?)(?: |$)");
+        public const string Prefix = "-";
+        static readonly Regex _optionRegex = new Regex($@"{Prefix}(\w+?)=(.+?)(?: |$)");
+        static readonly Regex _parameterlessOptionRegex = new Regex($@"{Prefix}(\w+?)(?: |$)");
 
         readonly string _arg;
 
@@ -17,7 +17,7 @@ namespace TorchUtils
 
         public static bool TryGetOption(string arg, out CommandOption option)
         {
-            if (arg.StartsWith(OptionPrefix))
+            if (arg.StartsWith(Prefix))
             {
                 option = new CommandOption(arg);
                 return true;

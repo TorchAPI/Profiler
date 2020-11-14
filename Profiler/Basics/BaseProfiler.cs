@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
+using TorchUtils;
 
 namespace Profiler.Basics
 {
@@ -14,6 +15,8 @@ namespace Profiler.Basics
     /// <remarks>You can use ProfilerPatch without this class.</remarks>
     public abstract class BaseProfiler<K> : IProfiler, IDisposable
     {
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+
         // Holds onto ProfileResults until processed.
         readonly ConcurrentQueue<ProfilerResult> _queuedProfilerResults;
 
@@ -27,6 +30,9 @@ namespace Profiler.Basics
 
         // Cached function to unpool (or create) a new ProfilerEntity instance.
         readonly Func<K, ProfilerEntry> _makeProfilerEntity;
+
+        ulong _startTick;
+        DateTime _startTime;
 
         bool _disposed;
 
@@ -54,32 +60,37 @@ namespace Profiler.Basics
                 throw new ObjectDisposedException(GetType().FullName);
             }
 
-            ThreadPool.QueueUserWorkItem(_ => ProcessQueue());
+            Task.Factory
+                .StartNew(ProcessQueue)
+                .Forget(Log);
         }
 
         void ProcessQueue()
         {
-            var queueCancellerToken = _queueCanceller.Token;
-            while (!_queueCanceller.IsCancellationRequested)
+            try
             {
-                while (_queuedProfilerResults.TryDequeue(out var profilerResult))
-                {
-                    OnProfilerResultDequeued(profilerResult);
-                }
+                _startTick = ProfilerPatch.CurrentTick;
+                _startTime = DateTime.UtcNow;
 
-                try
+                var queueCancellerToken = _queueCanceller.Token;
+                while (!_queueCanceller.IsCancellationRequested)
                 {
+                    while (_queuedProfilerResults.TryDequeue(out var profilerResult))
+                    {
+                        OnProfilerResultDequeued(profilerResult);
+                    }
+
                     // wait for the next interval, or throws if cancelled
                     queueCancellerToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(0.1f));
                 }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // pass
+            }
+            catch (OperationCanceledException)
+            {
+                // pass
             }
         }
 
@@ -113,9 +124,11 @@ namespace Profiler.Basics
         /// Generate a key-value-pair collection of the key objects and ProfilerEntries.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<(K Key, ProfilerEntry ProfilerEntry)> GetProfilerEntries()
+        public BaseProfilerResult<K> GetResult()
         {
-            return _profilerEntries.Select(p => (p.Key, p.Value));
+            var totalTick = ProfilerPatch.CurrentTick - _startTick;
+            var totalTime = DateTime.UtcNow - _startTime;
+            return new BaseProfilerResult<K>(totalTick, totalTime, _profilerEntries);
         }
 
         /// <summary>
