@@ -17,7 +17,7 @@ namespace Profiler.Basics
         {
             key = null;
 
-            if (profilerResult.Entrypoint != ProfilerPatch.ScriptsEntrypoint) return false;
+            if (profilerResult.Category != ProfilerCategory.Scripts) return false;
             if (!(profilerResult.GameEntity is MyProgrammableBlock programmableBlock)) return false; // shouldn't happen
             if (programmableBlock.Closed) return false;
             if (!_mask.AcceptBlock(programmableBlock)) return false;

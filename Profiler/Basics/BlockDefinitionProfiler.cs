@@ -18,7 +18,7 @@ namespace Profiler.Basics
         protected override bool TryAccept(ProfilerResult profilerResult, out MyCubeBlockDefinition key)
         {
             key = null;
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
+            if (profilerResult.Category != ProfilerCategory.General) return false;
             
             var block = profilerResult.GameEntity.GetParentEntityOfType<MyCubeBlock>();
             if (block == null) return false;

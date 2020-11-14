@@ -23,7 +23,7 @@ namespace Profiler.Basics
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            if (profilerResult.Entrypoint != ProfilerPatch.TotalEntrypoint) return;
+            if (profilerResult.Category != ProfilerCategory.Total) return;
 
             Interlocked.Add(ref _gameTime, profilerResult.DeltaTimeMs);
         }

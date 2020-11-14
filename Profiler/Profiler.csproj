@@ -164,6 +164,7 @@
     <Compile Include="Core.Patches\Game_UpdateInternal.cs" />
     <Compile Include="Core\IProfiler.cs" />
     <Compile Include="Core\MethodIndexer.cs" />
+    <Compile Include="Core\ProfilerCategory.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
     <Compile Include="Database\DbBlockTypeProfiler.cs" />
     <Compile Include="Database\DbFactionGridProfiler.cs" />

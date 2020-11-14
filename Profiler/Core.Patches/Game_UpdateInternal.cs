@@ -9,7 +9,7 @@ namespace Profiler.Core.Patches
 {
     internal static class Game_UpdateInternal
     {
-        public const string Entrypoint = "Total";
+        public const string Category = "Total";
 
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly MethodInfo Method = typeof(Game).InstanceMethod("UpdateInternal");
@@ -29,7 +29,7 @@ namespace Profiler.Core.Patches
         static void Prefix(Game __instance, ref ProfilerToken? __localProfilerHandle)
         {
             //Log.Info("updateinternal");
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Entrypoint, DateTime.UtcNow);
+            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
         }
 
         static void Suffix(ref ProfilerToken? __localProfilerHandle)
