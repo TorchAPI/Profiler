@@ -72,8 +72,10 @@ namespace Profiler.Core
         static readonly List<IProfiler> _observers = new List<IProfiler>();
         static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
         static int _programmableBlockActionMethodIndex;
-        
+
         public static ulong CurrentTick { get; private set; }
+
+        public static bool Enabled { get; set; } = true;
 
         public const string GeneralEntrypoint = "General";
         public const string ScriptsEntrypoint = "Scripts";
@@ -122,7 +124,7 @@ namespace Profiler.Core
             ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(SuffixProfilePb)));
 
             _programmableBlockActionMethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(ProgrammableBlockActionName);
-            
+
             Log.Trace("Profiler patch ended");
         }
 
@@ -264,6 +266,8 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void StopToken(in ProfilerToken? tokenOrNull, bool mainThreadUpdate)
         {
+            if (!Enabled) return;
+
             if (!(tokenOrNull is ProfilerToken token)) return;
 
             var result = new ProfilerResult(
