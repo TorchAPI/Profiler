@@ -21,6 +21,9 @@ namespace Profiler.Core
         /// <summary>
         /// Game entity responsible for the profiled method.
         /// </summary>
+        /// <remarks>
+        /// Null if not associated with a specific game entity.
+        /// </remarks>
         public readonly IMyEntity GameEntity;
 
         /// <summary>
@@ -46,7 +49,7 @@ namespace Profiler.Core
         /// <summary>
         /// Instantiate.
         /// </summary>
-        /// <param name="gameEntity">Game entity responsible for the profiled method.</param>
+        /// <param name="gameEntity">Game entity responsible for the profiled method. Null if not associated with a specific game entity.</param>
         /// <param name="methodIndex">Index of the profiled method.</param>
         /// <param name="entrypoint">Entrypoint of the profiled method.</param>
         /// <param name="startTimestamp">Timestamp of when the profiling started for the profiled method.</param>

@@ -69,24 +69,29 @@ namespace Profiler
             _dbProfilersCanceller = new CancellationTokenSource();
 
             Task.Factory
-                .StartNew(() =>
+                .StartNew(RunDbProfilers)
+                .Forget(Log);
+            
+            Log.Info("database writing started");
+        }
+
+        void RunDbProfilers()
+        {
+            Parallel.ForEach(_dbProfilers, dbProfiler =>
+            {
+                try
                 {
-                    Parallel.ForEach(_dbProfilers, dbProfiler =>
-                    {
-                        try
-                        {
-                            dbProfiler.StartProfiling(_dbProfilersCanceller.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            // pass
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Warn(e);
-                        }
-                    });
-                }).Forget(Log);
+                    dbProfiler.StartProfiling(_dbProfilersCanceller.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // pass
+                }
+                catch (Exception e)
+                {
+                    Log.Warn(e);
+                }
+            });
         }
 
         void OnGameUnloading()

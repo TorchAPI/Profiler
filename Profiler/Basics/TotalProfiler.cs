@@ -6,22 +6,32 @@ namespace Profiler.Basics
 {
     public sealed class TotalProfiler : IProfiler
     {
-        long _mainThreadMs;
-        long _offThreadMs;
+        ulong _startTick;
+        DateTime _startTime;
+        long _gameTime;
 
-        public long MainThreadMs => _mainThreadMs;
-        public long OffThreadMs => _offThreadMs;
+        public ulong Ticks { get; private set; }
+        public double TimeMs { get; private set; }
+        public double GameTimeMs => _gameTime;
+
+        public void Start()
+        {
+            _startTick = ProfilerPatch.CurrentTick;
+            _startTime = DateTime.UtcNow;
+            _gameTime = 0;
+        }
 
         public void OnProfileComplete(in ProfilerResult profilerResult)
         {
-            if (profilerResult.IsMainThread)
-            {
-                Interlocked.Add(ref _mainThreadMs, profilerResult.DeltaTimeMs);
-            }
-            else
-            {
-                Interlocked.Add(ref _offThreadMs, profilerResult.DeltaTimeMs);
-            }
+            if (profilerResult.Entrypoint != ProfilerPatch.TotalEntrypoint) return;
+
+            Interlocked.Add(ref _gameTime, profilerResult.DeltaTimeMs);
+        }
+
+        public void Stop()
+        {
+            Ticks = ProfilerPatch.CurrentTick - _startTick;
+            TimeMs = (DateTime.UtcNow - _startTime).TotalMilliseconds;
         }
     }
 }

@@ -17,23 +17,25 @@ namespace Profiler.Database
                 var profiler = new TotalProfiler();
                 using (ProfilerPatch.Profile(profiler))
                 {
-                    var startTick = ProfilerPatch.CurrentTick;
+                    profiler.Start();
 
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
-                    var totalTicks = ProfilerPatch.CurrentTick - startTick;
+                    profiler.Stop();
 
-                    OnProfilingFinished(totalTicks, profiler.MainThreadMs, profiler.OffThreadMs);
+                    OnProfilingFinished(profiler.Ticks, profiler.TimeMs, profiler.GameTimeMs);
                 }
             }
         }
 
-        void OnProfilingFinished(ulong totalTicks, long totalMainThreadMs, long totalOffThreadMs)
+        void OnProfilingFinished(ulong ticks, double timeMs, double gameTimeMs)
         {
             InfluxDbPointFactory
                 .Measurement("profiler_total")
-                .Field("main_thread", (float) totalMainThreadMs / totalTicks)
-                .Field("off_thread", (float) totalOffThreadMs / totalTicks)
+                .Field("tick", ticks)
+                .Field("total", (float) timeMs / ticks)
+                .Field("game", (float) gameTimeMs / ticks)
+                .Field("wait", (float) (timeMs - gameTimeMs) / ticks)
                 .Write();
         }
     }

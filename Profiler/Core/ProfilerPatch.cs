@@ -5,7 +5,9 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
+using Profiler.Core.Patches;
 using Profiler.Util;
+using Sandbox.Engine.Platform;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Torch.Managers.PatchManager;
@@ -37,7 +39,7 @@ namespace Profiler.Core
         [ReflectedMethodInfo(typeof(MyGameLogic), nameof(MyGameLogic.UpdateOnceBeforeFrame))]
         private static readonly MethodInfo _gameLogicUpdateOnceBeforeFrame;
 
-        [ReflectedMethodInfo(typeof(Sandbox.Engine.Platform.Game), nameof(Sandbox.Engine.Platform.Game.RunSingleFrame))]
+        [ReflectedMethodInfo(typeof(Game), nameof(Game.RunSingleFrame))]
         private static readonly MethodInfo _gameRunSingleFrame;
 
         const string ProgrammableBlockActionName = "RunSandboxedProgramAction";
@@ -72,11 +74,12 @@ namespace Profiler.Core
         static readonly List<IProfiler> _observers = new List<IProfiler>();
         static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
         static int _programmableBlockActionMethodIndex;
-        
+
         public static ulong CurrentTick { get; private set; }
 
         public const string GeneralEntrypoint = "General";
         public const string ScriptsEntrypoint = "Scripts";
+        public const string TotalEntrypoint = Game_UpdateInternal.Entrypoint;
 
         public static void Patch(PatchContext ctx)
         {
@@ -118,11 +121,13 @@ namespace Profiler.Core
                 Log.Error("Unable to find MyDistributedUpdater.Iterate(Delegate) method.  Some profiling data will be missing.");
             }
 
-            ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(PrefixProfilePb)));
-            ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(SuffixProfilePb)));
+            ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(typeof(ProfilerPatch).StaticMethod(nameof(PrefixProfilePb)));
+            ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(typeof(ProfilerPatch).StaticMethod(nameof(SuffixProfilePb)));
 
             _programmableBlockActionMethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(ProgrammableBlockActionName);
-            
+
+            Game_UpdateInternal.Patch(ctx);
+
             Log.Trace("Profiler patch ended");
         }
 
@@ -250,7 +255,7 @@ namespace Profiler.Core
                 }
                 default:
                 {
-                    return null;
+                    return new ProfilerToken(null, mappingIndex, GeneralEntrypoint, DateTime.UtcNow);
                 }
             }
         }
@@ -262,7 +267,7 @@ namespace Profiler.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void StopToken(in ProfilerToken? tokenOrNull, bool mainThreadUpdate)
+        internal static void StopToken(in ProfilerToken? tokenOrNull, bool mainThreadUpdate)
         {
             if (!(tokenOrNull is ProfilerToken token)) return;
 
