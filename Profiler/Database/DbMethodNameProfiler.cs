@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
@@ -29,13 +28,12 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<string> result)
         {
-            var results = result.GetTopAverageTotalTimesWithRemainder();
-            foreach (var (methodName, timeMs) in results)
+            foreach (var (name, entity) in result.GetTopEntities())
             {
                 InfluxDbPointFactory
                     .Measurement("profiler_method_names")
-                    .Tag("method_name", methodName)
-                    .Field("ms", timeMs)
+                    .Tag("method_name", name)
+                    .Field("ms", (float) entity.TotalMainThreadTimeMs / result.TotalTicks)
                     .Write();
             }
         }

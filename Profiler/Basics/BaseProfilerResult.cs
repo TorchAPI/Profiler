@@ -59,34 +59,13 @@ namespace Profiler.Basics
         /// Top entities from the profiler sorted by their total profiled time.
         /// </summary>
         /// <returns>Sorted entities per their profiled time, descending.</returns>
-        public IEnumerable<(K Key, ProfilerEntry Entity)> GetTopEntities()
+        public IEnumerable<(K Key, ProfilerEntry Entity)> GetTopEntities(int? limit = null)
         {
             return _entities
                 .OrderByDescending(r => r.Value.TotalTimeMs)
                 .Select(kv => (kv.Key, kv.Value))
+                .Take(limit ?? int.MaxValue)
                 .ToArray();
-        }
-
-        /// <summary>
-        /// "Remainder" time, which is a reminder of the sum of all profiled time from the total time the profiler ran.
-        /// </summary>
-        /// <returns></returns>
-        public float GetTotalRemainderTime()
-        {
-            var sumTime = _entities.Sum(s => s.Value.TotalTimeMs);
-            var totalTime = (float) TotalTime.TotalMilliseconds;
-            var remainTotalTime = totalTime - sumTime;
-            return remainTotalTime;
-        }
-
-        // sick helper
-        public IEnumerable<(string Key, float AverageTimeMs)> GetTopAverageTotalTimesWithRemainder(Func<K, string> keyToStr = null)
-        {
-            return GetTopEntities()
-                .Select(kv => (
-                    Key: keyToStr?.Invoke(kv.Key) ?? kv.Key?.ToString() ?? "<null>",
-                    AverageTimeMs: (float) kv.Entity.TotalTimeMs / TotalTicks))
-                .Append(("<remainder>", GetTotalRemainderTime() / TotalTicks));
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using Profiler.Basics;
 using Profiler.Core;
@@ -32,13 +31,12 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<MyCubeGrid> result)
         {
-            var results = result.GetTopAverageTotalTimesWithRemainder(k => k.DisplayName);
-            foreach (var (name, timeMs) in results.Take(MaxDisplayCount))
+            foreach (var (grid, entity) in result.GetTopEntities(MaxDisplayCount))
             {
                 InfluxDbPointFactory
                     .Measurement("profiler")
-                    .Tag("grid_name", name)
-                    .Field("main_ms", timeMs)
+                    .Tag("grid_name", grid.DisplayName)
+                    .Field("main_ms", (float) entity.TotalMainThreadTimeMs / result.TotalTicks)
                     .Write();
             }
         }

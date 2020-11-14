@@ -41,14 +41,13 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<MyCubeGrid> result)
         {
-            var results = result.GetTopAverageTotalTimesWithRemainder(k => k.DisplayName);
-            foreach (var (name, timeMs) in results)
+            foreach (var (grid, entity) in result.GetTopEntities())
             {
                 InfluxDbPointFactory
                     .Measurement("profiler_faction_grids")
                     .Tag("faction_tag", _config.FactionTag)
-                    .Tag("grid_name", name)
-                    .Field("main_ms", timeMs)
+                    .Tag("grid_name", grid.DisplayName)
+                    .Field("main_ms", (float) entity.TotalMainThreadTimeMs / result.TotalTicks)
                     .Write();
             }
         }

@@ -44,15 +44,14 @@ namespace Profiler.Database
                 onlineFactions.Increment(faction.Tag);
             }
 
-            var results = result.GetTopAverageTotalTimesWithRemainder(k => k.Tag);
-            foreach (var (name, timeMs) in results)
+            foreach (var (faction, entity) in result.GetTopEntities())
             {
-                onlineFactions.TryGetValue(name, out var onlinePlayerCount);
+                onlineFactions.TryGetValue(faction.Tag, out var onlinePlayerCount);
 
                 InfluxDbPointFactory
                     .Measurement("profiler_factions")
-                    .Tag("faction_tag", name)
-                    .Field("main_ms", timeMs)
+                    .Tag("faction_tag", faction.Tag)
+                    .Field("main_ms", (float) entity.TotalMainThreadTimeMs / result.TotalTicks)
                     .Field("online_player_count", onlinePlayerCount)
                     .Write();
             }
