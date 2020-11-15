@@ -29,6 +29,7 @@ namespace Profiler.Core.Patches
         {
             (typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateBeforeSimulation), UpdateSessionComponentsCategoryTokenMethod),
             (typeof(MyReplicationLayer), nameof(MyReplicationLayer.Simulate), UpdateReplicationCategoryTokenMethod),
+            (typeof(MySessionComponentBase), nameof(MySessionComponentBase.Simulate), UpdateSessionComponentsCategoryTokenMethod),
             (typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateAfterSimulation), UpdateSessionComponentsCategoryTokenMethod),
         };
 
@@ -97,7 +98,7 @@ namespace Profiler.Core.Patches
                     new MsilInstruction(OpCodes.Dup), // copy & pass the caller object to token
                     new MsilInstruction(OpCodes.Ldc_I4).InlineValue(mappingIndex), // pass the method index to token
                     new MsilInstruction(OpCodes.Call).InlineValue(tokenCreatorMethod), // create the token
-                    localTokenValue.AsValueStore(),
+                    localTokenValue.AsValueStore(), // store
                 };
 
                 // insert
