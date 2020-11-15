@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using Profiler.Util;
 using Torch.Managers.PatchManager;
 using VRage.Game.Components;
@@ -9,18 +8,20 @@ namespace Profiler.Core.Patches
     public sealed class MySessionComponentBase_Simulate
     {
         const string Category = ProfilerCategory.UpdateSessionComponents;
+        const string Method = nameof(MySessionComponentBase.Simulate);
         static readonly Type SelfType = typeof(MySessionComponentBase_Simulate);
-        static readonly Type Type = typeof(MySessionComponentBase);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySessionComponentBase.Simulate));
-        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
+        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(MySessionComponentBase_.Type, Method);
 
         public static void Patch(PatchContext ctx)
         {
             var prefix = SelfType.StaticMethod(nameof(Prefix));
             var suffix = SelfType.StaticMethod(nameof(Suffix));
 
-            ctx.GetPattern(Method).Prefixes.Add(prefix);
-            ctx.GetPattern(Method).Suffixes.Add(suffix);
+            foreach (var method in MySessionComponentBase_.DerivedInstanceMethods(Method))
+            {
+                ctx.GetPattern(method).Prefixes.Add(prefix);
+                ctx.GetPattern(method).Suffixes.Add(suffix);
+            }
         }
 
         // ReSharper disable once RedundantAssignment

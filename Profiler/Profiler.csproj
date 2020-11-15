@@ -170,9 +170,9 @@
     <Compile Include="Core.Patches\MyGameService_Update.cs" />
     <Compile Include="Core.Patches\MyDedicatedServer_ReportReplicatedObjects.cs" />
     <Compile Include="Core.Patches\MyNetworkReader_Process.cs" />
+    <Compile Include="Core.Patches\MySessionComponentBase_.cs" />
     <Compile Include="Core.Patches\MySessionComponentBase_Simulate.cs" />
     <Compile Include="Core.Patches\MySessionComponentBase_UpdateAfterSimulation.cs" />
-    <Compile Include="Core.Patches\MySessionComponentBase_UpdateBeforeInit.cs" />
     <Compile Include="Core.Patches\MySessionComponentBase_UpdateBeforeSimulation.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />

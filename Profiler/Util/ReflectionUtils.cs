@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
@@ -25,23 +26,48 @@ namespace Profiler.Util
             return Method(t, name, StaticFlags);
         }
 
+        static Type[] GetTypesSafe(this Assembly self)
+        {
+            try
+            {
+                return self.GetTypes();
+            }
+            catch (ReflectionTypeLoadException)
+            {
+                return new Type[0];
+            }
+        }
+
         // Type.GetType() but you don't have to specify the assembly qualified name (=durable to game updates)
         public static Type GetTypeByName(string fullName)
         {
             var typeName = fullName.Split('.').Last();
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var type in assembly.GetTypesSafe())
             {
-                var types = assembly.GetTypes();
-                foreach (var type in types)
-                {
-                    if (type.Name != typeName) continue;
-                    if (!type.FullName?.Contains(fullName) ?? true) continue;
+                if (type.Name != typeName) continue;
+                if (!type.FullName?.Contains(fullName) ?? true) continue;
 
-                    return type;
-                }
+                return type;
             }
 
             throw new TypeInitializationException(fullName, new NullReferenceException());
+        }
+
+        public static Type[] GetDerivedTypes(this Type self)
+        {
+            var derivedTypes = new List<Type>();
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var type in assembly.GetTypesSafe())
+            {
+                var isDerived = self.IsAssignableFrom(type);
+                if (isDerived)
+                {
+                    derivedTypes.Add(type);
+                }
+            }
+
+            return derivedTypes.ToArray();
         }
     }
 }

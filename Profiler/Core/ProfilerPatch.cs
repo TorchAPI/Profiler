@@ -131,7 +131,6 @@ namespace Profiler.Core
                 MyReplicationServer_UpdateBefore.Patch(ctx);
                 //MySession_UpdateComponents.Patch(ctx);
                 {
-                    MySessionComponentBase_UpdateBeforeInit.Patch(ctx);
                     MySessionComponentBase_UpdateBeforeSimulation.Patch(ctx);
                     MyReplicationServer_Simulate.Patch(ctx);
                     MySessionComponentBase_Simulate.Patch(ctx);
