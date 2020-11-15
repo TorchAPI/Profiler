@@ -13,6 +13,7 @@ namespace Profiler.Basics
                 case ProfilerCategory.UpdateNetwork: return true;
                 case ProfilerCategory.UpdateReplication: return true;
                 case ProfilerCategory.UpdateSessionComponents: return true;
+                case ProfilerCategory.UpdateSessionComponentsAll: return true;
                 default: return false;
             }
         }

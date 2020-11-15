@@ -131,7 +131,7 @@ namespace Profiler.Core
                 MyNetworkReader_Process.Patch(ctx);
                 MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
                 MyReplicationServer_UpdateBefore.Patch(ctx);
-                //MySession_UpdateComponents.Patch(ctx);
+                MySession_UpdateComponents.Patch(ctx);
                 {
                     MySession_UpdateComponents_Transpile.Patch(ctx);
                 }
