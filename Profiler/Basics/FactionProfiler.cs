@@ -18,7 +18,7 @@ namespace Profiler.Basics
         {
             key = null;
 
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
+            if (profilerResult.Category != ProfilerCategory.General) return false;
 
             var player = _mask.ExtractPlayer(profilerResult.GameEntity);
             if (!player.HasValue) return false;

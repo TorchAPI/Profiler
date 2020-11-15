@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Reflection;
 using Profiler.Util;
-using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
+using VRage.Network;
 
 namespace Profiler.Core.Patches
 {
-    internal static class Game_UpdateInternal
+    public static class MyReplicationServer_UpdateAfter
     {
-        const string Category = ProfilerCategory.Update;
-        static readonly Type SelfType = typeof(Game_UpdateInternal);
-        static readonly Type Type = typeof(Game);
-        static readonly MethodInfo Method = Type.InstanceMethod("UpdateInternal");
+        const string Category = ProfilerCategory.UpdateReplication;
+        static readonly Type SelfType = typeof(MyReplicationServer_UpdateAfter);
+        static readonly Type Type = typeof(MyReplicationServer);
+        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyReplicationServer.UpdateAfter));
         static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)

@@ -79,10 +79,6 @@ namespace Profiler.Core
 
         public static bool Enabled { get; set; } = true;
 
-        public const string GeneralEntrypoint = "General";
-        public const string ScriptsEntrypoint = "Scripts";
-        public const string TotalEntrypoint = Game_UpdateInternal.Entrypoint;
-
         public static void Patch(PatchContext ctx)
         {
             Log.Trace("Profiler patch started");
@@ -129,6 +125,15 @@ namespace Profiler.Core
             _programmableBlockActionMethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(ProgrammableBlockActionName);
 
             Game_UpdateInternal.Patch(ctx);
+            MyTransportLayer_Tick.Patch(ctx);
+            MyGameService_Update.Patch(ctx);
+            MyNetworkReader_Process.Patch(ctx);
+            MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
+            MyReplicationServer_UpdateBefore.Patch(ctx);
+            MySession_UpdateComponents.Patch(ctx);
+            MyReplicationServer_UpdateAfter.Patch(ctx);
+            MyDedicatedServer_Tick.Patch(ctx);
+            MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
 
             Log.Trace("Profiler patch ended");
         }
@@ -249,15 +254,15 @@ namespace Profiler.Core
             {
                 case MyEntityComponentBase componentBase:
                 {
-                    return new ProfilerToken(componentBase.Entity, mappingIndex, GeneralEntrypoint, DateTime.UtcNow);
+                    return new ProfilerToken(componentBase.Entity, mappingIndex, ProfilerCategory.General, DateTime.UtcNow);
                 }
                 case IMyEntity entity:
                 {
-                    return new ProfilerToken(entity, mappingIndex, GeneralEntrypoint, DateTime.UtcNow);
+                    return new ProfilerToken(entity, mappingIndex, ProfilerCategory.General, DateTime.UtcNow);
                 }
                 default:
                 {
-                    return new ProfilerToken(null, mappingIndex, GeneralEntrypoint, DateTime.UtcNow);
+                    return new ProfilerToken(null, mappingIndex, ProfilerCategory.General, DateTime.UtcNow);
                 }
             }
         }
@@ -265,7 +270,7 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
         {
-            return new ProfilerToken(block, _programmableBlockActionMethodIndex, ScriptsEntrypoint, DateTime.UtcNow);
+            return new ProfilerToken(block, _programmableBlockActionMethodIndex, ProfilerCategory.Scripts, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -278,7 +283,7 @@ namespace Profiler.Core
             var result = new ProfilerResult(
                 token.GameEntity,
                 token.MethodIndex,
-                token.Entrypoint,
+                token.Category,
                 token.StartTimestamp,
                 DateTime.UtcNow,
                 mainThreadUpdate);

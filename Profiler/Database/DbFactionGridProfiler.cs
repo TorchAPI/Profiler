@@ -41,7 +41,7 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<MyCubeGrid> result)
         {
-            foreach (var (grid, entity) in result.GetTopEntities())
+            foreach (var (grid, entity) in result.GetTop())
             {
                 InfluxDbPointFactory
                     .Measurement("profiler_faction_grids")

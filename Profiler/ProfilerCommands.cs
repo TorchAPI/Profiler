@@ -62,7 +62,7 @@ namespace Profiler
                     var result = profiler.GetResult();
 
                     var data = result
-                        .GetTopEntities()
+                        .GetTop()
                         .Take(args.Top)
                         .Select(p => (BlockTypeToString(p.Key), p.Entity));
 
@@ -99,7 +99,7 @@ namespace Profiler
                     var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .GetTopEntities()
+                        .GetTop()
                         .Take(args.Top)
                         .Select(p => (p.Key.BlockPairName, p.Entity));
 
@@ -131,7 +131,7 @@ namespace Profiler
                     var profilerEntities = profiler.GetResult();
 
                     var gridProfilerEntries = profilerEntities
-                        .GetTopEntities()
+                        .GetTop()
                         .Where(p => !p.Key.Closed)
                         .Take(args.Top);
 
@@ -176,7 +176,7 @@ namespace Profiler
                     var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .GetTopEntities()
+                        .GetTop()
                         .Where(p => p.Key != null)
                         .Take(args.Top)
                         .Select(p => (p.Key.Tag, p.Entity));
@@ -209,7 +209,7 @@ namespace Profiler
                     var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .GetTopEntities()
+                        .GetTop()
                         .Where(p => p.Key != null)
                         .Select(p => (p.Key.DisplayName, p.Entity))
                         .Take(args.Top);
@@ -242,7 +242,7 @@ namespace Profiler
                     var profilerEntities = profiler.GetResult();
 
                     var data = profilerEntities
-                        .GetTopEntities()
+                        .GetTop()
                         .Where(p => !p.Key.Closed)
                         .Take(args.Top)
                         .Select(p => (PbToString(p.Key), p.Entity));

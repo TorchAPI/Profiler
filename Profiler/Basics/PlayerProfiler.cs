@@ -15,7 +15,7 @@ namespace Profiler.Basics
         protected override bool TryAccept(ProfilerResult profilerResult, out MyIdentity key)
         {
             key = null;
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
+            if (profilerResult.Category != ProfilerCategory.General) return false;
 
             var playerIdOrNull = _mask.ExtractPlayer(profilerResult.GameEntity);
             if (!(playerIdOrNull is long playerId)) return false;

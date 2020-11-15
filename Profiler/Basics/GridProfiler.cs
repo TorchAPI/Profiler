@@ -28,7 +28,7 @@ namespace Profiler.Basics
         {
             key = null;
 
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
+            if (profilerResult.Category != ProfilerCategory.General) return false;
 
             var grid = profilerResult.GameEntity.GetParentEntityOfType<MyCubeGrid>();
             if (grid == null) return false;

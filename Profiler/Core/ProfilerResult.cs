@@ -27,9 +27,9 @@ namespace Profiler.Core
         public readonly IMyEntity GameEntity;
 
         /// <summary>
-        /// Entrypoint of the profiled method.
+        /// Category of the profiled method.
         /// </summary>
-        public readonly string Entrypoint;
+        public readonly string Category;
 
         /// <summary>
         /// Timestamp of when the profiling started for the profiled method.
@@ -51,15 +51,15 @@ namespace Profiler.Core
         /// </summary>
         /// <param name="gameEntity">Game entity responsible for the profiled method. Null if not associated with a specific game entity.</param>
         /// <param name="methodIndex">Index of the profiled method.</param>
-        /// <param name="entrypoint">Entrypoint of the profiled method.</param>
+        /// <param name="category">Category of the profiled method.</param>
         /// <param name="startTimestamp">Timestamp of when the profiling started for the profiled method.</param>
         /// <param name="stopTimestamp">Timestamp of when the profiling ended for the profiled method.</param>
         /// <param name="isMainThread">True if the profiled method was executed in the main thread, otherwise false.</param>
-        internal ProfilerResult(IMyEntity gameEntity, int methodIndex, string entrypoint, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
+        internal ProfilerResult(IMyEntity gameEntity, int methodIndex, string category, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
         {
             _methodIndex = methodIndex;
             GameEntity = gameEntity;
-            Entrypoint = entrypoint;
+            Category = category;
             StartTimestamp = startTimestamp;
             StopTimestamp = stopTimestamp;
             IsMainThread = isMainThread;

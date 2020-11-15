@@ -1,21 +1,24 @@
 ﻿using System;
 using System.Reflection;
+using NLog;
 using Profiler.Util;
-using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
 {
-    internal static class Game_UpdateInternal
+    public static class MyNetworkReader_Process
     {
-        const string Category = ProfilerCategory.Update;
-        static readonly Type SelfType = typeof(Game_UpdateInternal);
-        static readonly Type Type = typeof(Game);
-        static readonly MethodInfo Method = Type.InstanceMethod("UpdateInternal");
+        const string Category = ProfilerCategory.UpdateNetwork;
+        static readonly Type SelfType = typeof(MyNetworkReader_Process);
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+        static readonly Type Type = ReflectionUtils.GetTypeByName("Sandbox.Engine.Networking.MyNetworkReader");
+        static readonly MethodInfo Method = Type.StaticMethod("Process");
         static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
+            Log.Info($"type: {Type.AssemblyQualifiedName}");
+            
             var prefix = SelfType.StaticMethod(nameof(Prefix));
             var suffix = SelfType.StaticMethod(nameof(Suffix));
 
@@ -25,7 +28,7 @@ namespace Profiler.Core.Patches
 
         // ReSharper disable once RedundantAssignment
         // ReSharper disable once UnusedParameter.Local
-        static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
+        static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
             __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
         }
