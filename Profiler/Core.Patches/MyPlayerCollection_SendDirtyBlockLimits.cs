@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Reflection;
 using Profiler.Util;
-using Sandbox.Engine.Platform;
+using Sandbox.Game.Multiplayer;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
 {
-    internal static class Game_UpdateInternal
+    public static class MyPlayerCollection_SendDirtyBlockLimits
     {
-        const string Category = ProfilerCategory.Update;
-        static readonly Type SelfType = typeof(Game_UpdateInternal);
-        static readonly Type Type = typeof(Game);
-        static readonly MethodInfo Method = Type.InstanceMethod("UpdateInternal");
+        const string Category = ProfilerCategory.UpdateNetwork;
+        static readonly Type SelfType = typeof(MyPlayerCollection_SendDirtyBlockLimits);
+        static readonly Type Type = typeof(MyPlayerCollection);
+        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyPlayerCollection.SendDirtyBlockLimits));
         static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)

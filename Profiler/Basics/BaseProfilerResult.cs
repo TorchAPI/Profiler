@@ -37,29 +37,21 @@ namespace Profiler.Basics
         /// <param name="key">Key to search an entity with.</param>
         /// <param name="entity">Entity if found.</param>
         /// <returns>True if found, otherwise false.</returns>
-        public bool TryGetEntityByKey(K key, out ProfilerEntry entity)
+        public bool TryGet(K key, out ProfilerEntry entity)
         {
             return _entities.TryGetValue(key, out entity);
         }
 
-        /// <summary>
-        /// Gets the entity tagged by the key.
-        /// </summary>
-        /// <remarks>
-        /// Returns null if not found.
-        /// </remarks>
-        /// <param name="key">Key to search an entity with.</param>
-        /// <returns>Entity if found, otherwise null.</returns>
-        public ProfilerEntry GetEntityByKey(K key)
+        public long GetMainThreadMsOrElse(K key, long defaultValue)
         {
-            return TryGetEntityByKey(key, out var e) ? e : null;
+            return TryGet(key, out var e) ? e.TotalMainThreadTimeMs : defaultValue;
         }
 
         /// <summary>
         /// Top entities from the profiler sorted by their total profiled time.
         /// </summary>
         /// <returns>Sorted entities per their profiled time, descending.</returns>
-        public IEnumerable<(K Key, ProfilerEntry Entity)> GetTopEntities(int? limit = null)
+        public IEnumerable<(K Key, ProfilerEntry Entity)> GetTop(int? limit = null)
         {
             return _entities
                 .OrderByDescending(r => r.Value.TotalTimeMs)

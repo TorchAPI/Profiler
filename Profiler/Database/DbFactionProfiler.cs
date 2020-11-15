@@ -44,7 +44,7 @@ namespace Profiler.Database
                 onlineFactions.Increment(faction.Tag);
             }
 
-            foreach (var (faction, entity) in result.GetTopEntities())
+            foreach (var (faction, entity) in result.GetTop())
             {
                 onlineFactions.TryGetValue(faction.Tag, out var onlinePlayerCount);
 

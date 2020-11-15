@@ -30,7 +30,7 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<Type> result)
         {
-            foreach (var (type, entry) in result.GetTopEntities(MaxDisplayCount))
+            foreach (var (type, entry) in result.GetTop(MaxDisplayCount))
             {
                 InfluxDbPointFactory
                     .Measurement("profiler_block_types")

@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Reflection;
 using Profiler.Util;
-using Sandbox.Engine.Platform;
+using Sandbox.Engine.Networking;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
 {
-    internal static class Game_UpdateInternal
+    public static class MyGameService_Update
     {
-        const string Category = ProfilerCategory.Update;
-        static readonly Type SelfType = typeof(Game_UpdateInternal);
-        static readonly Type Type = typeof(Game);
-        static readonly MethodInfo Method = Type.InstanceMethod("UpdateInternal");
-        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
+        const string Category = ProfilerCategory.UpdateNetwork;
+        static readonly Type SelfType = typeof(MyGameService_Update);
+        static readonly MethodInfo Method = typeof(MyGameService).StaticMethod(nameof(MyGameService.Update));
+        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{typeof(MyGameService).FullName}#{nameof(MyGameService.Update)}");
 
         public static void Patch(PatchContext ctx)
         {
@@ -25,7 +24,7 @@ namespace Profiler.Core.Patches
 
         // ReSharper disable once RedundantAssignment
         // ReSharper disable once UnusedParameter.Local
-        static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
+        static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
             __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
         }

@@ -1,21 +1,24 @@
 ﻿using System;
 using System.Reflection;
+using NLog;
 using Profiler.Util;
-using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
 {
-    internal static class Game_UpdateInternal
+    public sealed class MyTransportLayer_Tick
     {
-        const string Category = ProfilerCategory.Update;
-        static readonly Type SelfType = typeof(Game_UpdateInternal);
-        static readonly Type Type = typeof(Game);
-        static readonly MethodInfo Method = Type.InstanceMethod("UpdateInternal");
+        const string Category = ProfilerCategory.UpdateNetwork;
+        static readonly Type SelfType = typeof(MyTransportLayer_Tick);
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+        static readonly Type Type = ReflectionUtils.GetTypeByName("Sandbox.Engine.Multiplayer.MyTransportLayer");
+        static readonly MethodInfo Method = Type.InstanceMethod("Tick");
         static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
+            Log.Info($"type: {Type.Assembly}");
+
             var prefix = SelfType.StaticMethod(nameof(Prefix));
             var suffix = SelfType.StaticMethod(nameof(Suffix));
 

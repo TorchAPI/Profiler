@@ -1,11 +1,13 @@
-﻿using Profiler.Core.Patches;
-
-namespace Profiler.Core
+﻿namespace Profiler.Core
 {
-    public static class ProfilerCategory
+    internal static class ProfilerCategory
     {
         public const string General = "General";
         public const string Scripts = "Scripts";
-        public const string Total = Game_UpdateInternal.Category;
+
+        public const string Update = "Update";
+        public const string UpdateNetwork = "UpdateNetwork";
+        public const string UpdateReplication = "UpdateReplication";
+        public const string UpdateComponents = "UpdateComponentss";
     }
 }

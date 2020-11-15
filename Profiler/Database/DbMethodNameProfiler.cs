@@ -28,7 +28,7 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<string> result)
         {
-            foreach (var (name, entity) in result.GetTopEntities())
+            foreach (var (name, entity) in result.GetTop())
             {
                 InfluxDbPointFactory
                     .Measurement("profiler_method_names")

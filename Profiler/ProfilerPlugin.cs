@@ -58,7 +58,7 @@ namespace Profiler
 
             _dbProfilers.AddRange(new IDbProfiler[]
             {
-                new DbTotalProfiler(),
+                new DbGameLoopProfiler(),
                 new DbGridProfiler(),
                 new DbFactionProfiler(),
                 new DbBlockTypeProfiler(),

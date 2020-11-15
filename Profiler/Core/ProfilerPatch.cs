@@ -123,6 +123,15 @@ namespace Profiler.Core
             _programmableBlockActionMethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(ProgrammableBlockActionName);
 
             Game_UpdateInternal.Patch(ctx);
+            MyTransportLayer_Tick.Patch(ctx);
+            MyGameService_Update.Patch(ctx);
+            MyNetworkReader_Process.Patch(ctx);
+            MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
+            MyReplicationServer_UpdateBefore.Patch(ctx);
+            MySession_UpdateComponents.Patch(ctx);
+            MyReplicationServer_UpdateAfter.Patch(ctx);
+            MyDedicatedServer_Tick.Patch(ctx);
+            MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
 
             Log.Trace("Profiler patch ended");
         }
