@@ -33,7 +33,7 @@ namespace Profiler.Database
             var waitMs = frameMs - updateMs;
             var updateNetworkMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateNetwork, 0);
             var updateReplMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateReplication, 0);
-            var updateCompsMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateComponents, 0);
+            var updateCompsMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateSessionComponents, 0);
             var updateOtherMs = updateMs - updateNetworkMs - updateReplMs - updateCompsMs;
 
             InfluxDbPointFactory

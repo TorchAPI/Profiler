@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Reflection;
 using Profiler.Util;
-using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
+using VRage.Game.Components;
 
 namespace Profiler.Core.Patches
 {
-    public sealed class MySession_UpdateComponents
+    public static class MySessionComponentBase_UpdateBeforeSimulation
     {
         const string Category = ProfilerCategory.UpdateSessionComponents;
-        static readonly Type SelfType = typeof(MySession_UpdateComponents);
-        static readonly Type Type = typeof(MySession);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.UpdateComponents));
+        static readonly Type SelfType = typeof(MySessionComponentBase_UpdateBeforeSimulation);
+        static readonly Type Type = typeof(MySessionComponentBase);
+        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySessionComponentBase.UpdateBeforeSimulation));
         static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
@@ -27,7 +27,7 @@ namespace Profiler.Core.Patches
         // ReSharper disable once UnusedParameter.Local
         static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
+            __localProfilerHandle = new ProfilerToken(__instance, MethodIndex, Category, DateTime.UtcNow);
         }
 
         static void Suffix(ref ProfilerToken? __localProfilerHandle)

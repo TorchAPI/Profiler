@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Reflection;
 using Profiler.Util;
-using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
+using VRage.Network;
 
 namespace Profiler.Core.Patches
 {
-    public sealed class MySession_UpdateComponents
+    public sealed class MyReplicationServer_Simulate
     {
-        const string Category = ProfilerCategory.UpdateSessionComponents;
-        static readonly Type SelfType = typeof(MySession_UpdateComponents);
-        static readonly Type Type = typeof(MySession);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.UpdateComponents));
+        const string Category = ProfilerCategory.UpdateReplication;
+        static readonly Type SelfType = typeof(MyReplicationServer_Simulate);
+        static readonly Type Type = typeof(MyReplicationServer);
+        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyReplicationServer.Simulate));
         static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)

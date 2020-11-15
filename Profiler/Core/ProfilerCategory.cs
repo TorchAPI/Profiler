@@ -8,6 +8,6 @@
         public const string Update = "Update";
         public const string UpdateNetwork = "UpdateNetwork";
         public const string UpdateReplication = "UpdateReplication";
-        public const string UpdateComponents = "UpdateComponentss";
+        public const string UpdateSessionComponents = "UpdateSessionComponentss";
     }
 }
