@@ -124,14 +124,14 @@ namespace Profiler.Core.Patches
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? CreateTokenInUpdateSessionComponentsCategory(object obj, int mappingIndex)
+        static ProfilerToken? CreateTokenInUpdateSessionComponentsCategory(MySessionComponentBase obj, int mappingIndex)
         {
             //Log.Trace($"session component: {obj?.GetType()}");
             return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateSessionComponents, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? CreateTokenInUpdateReplicationCategory(object obj, int mappingIndex)
+        static ProfilerToken? CreateTokenInUpdateReplicationCategory(MySessionComponentBase obj, int mappingIndex)
         {
             //Log.Trace($"replication layer: {obj?.GetType()}");
             return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateReplication, DateTime.UtcNow);
