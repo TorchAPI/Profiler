@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public sealed class MySession_UpdateComponents
     {
-        const string Category = ProfilerCategory.UpdateComponents;
+        const string Category = ProfilerCategory.UpdateSessionComponents;
         static readonly Type SelfType = typeof(MySession_UpdateComponents);
         static readonly Type Type = typeof(MySession);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.UpdateComponents));

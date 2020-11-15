@@ -2,6 +2,7 @@
 using Profiler.Core;
 using Sandbox.Game.World;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 
 namespace Profiler.Basics
 {
@@ -20,7 +21,7 @@ namespace Profiler.Basics
 
             if (profilerResult.Category != ProfilerCategory.General) return false;
 
-            var player = _mask.ExtractPlayer(profilerResult.GameEntity);
+            var player = _mask.ExtractPlayer(profilerResult.GameEntity as IMyEntity);
             if (!player.HasValue) return false;
 
             var faction = MySession.Static.Factions.TryGetPlayerFaction(player.Value);

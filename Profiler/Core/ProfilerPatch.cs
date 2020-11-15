@@ -48,7 +48,9 @@ namespace Profiler.Core
         private static readonly MethodInfo _programmableRunSandboxed;
 
         static readonly MethodInfo GetGenericProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Start));
-        static readonly MethodInfo StopProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(StopToken));
+
+        public static readonly MethodInfo StopProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(StopToken));
+
         static readonly MethodInfo DoTick = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Tick));
 
         private static readonly ListReader<string> ParallelEntityUpdateMethods = new List<string>
@@ -125,15 +127,20 @@ namespace Profiler.Core
             _programmableBlockActionMethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(ProgrammableBlockActionName);
 
             Game_UpdateInternal.Patch(ctx);
-            MyTransportLayer_Tick.Patch(ctx);
-            MyGameService_Update.Patch(ctx);
-            MyNetworkReader_Process.Patch(ctx);
-            MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
-            MyReplicationServer_UpdateBefore.Patch(ctx);
-            MySession_UpdateComponents.Patch(ctx);
-            MyReplicationServer_UpdateAfter.Patch(ctx);
-            MyDedicatedServer_Tick.Patch(ctx);
-            MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
+            {
+                MyTransportLayer_Tick.Patch(ctx);
+                MyGameService_Update.Patch(ctx);
+                MyNetworkReader_Process.Patch(ctx);
+                MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
+                MyReplicationServer_UpdateBefore.Patch(ctx);
+                //MySession_UpdateComponents.Patch(ctx);
+                {
+                    MySession_UpdateComponents_Transpile.Patch(ctx);
+                }
+                MyReplicationServer_UpdateAfter.Patch(ctx);
+                MyDedicatedServer_Tick.Patch(ctx);
+                MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
+            }
 
             Log.Trace("Profiler patch ended");
         }

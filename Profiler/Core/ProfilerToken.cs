@@ -1,5 +1,4 @@
 using System;
-using VRage.ModAPI;
 
 namespace Profiler.Core
 {
@@ -14,7 +13,7 @@ namespace Profiler.Core
         /// <remarks>
         /// Null if not associated with a specific game entity.
         /// </remarks>
-        public readonly IMyEntity GameEntity;
+        public readonly object GameEntity;
 
         /// <summary>
         /// Index of the profiled method.
@@ -38,7 +37,7 @@ namespace Profiler.Core
         /// <param name="methodIndex">Index of the profiled method.</param>
         /// <param name="category">Category of the profiled method.</param>
         /// <param name="startTimestamp">Timestamp of when this profiling started.</param>
-        public ProfilerToken(IMyEntity gameEntity, int methodIndex, string category, DateTime startTimestamp)
+        public ProfilerToken(object gameEntity, int methodIndex, string category, DateTime startTimestamp)
         {
             GameEntity = gameEntity;
             MethodIndex = methodIndex;

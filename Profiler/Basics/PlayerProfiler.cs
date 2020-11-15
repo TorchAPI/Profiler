@@ -1,5 +1,6 @@
 ﻿using Profiler.Core;
 using Sandbox.Game.World;
+using VRage.ModAPI;
 
 namespace Profiler.Basics
 {
@@ -17,7 +18,7 @@ namespace Profiler.Basics
             key = null;
             if (profilerResult.Category != ProfilerCategory.General) return false;
 
-            var playerIdOrNull = _mask.ExtractPlayer(profilerResult.GameEntity);
+            var playerIdOrNull = _mask.ExtractPlayer(profilerResult.GameEntity as IMyEntity);
             if (!(playerIdOrNull is long playerId)) return false;
 
             var identity = MySession.Static.Players.TryGetIdentity(playerId);

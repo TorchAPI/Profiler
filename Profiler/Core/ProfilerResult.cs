@@ -1,5 +1,4 @@
 ﻿using System;
-using VRage.ModAPI;
 
 namespace Profiler.Core
 {
@@ -24,7 +23,7 @@ namespace Profiler.Core
         /// <remarks>
         /// Null if not associated with a specific game entity.
         /// </remarks>
-        public readonly IMyEntity GameEntity;
+        public readonly object GameEntity;
 
         /// <summary>
         /// Category of the profiled method.
@@ -55,7 +54,7 @@ namespace Profiler.Core
         /// <param name="startTimestamp">Timestamp of when the profiling started for the profiled method.</param>
         /// <param name="stopTimestamp">Timestamp of when the profiling ended for the profiled method.</param>
         /// <param name="isMainThread">True if the profiled method was executed in the main thread, otherwise false.</param>
-        internal ProfilerResult(IMyEntity gameEntity, int methodIndex, string category, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
+        internal ProfilerResult(object gameEntity, int methodIndex, string category, DateTime startTimestamp, DateTime stopTimestamp, bool isMainThread)
         {
             _methodIndex = methodIndex;
             GameEntity = gameEntity;

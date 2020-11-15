@@ -33,8 +33,8 @@ namespace Profiler.Database
             var waitMs = frameMs - updateMs;
             var updateNetworkMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateNetwork, 0);
             var updateReplMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateReplication, 0);
-            var updateCompsMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateComponents, 0);
-            var updateOtherMs = updateMs - updateNetworkMs - updateReplMs - updateCompsMs;
+            var updateSessionCompsMs = (float) result.GetMainThreadMsOrElse(ProfilerCategory.UpdateSessionComponents, 0);
+            var updateOtherMs = updateMs - updateNetworkMs - updateReplMs - updateSessionCompsMs;
 
             InfluxDbPointFactory
                 .Measurement("profiler_game_loop")
@@ -44,7 +44,7 @@ namespace Profiler.Database
                 .Field("update", updateMs / result.TotalTicks)
                 .Field("update_network", updateNetworkMs / result.TotalTicks)
                 .Field("update_replication", updateReplMs / result.TotalTicks)
-                .Field("update_components", updateCompsMs / result.TotalTicks)
+                .Field("update_session_components", updateSessionCompsMs / result.TotalTicks)
                 .Field("update_other", updateOtherMs / result.TotalTicks)
                 .Write();
         }

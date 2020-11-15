@@ -14,6 +14,11 @@ namespace Profiler.Core
             _mapping = new List<string>();
         }
 
+        public int GetOrCreateIndexOf(Type type, string method)
+        {
+            return GetOrCreateIndexOf($"{type.FullName}#{method}");
+        }
+
         public int GetOrCreateIndexOf(string methodName)
         {
             var existingIndex = _mapping.IndexOf(methodName);

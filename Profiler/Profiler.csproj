@@ -170,6 +170,7 @@
     <Compile Include="Core.Patches\MyDedicatedServer_ReportReplicatedObjects.cs" />
     <Compile Include="Core.Patches\MyNetworkReader_Process.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
+    <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
     <Compile Include="Core\IProfiler.cs" />
     <Compile Include="Core\MethodIndexer.cs" />
