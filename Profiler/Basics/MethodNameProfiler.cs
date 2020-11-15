@@ -7,7 +7,7 @@ namespace Profiler.Basics
         protected override bool TryAccept(ProfilerResult profilerResult, out string key)
         {
             key = profilerResult.MethodName;
-            return true;
+            return profilerResult.Category == ProfilerCategory.General;
         }
     }
 }

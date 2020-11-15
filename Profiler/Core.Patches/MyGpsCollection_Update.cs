@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Reflection;
 using Profiler.Util;
-using Sandbox.Game.World;
+using Sandbox.Game.Multiplayer;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
 {
-    public sealed class MySession_UpdateComponents
+    public static class MyGpsCollection_Update
     {
-        const string Category = ProfilerCategory.UpdateSessionComponentsAll;
-        static readonly Type SelfType = typeof(MySession_UpdateComponents);
-        static readonly Type Type = typeof(MySession);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.UpdateComponents));
+        const string Category = ProfilerCategory.UpdateGps;
+        static readonly Type SelfType = typeof(MyGpsCollection_Update);
+        static readonly Type Type = typeof(MyGpsCollection);
+        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyGpsCollection.Update));
         static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
@@ -25,7 +25,7 @@ namespace Profiler.Core.Patches
 
         // ReSharper disable once RedundantAssignment
         // ReSharper disable once UnusedParameter.Local
-        static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
+        static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
             __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
         }

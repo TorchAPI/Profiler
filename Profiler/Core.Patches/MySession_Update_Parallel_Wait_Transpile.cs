@@ -5,32 +5,29 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
+using ParallelTasks;
 using Profiler.Util;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
 using TorchUtils;
-using VRage.Game.Components;
-using VRage.Network;
 
 namespace Profiler.Core.Patches
 {
-    public static class MySession_UpdateComponents_Transpile
+    public static class MySession_Update_Parallel_Wait_Transpile
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        static readonly Type SelfType = typeof(MySession_UpdateComponents_Transpile);
+        static readonly Type SelfType = typeof(MySession_Update_Parallel_Wait_Transpile);
         static readonly Type Type = typeof(MySession);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.UpdateComponents));
+        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.Update));
 
-        static readonly MethodInfo UpdateSessionComponentsCategoryTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInUpdateSessionComponentsCategory));
-        static readonly MethodInfo UpdateReplicationCategoryTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInUpdateReplicationCategory));
+        static readonly MethodInfo ParallelWaitTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInParallelWait));
+        static readonly MethodInfo ParallelRunTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInParallelRun));
 
         static readonly (Type Type, string Method, MethodInfo TokenCreataor)[] TargetCalls =
         {
-            (typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateBeforeSimulation), UpdateSessionComponentsCategoryTokenMethod),
-            (typeof(MyReplicationLayer), nameof(MyReplicationLayer.Simulate), UpdateReplicationCategoryTokenMethod),
-            (typeof(MySessionComponentBase), nameof(MySessionComponentBase.Simulate), UpdateSessionComponentsCategoryTokenMethod),
-            (typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateAfterSimulation), UpdateSessionComponentsCategoryTokenMethod),
+            (typeof(IWorkScheduler), nameof(IWorkScheduler.WaitForTasksToFinish), ParallelWaitTokenMethod),
+            (typeof(Parallel), nameof(Parallel.RunCallbacks), ParallelRunTokenMethod),
         };
 
         static bool Matches(MethodBase method, Type type, string name)
@@ -61,13 +58,12 @@ namespace Profiler.Core.Patches
         {
             var localTokenValue = __localCreator(typeof(ProfilerToken?));
             var oldInsns = insns.ToArray();
-            var newInsns = new List<MsilInstruction>();
+            var newInsns = insns.ToList();
             var insertedInsnCount = 0;
 
             for (var i = 0; i < oldInsns.Length; i++)
             {
                 var insn = oldInsns[i];
-                newInsns.Add(insn);
 
                 // skip any instructions other than method calls
                 if (insn.OpCode != OpCodes.Call && insn.OpCode != OpCodes.Callvirt) continue;
@@ -95,7 +91,6 @@ namespace Profiler.Core.Patches
                 // make a ProfilerToken instance
                 var createTokenInsns = new List<MsilInstruction>
                 {
-                    new MsilInstruction(OpCodes.Dup), // copy & pass the caller object to token
                     new MsilInstruction(OpCodes.Ldc_I4).InlineValue(mappingIndex), // pass the method index to token
                     new MsilInstruction(OpCodes.Call).InlineValue(tokenCreatorMethod), // create the token
                     localTokenValue.AsValueStore(), // store
@@ -124,17 +119,17 @@ namespace Profiler.Core.Patches
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? CreateTokenInUpdateSessionComponentsCategory(object obj, int mappingIndex)
+        static ProfilerToken? CreateTokenInParallelWait(int mappingIndex)
         {
             //Log.Trace($"session component: {obj?.GetType()}");
-            return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateSessionComponents, DateTime.UtcNow);
+            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? CreateTokenInUpdateReplicationCategory(object obj, int mappingIndex)
+        static ProfilerToken? CreateTokenInParallelRun(int mappingIndex)
         {
             //Log.Trace($"replication layer: {obj?.GetType()}");
-            return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateReplication, DateTime.UtcNow);
+            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait, DateTime.UtcNow);
         }
     }
 }

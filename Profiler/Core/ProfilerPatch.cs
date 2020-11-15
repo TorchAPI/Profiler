@@ -132,14 +132,18 @@ namespace Profiler.Core
                 MyGameService_Update.Patch(ctx);
                 MyNetworkReader_Process.Patch(ctx);
                 MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
-                MyReplicationServer_UpdateBefore.Patch(ctx);
-                //MySession_UpdateComponents.Patch(ctx);
                 {
-                    MySession_UpdateComponents_Transpile.Patch(ctx);
+                    MySession_Update_Parallel_Wait_Transpile.Patch(ctx);
+                    MyReplicationServer_UpdateBefore.Patch(ctx);
+                    MySession_UpdateComponents.Patch(ctx);
+                    {
+                        MySession_UpdateComponents_Transpile.Patch(ctx);
+                    }
+                    MyGpsCollection_Update.Patch(ctx);
+                    MyReplicationServer_UpdateAfter.Patch(ctx);
+                    MyDedicatedServer_Tick.Patch(ctx);
+                    MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
                 }
-                MyReplicationServer_UpdateAfter.Patch(ctx);
-                MyDedicatedServer_Tick.Patch(ctx);
-                MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
             }
 
             Log.Trace("Profiler patch ended");

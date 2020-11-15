@@ -9,10 +9,13 @@ namespace Profiler.Basics
             key = profilerResult.Category;
             switch (profilerResult.Category)
             {
-                case ProfilerCategory.Update: return true;
-                case ProfilerCategory.UpdateNetwork: return true;
-                case ProfilerCategory.UpdateReplication: return true;
-                case ProfilerCategory.UpdateSessionComponents: return true;
+                case ProfilerCategory.Update:
+                case ProfilerCategory.UpdateNetwork:
+                case ProfilerCategory.UpdateReplication:
+                case ProfilerCategory.UpdateSessionComponents:
+                case ProfilerCategory.UpdateSessionComponentsAll:
+                case ProfilerCategory.UpdateGps:
+                case ProfilerCategory.UpdateParallelWait: return true;
                 default: return false;
             }
         }
