@@ -160,6 +160,7 @@
     <Compile Include="Basics\PlayerProfiler.cs" />
     <Compile Include="Basics\ProfilerEntry.cs" />
     <Compile Include="Basics\GameLoopProfiler.cs" />
+    <Compile Include="Basics\SessionComponentsProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core.Patches\Game_UpdateInternal.cs" />
     <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
@@ -184,6 +185,7 @@
     <Compile Include="Database\DbMethodNameProfiler.cs" />
     <Compile Include="Database\DbProfilerConfig.cs" />
     <Compile Include="Database\DbGameLoopProfiler.cs" />
+    <Compile Include="Database\DbSessionComponentsProfiler.cs" />
     <Compile Include="Database\IDbProfiler.cs" />
     <Compile Include="Database\DbGridProfiler.cs" />
     <Compile Include="Core\MyDistributedUpdaterReflection.cs" />

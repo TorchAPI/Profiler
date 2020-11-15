@@ -64,6 +64,7 @@ namespace Profiler
                 new DbBlockTypeProfiler(),
                 new DbFactionGridProfiler(config),
                 new DbMethodNameProfiler(),
+                new DbSessionComponentsProfiler(),
             });
 
             _dbProfilersCanceller = new CancellationTokenSource();
@@ -71,7 +72,7 @@ namespace Profiler
             Task.Factory
                 .StartNew(RunDbProfilers)
                 .Forget(Log);
-            
+
             Log.Info("database writing started");
         }
 
