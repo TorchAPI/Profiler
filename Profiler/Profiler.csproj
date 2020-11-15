@@ -162,6 +162,7 @@
     <Compile Include="Basics\GameLoopProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core.Patches\Game_UpdateInternal.cs" />
+    <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
     <Compile Include="Core.Patches\MyDedicatedServer_Tick.cs" />
     <Compile Include="Core.Patches\MyPlayerCollection_SendDirtyBlockLimits.cs" />
     <Compile Include="Core.Patches\MyReplicationServer_UpdateAfter.cs" />
@@ -169,6 +170,7 @@
     <Compile Include="Core.Patches\MyGameService_Update.cs" />
     <Compile Include="Core.Patches\MyDedicatedServer_ReportReplicatedObjects.cs" />
     <Compile Include="Core.Patches\MyNetworkReader_Process.cs" />
+    <Compile Include="Core.Patches\MySession_Update_Parallel_Wait_Transpile.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
