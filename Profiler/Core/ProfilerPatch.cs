@@ -48,7 +48,9 @@ namespace Profiler.Core
         private static readonly MethodInfo _programmableRunSandboxed;
 
         static readonly MethodInfo GetGenericProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Start));
-        static readonly MethodInfo StopProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(StopToken));
+
+        public static readonly MethodInfo StopProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(StopToken));
+
         static readonly MethodInfo DoTick = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Tick));
 
         private static readonly ListReader<string> ParallelEntityUpdateMethods = new List<string>
@@ -131,10 +133,7 @@ namespace Profiler.Core
                 MyReplicationServer_UpdateBefore.Patch(ctx);
                 //MySession_UpdateComponents.Patch(ctx);
                 {
-                    MySessionComponentBase_UpdateBeforeSimulation.Patch(ctx);
-                    MyReplicationServer_Simulate.Patch(ctx);
-                    MySessionComponentBase_Simulate.Patch(ctx);
-                    MySessionComponentBase_UpdateAfterSimulation.Patch(ctx);
+                    MySession_UpdateComponents_Transpile.Patch(ctx);
                 }
                 MyReplicationServer_UpdateAfter.Patch(ctx);
                 MyDedicatedServer_Tick.Patch(ctx);
