@@ -71,7 +71,7 @@ namespace Profiler.Basics
         public BaseProfilerResult<K> GetResult()
         {
             var totalFrameCount = VRageUtils.CurrentGameFrameCount - _startFrameCount;
-            var totalTime = DateTime.UtcNow - _startTime;
+            var totalTime = (DateTime.UtcNow - _startTime).TotalMilliseconds;
             return new BaseProfilerResult<K>(totalFrameCount, totalTime, _profilerEntries);
         }
 

@@ -12,7 +12,7 @@ namespace Profiler.Basics
     {
         readonly IReadOnlyDictionary<K, ProfilerEntry> _entities;
 
-        internal BaseProfilerResult(ulong totalFrameCount, TimeSpan totalTime, IReadOnlyDictionary<K, ProfilerEntry> self)
+        internal BaseProfilerResult(ulong totalFrameCount, double totalTime, IReadOnlyDictionary<K, ProfilerEntry> self)
         {
             TotalFrameCount = totalFrameCount;
             TotalTime = totalTime;
@@ -27,7 +27,7 @@ namespace Profiler.Basics
         /// <summary>
         /// Total time the profiler ran.
         /// </summary>
-        public TimeSpan TotalTime { get; }
+        public double TotalTime { get; }
 
         /// <summary>
         /// Gets the entity tagged by the key.

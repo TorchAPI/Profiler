@@ -8,6 +8,9 @@ namespace Profiler.Basics
     /// </summary>
     public sealed class ProfilerEntry
     {
+        // https://docs.microsoft.com/en-us/dotnet/api/system.datetime.ticks
+        const double TickToTime = 1D / 10000;
+
         // Use Pool
         ProfilerEntry()
         {
@@ -32,11 +35,11 @@ namespace Profiler.Basics
         {
             if (profilerResult.IsMainThread)
             {
-                TotalMainThreadTime += profilerResult.TotalTick / 10f;
+                TotalMainThreadTime += profilerResult.TotalTick * TickToTime;
             }
             else
             {
-                TotalOffThreadTime += profilerResult.TotalTick / 10f;
+                TotalOffThreadTime += profilerResult.TotalTick * TickToTime;
             }
         }
 

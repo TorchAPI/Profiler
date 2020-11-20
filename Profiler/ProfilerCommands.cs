@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using Profiler.Basics;
@@ -201,13 +202,22 @@ namespace Profiler
             return $"'{blockName}' (in '{gridName}')";
         }
 
-        static void RunThread(Func<Task> task)
+        static async void RunThread(Func<Task> task)
         {
-            Task.Factory.StartNew(task).Forget(Log);
+            try
+            {
+                await task();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e);
+            }
         }
 
         void RespondResult(BaseProfilerResult<string> result)
         {
+            Log.Info("Got result from profiling via command");
+
             var messageBuilder = new StringBuilder();
             messageBuilder.AppendLine($"Finished profiling; past {result.TotalTime:0.00}ms and {result.TotalFrameCount} frames");
 
@@ -219,6 +229,7 @@ namespace Profiler
                 messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel (total {totalTime})");
             }
 
+            Log.Info("Finished showing profiler result via command");
             Context.Respond(messageBuilder.ToString());
         }
 
