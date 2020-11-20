@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
 using ParallelTasks;
-using Profiler.Util;
+using Profiler.TorchUtils;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
@@ -86,7 +86,7 @@ namespace Profiler.Core.Patches
                 Log.Trace($"index: {i}, insert index: {insertIndex}");
 
                 // create a method index
-                var mappingIndex = MethodIndexer.Instance.GetOrCreateIndexOf(method.DeclaringType, method.Name);
+                var mappingIndex = StringIndexer.Instance.IndexOf($"{method.DeclaringType}#{method.Name}");
 
                 // make a ProfilerToken instance
                 var createTokenInsns = new List<MsilInstruction>
@@ -122,14 +122,14 @@ namespace Profiler.Core.Patches
         static ProfilerToken? CreateTokenInParallelWait(int mappingIndex)
         {
             //Log.Trace($"session component: {obj?.GetType()}");
-            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait, DateTime.UtcNow);
+            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? CreateTokenInParallelRun(int mappingIndex)
         {
             //Log.Trace($"replication layer: {obj?.GetType()}");
-            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait, DateTime.UtcNow);
+            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait);
         }
     }
 }

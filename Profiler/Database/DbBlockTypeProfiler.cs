@@ -17,9 +17,9 @@ namespace Profiler.Database
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
                 using (var profiler = new BlockTypeProfiler(gameEntityMask))
-                using (ProfilerPatch.Profile(profiler))
+                using (ProfilerResultQueue.Instance.Profile(profiler))
                 {
-                    profiler.StartProcessQueue();
+                    profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
                     var result = profiler.GetResult();
@@ -30,12 +30,12 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<Type> result)
         {
-            foreach (var (type, entry) in result.GetTop(MaxDisplayCount))
+            foreach (var (type, entry) in result.GetTopEntities(MaxDisplayCount))
             {
                 InfluxDbPointFactory
                     .Measurement("profiler_block_types")
                     .Tag("block_type", type.Name)
-                    .Field("main_ms", (float) entry.TotalMainThreadTimeMs / result.TotalTicks)
+                    .Field("main_ms", (float) entry.TotalMainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

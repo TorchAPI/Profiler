@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using NLog;
 
 namespace Profiler.Basics
 {
@@ -11,20 +10,19 @@ namespace Profiler.Basics
     /// <typeparam name="K">The type of key used in the BaseProfiler.</typeparam>
     public sealed class BaseProfilerResult<K>
     {
-        readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly IReadOnlyDictionary<K, ProfilerEntry> _entities;
 
-        internal BaseProfilerResult(ulong totalTicks, TimeSpan totalTime, IReadOnlyDictionary<K, ProfilerEntry> self)
+        internal BaseProfilerResult(ulong totalFrameCount, TimeSpan totalTime, IReadOnlyDictionary<K, ProfilerEntry> self)
         {
-            TotalTicks = totalTicks;
+            TotalFrameCount = totalFrameCount;
             TotalTime = totalTime;
             _entities = self;
         }
 
         /// <summary>
-        /// Total tick (game frame) the profiler ran.
+        /// Total game frames the profiler ran.
         /// </summary>
-        public ulong TotalTicks { get; }
+        public ulong TotalFrameCount { get; }
 
         /// <summary>
         /// Total time the profiler ran.
@@ -42,22 +40,37 @@ namespace Profiler.Basics
             return _entities.TryGetValue(key, out entity);
         }
 
-        public long GetMainThreadMsOrElse(K key, long defaultValue)
+        public double GetMainThreadTickMsOrElse(K key, long defaultValue)
         {
-            return TryGet(key, out var e) ? e.TotalMainThreadTimeMs : defaultValue;
+            return TryGet(key, out var e) ? e.TotalMainThreadTime : defaultValue;
         }
 
         /// <summary>
         /// Top entities from the profiler sorted by their total profiled time.
         /// </summary>
         /// <returns>Sorted entities per their profiled time, descending.</returns>
-        public IEnumerable<(K Key, ProfilerEntry Entity)> GetTop(int? limit = null)
+        public IEnumerable<(K Key, ProfilerEntry Entity)> GetTopEntities(int? limit = null)
         {
             return _entities
-                .OrderByDescending(r => r.Value.TotalTimeMs)
+                .OrderByDescending(r => r.Value.TotalTime)
                 .Select(kv => (kv.Key, kv.Value))
                 .Take(limit ?? int.MaxValue)
                 .ToArray();
+        }
+
+        /// <summary>
+        /// Create new BaseProfilerResult object with mapped keys.
+        /// </summary>
+        /// <param name="f">Function to map existing keys to new keys.</param>
+        /// <typeparam name="K1">New type of keys.</typeparam>
+        /// <returns>Object with the same list of entities but with a different key mapping.</returns>
+        public BaseProfilerResult<K1> Select<K1>(Func<K, K1> f)
+        {
+            var entities = _entities
+                .Select(kv => (f(kv.Key), kv.Value))
+                .ToDictionary(kv => kv.Item1, kv => kv.Item2);
+
+            return new BaseProfilerResult<K1>(TotalFrameCount, TotalTime, entities);
         }
     }
 }

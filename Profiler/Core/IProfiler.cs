@@ -13,6 +13,6 @@
         /// the number of patched methods in ProfilerPatch and
         /// the number of entities in the game.</remarks>
         /// <param name="profilerResult">Profiling data of the method that just finished running.</param>
-        void OnProfileComplete(in ProfilerResult profilerResult);
+        void ReceiveProfilerResult(in ProfilerResult profilerResult);
     }
 }

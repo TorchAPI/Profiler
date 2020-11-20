@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using Profiler.Util;
+using Profiler.TorchUtils;
 using Sandbox.Engine.Networking;
 using Torch.Managers.PatchManager;
 
@@ -11,7 +11,7 @@ namespace Profiler.Core.Patches
         const string Category = ProfilerCategory.UpdateNetwork;
         static readonly Type SelfType = typeof(MyGameService_Update);
         static readonly MethodInfo Method = typeof(MyGameService).StaticMethod(nameof(MyGameService.Update));
-        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{typeof(MyGameService).FullName}#{nameof(MyGameService.Update)}");
+        static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{typeof(MyGameService).FullName}#{nameof(MyGameService.Update)}");
 
         public static void Patch(PatchContext ctx)
         {
@@ -26,7 +26,7 @@ namespace Profiler.Core.Patches
         // ReSharper disable once UnusedParameter.Local
         static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
+            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
         }
 
         static void Suffix(ref ProfilerToken? __localProfilerHandle)

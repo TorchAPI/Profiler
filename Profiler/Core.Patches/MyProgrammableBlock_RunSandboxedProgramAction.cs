@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using Profiler.Util;
+using Profiler.TorchUtils;
 using Sandbox.Game.Entities.Blocks;
 using Torch.Managers.PatchManager;
 
@@ -12,7 +12,7 @@ namespace Profiler.Core.Patches
         static readonly Type SelfType = typeof(MyProgrammableBlock_RunSandboxedProgramAction);
         static readonly Type Type = typeof(MyProgrammableBlock);
         static readonly MethodInfo Method = Type.InstanceMethod("RunSandboxedProgramAction");
-        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
+        static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
@@ -27,7 +27,7 @@ namespace Profiler.Core.Patches
         // ReSharper disable once UnusedParameter.Local
         static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
+            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
         }
 
         static void Suffix(ref ProfilerToken? __localProfilerHandle)
