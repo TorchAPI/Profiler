@@ -2,9 +2,9 @@
 
 namespace Profiler.Basics
 {
-    public sealed class GameLoopProfiler : BaseProfiler<string>
+    public sealed class GameLoopProfiler : BaseProfiler<ProfilerCategory>
     {
-        protected override bool TryAccept(ProfilerResult profilerResult, out string key)
+        protected override bool TryAccept(ProfilerResult profilerResult, out ProfilerCategory key)
         {
             key = profilerResult.Category;
             switch (profilerResult.Category)
@@ -15,7 +15,8 @@ namespace Profiler.Basics
                 case ProfilerCategory.UpdateSessionComponents:
                 case ProfilerCategory.UpdateSessionComponentsAll:
                 case ProfilerCategory.UpdateGps:
-                case ProfilerCategory.UpdateParallelWait: return true;
+                case ProfilerCategory.UpdateParallelWait:
+                    return true;
                 default: return false;
             }
         }

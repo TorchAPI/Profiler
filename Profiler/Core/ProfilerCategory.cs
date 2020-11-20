@@ -1,16 +1,15 @@
 ﻿namespace Profiler.Core
 {
-    internal static class ProfilerCategory
+    public enum ProfilerCategory
     {
-        public const string General = "General";
-        public const string Scripts = "Scripts";
-
-        public const string Update = "Update";
-        public const string UpdateNetwork = "UpdateNetwork";
-        public const string UpdateReplication = "UpdateReplication";
-        public const string UpdateParallelWait = "UpdateParallelWait";
-        public const string UpdateSessionComponents = "UpdateSessionComponents";
-        public const string UpdateSessionComponentsAll = "UpdateSessionComponentssll";
-        public const string UpdateGps = "UpdateGps";
+        General,
+        Scripts,
+        Update,
+        UpdateNetwork,
+        UpdateReplication,
+        UpdateParallelWait,
+        UpdateSessionComponents,
+        UpdateSessionComponentsAll,
+        UpdateGps,
     }
 }

@@ -9,10 +9,10 @@ namespace Profiler.Core
     {
         public readonly object GameEntity;
         public readonly int MethodIndex;
-        public readonly string Category;
+        public readonly ProfilerCategory Category;
         public readonly long StartTick; // in 100 nanoseconds
 
-        public ProfilerToken(object gameEntity, int methodIndex, string category)
+        public ProfilerToken(object gameEntity, int methodIndex, ProfilerCategory category)
         {
             GameEntity = gameEntity;
             MethodIndex = methodIndex;

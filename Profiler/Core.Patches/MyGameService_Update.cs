@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public static class MyGameService_Update
     {
-        const string Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
         static readonly Type SelfType = typeof(MyGameService_Update);
         static readonly MethodInfo Method = typeof(MyGameService).StaticMethod(nameof(MyGameService.Update));
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{typeof(MyGameService).FullName}#{nameof(MyGameService.Update)}");

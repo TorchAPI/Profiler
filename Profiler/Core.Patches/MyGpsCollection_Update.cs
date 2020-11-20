@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public static class MyGpsCollection_Update
     {
-        const string Category = ProfilerCategory.UpdateGps;
+        const ProfilerCategory Category = ProfilerCategory.UpdateGps;
         static readonly Type SelfType = typeof(MyGpsCollection_Update);
         static readonly Type Type = typeof(MyGpsCollection);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyGpsCollection.Update));

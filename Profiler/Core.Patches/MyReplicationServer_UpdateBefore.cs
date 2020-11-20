@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public static class MyReplicationServer_UpdateBefore
     {
-        const string Category = ProfilerCategory.UpdateReplication;
+        const ProfilerCategory Category = ProfilerCategory.UpdateReplication;
         static readonly Type SelfType = typeof(MyReplicationServer_UpdateBefore);
         static readonly Type Type = typeof(MyReplicationServer);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyReplicationServer.UpdateBefore));

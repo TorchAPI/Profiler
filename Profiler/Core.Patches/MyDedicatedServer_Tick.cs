@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public static class MyDedicatedServer_Tick
     {
-        const string Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
         static readonly Type SelfType = typeof(MyDedicatedServer_Tick);
         static readonly Type Type = typeof(MyDedicatedServer);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyDedicatedServer.Tick));

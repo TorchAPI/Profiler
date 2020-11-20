@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public sealed class MyTransportLayer_Tick
     {
-        const string Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
         static readonly Type SelfType = typeof(MyTransportLayer_Tick);
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type Type = ReflectionUtils.GetTypeByName("Sandbox.Engine.Multiplayer.MyTransportLayer");

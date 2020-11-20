@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public sealed class MyDedicatedServer_ReportReplicatedObjects
     {
-        const string Category = ProfilerCategory.UpdateReplication;
+        const ProfilerCategory Category = ProfilerCategory.UpdateReplication;
         static readonly Type SelfType = typeof(MyDedicatedServer_ReportReplicatedObjects);
         static readonly Type Type = typeof(MyDedicatedServer);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyDedicatedServer.ReportReplicatedObjects));

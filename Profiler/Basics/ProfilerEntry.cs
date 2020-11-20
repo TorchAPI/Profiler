@@ -31,7 +31,7 @@ namespace Profiler.Basics
         /// </summary>
         public double TotalTime => TotalMainThreadTime + TotalOffThreadTime;
 
-        internal void Add(ProfilerResult profilerResult)
+        internal void Add(in ProfilerResult profilerResult)
         {
             if (profilerResult.IsMainThread)
             {

@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public sealed class MyProgrammableBlock_RunSandboxedProgramAction
     {
-        const string Category = ProfilerCategory.Scripts;
+        const ProfilerCategory Category = ProfilerCategory.Scripts;
         static readonly Type SelfType = typeof(MyProgrammableBlock_RunSandboxedProgramAction);
         static readonly Type Type = typeof(MyProgrammableBlock);
         static readonly MethodInfo Method = Type.InstanceMethod("RunSandboxedProgramAction");
