@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using Profiler.Basics;
@@ -43,7 +42,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlockType()
         {
-            RunThread(async () =>
+            this.CatchAndReport(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -71,7 +70,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlock()
         {
-            RunThread(async () =>
+            this.CatchAndReport(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -94,7 +93,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileGrids()
         {
-            RunThread(async () =>
+            this.CatchAndReport(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -130,7 +129,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileFactions()
         {
-            RunThread(async () =>
+            this.CatchAndReport(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -153,7 +152,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfilePlayers()
         {
-            RunThread(async () =>
+            this.CatchAndReport(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -176,7 +175,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileScripts()
         {
-            RunThread(async () =>
+            this.CatchAndReport(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -200,18 +199,6 @@ namespace Profiler
             var blockName = pb.DisplayName;
             var gridName = pb.GetParentEntityOfType<MyCubeGrid>()?.DisplayName ?? "<none>";
             return $"'{blockName}' (in '{gridName}')";
-        }
-
-        static async void RunThread(Func<Task> task)
-        {
-            try
-            {
-                await task();
-            }
-            catch (Exception e)
-            {
-                Log.Error(e);
-            }
         }
 
         void RespondResult(BaseProfilerResult<string> result)
