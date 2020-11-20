@@ -1,6 +1,5 @@
-using System.Threading;
 using Profiler.Core;
-using Profiler.Util;
+using Profiler.TorchUtils;
 
 namespace Profiler.Basics
 {
@@ -9,8 +8,8 @@ namespace Profiler.Basics
     /// </summary>
     public sealed class ProfilerEntry
     {
-        long _totalMainThreadTimeMs;
-        long _totalOffThreadTimeMs;
+        // https://docs.microsoft.com/en-us/dotnet/api/system.datetime.ticks
+        const double TickToTime = 1D / 10000;
 
         // Use Pool
         ProfilerEntry()
@@ -20,36 +19,37 @@ namespace Profiler.Basics
         /// <summary>
         /// Total main-thread computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public long TotalMainThreadTimeMs => _totalMainThreadTimeMs;
+        public double TotalMainThreadTime { get; private set; }
 
         /// <summary>
         /// Total not-main-thread computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public long TotalOffThreadTimeMs => _totalOffThreadTimeMs;
+        public double TotalOffThreadTime { get; private set; }
 
         /// <summary>
         /// Total computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public long TotalTimeMs => TotalMainThreadTimeMs + TotalOffThreadTimeMs;
+        public double TotalTime => TotalMainThreadTime + TotalOffThreadTime;
 
         internal void Add(ProfilerResult profilerResult)
         {
             if (profilerResult.IsMainThread)
             {
-                Interlocked.Add(ref _totalMainThreadTimeMs, profilerResult.DeltaTimeMs);
+                TotalMainThreadTime += profilerResult.TotalTick * TickToTime;
             }
             else
             {
-                Interlocked.Add(ref _totalOffThreadTimeMs, profilerResult.DeltaTimeMs);
+                TotalOffThreadTime += profilerResult.TotalTick * TickToTime;
             }
         }
 
         void Reset()
         {
-            _totalMainThreadTimeMs = 0;
-            _totalOffThreadTimeMs = 0;
+            TotalMainThreadTime = 0;
+            TotalOffThreadTime = 0;
         }
 
+        // Pool for ProfilerEntity instances to prevent GC
         internal sealed class Pool : ObjectPool<ProfilerEntry>
         {
             public static readonly Pool Instance = new Pool();

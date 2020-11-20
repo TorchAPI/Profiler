@@ -20,9 +20,9 @@ namespace Profiler.Database
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
                 using (var profiler = new FactionProfiler(gameEntityMask))
-                using (ProfilerPatch.Profile(profiler))
+                using (ProfilerResultQueue.Instance.Profile(profiler))
                 {
-                    profiler.StartProcessQueue();
+                    profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
                     var result = profiler.GetResult();
@@ -44,14 +44,14 @@ namespace Profiler.Database
                 onlineFactions.Increment(faction.Tag);
             }
 
-            foreach (var (faction, entity) in result.GetTop())
+            foreach (var (faction, entity) in result.GetTopEntities())
             {
                 onlineFactions.TryGetValue(faction.Tag, out var onlinePlayerCount);
 
                 InfluxDbPointFactory
                     .Measurement("profiler_factions")
                     .Tag("faction_tag", faction.Tag)
-                    .Field("main_ms", (float) entity.TotalMainThreadTimeMs / result.TotalTicks)
+                    .Field("main_ms", entity.TotalMainThreadTime / result.TotalFrameCount)
                     .Field("online_player_count", onlinePlayerCount)
                     .Write();
             }

@@ -16,9 +16,9 @@ namespace Profiler.Database
             while (!canceller.IsCancellationRequested)
             {
                 using (var profiler = new SessionComponentsProfiler())
-                using (ProfilerPatch.Profile(profiler))
+                using (ProfilerResultQueue.Instance.Profile(profiler))
                 {
-                    profiler.StartProcessQueue();
+                    profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
                     var result = profiler.GetResult();
@@ -29,12 +29,12 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<MySessionComponentBase> result)
         {
-            foreach (var (comp, entity) in result.GetTop())
+            foreach (var (comp, entity) in result.GetTopEntities())
             {
                 InfluxDbPointFactory
                     .Measurement("profiler_game_loop_session_components")
                     .Tag("comp_name", comp.GetType().Name)
-                    .Field("main_ms", (float) entity.TotalMainThreadTimeMs / result.TotalTicks)
+                    .Field("main_ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

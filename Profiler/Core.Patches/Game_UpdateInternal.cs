@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Reflection;
-using Profiler.Util;
+using Profiler.TorchUtils;
 using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
+using TorchUtils;
 
 namespace Profiler.Core.Patches
 {
@@ -12,7 +13,7 @@ namespace Profiler.Core.Patches
         static readonly Type SelfType = typeof(Game_UpdateInternal);
         static readonly Type Type = typeof(Game);
         static readonly MethodInfo Method = Type.InstanceMethod("UpdateInternal");
-        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
+        static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
@@ -27,7 +28,7 @@ namespace Profiler.Core.Patches
         // ReSharper disable once UnusedParameter.Local
         static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
+            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
         }
 
         static void Suffix(ref ProfilerToken? __localProfilerHandle)

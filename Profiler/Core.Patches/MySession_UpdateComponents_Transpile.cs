@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.Util;
+using Profiler.TorchUtils;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
@@ -90,7 +90,7 @@ namespace Profiler.Core.Patches
                 Log.Trace($"index: {i}, insert index: {insertIndex}");
 
                 // create a method index
-                var mappingIndex = MethodIndexer.Instance.GetOrCreateIndexOf(method.DeclaringType, method.Name);
+                var mappingIndex = StringIndexer.Instance.IndexOf($"{method.DeclaringType}#{method.Name}");
 
                 // make a ProfilerToken instance
                 var createTokenInsns = new List<MsilInstruction>
@@ -127,14 +127,14 @@ namespace Profiler.Core.Patches
         static ProfilerToken? CreateTokenInUpdateSessionComponentsCategory(MySessionComponentBase obj, int mappingIndex)
         {
             //Log.Trace($"session component: {obj?.GetType()}");
-            return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateSessionComponents, DateTime.UtcNow);
+            return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateSessionComponents);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static ProfilerToken? CreateTokenInUpdateReplicationCategory(MySessionComponentBase obj, int mappingIndex)
         {
             //Log.Trace($"replication layer: {obj?.GetType()}");
-            return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateReplication, DateTime.UtcNow);
+            return new ProfilerToken(obj, mappingIndex, ProfilerCategory.UpdateReplication);
         }
     }
 }

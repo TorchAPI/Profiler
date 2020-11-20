@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using NLog;
-using Profiler.Util;
+using Profiler.TorchUtils;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
@@ -13,7 +13,7 @@ namespace Profiler.Core.Patches
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type Type = ReflectionUtils.GetTypeByName("Sandbox.Engine.Multiplayer.MyTransportLayer");
         static readonly MethodInfo Method = Type.InstanceMethod("Tick");
-        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
+        static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
@@ -30,7 +30,7 @@ namespace Profiler.Core.Patches
         // ReSharper disable once UnusedParameter.Local
         static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
+            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
         }
 
         static void Suffix(ref ProfilerToken? __localProfilerHandle)

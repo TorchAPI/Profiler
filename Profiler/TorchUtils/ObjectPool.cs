@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace Profiler.Util
+namespace Profiler.TorchUtils
 {
+    //todo https://docs.microsoft.com/en-us/dotnet/standard/collections/thread-safe/how-to-create-an-object-pool
+    
     /// <summary>
     /// Typical object pool with thread-safe pooling/unpooling functions.
     /// O(1) for pooling and unpooling.

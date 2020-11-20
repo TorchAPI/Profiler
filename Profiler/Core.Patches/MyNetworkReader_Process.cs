@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using NLog;
-using Profiler.Util;
+using Profiler.TorchUtils;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
@@ -13,12 +13,12 @@ namespace Profiler.Core.Patches
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type Type = ReflectionUtils.GetTypeByName("Sandbox.Engine.Networking.MyNetworkReader");
         static readonly MethodInfo Method = Type.StaticMethod("Process");
-        static readonly int MethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf($"{Type.FullName}#{Method.Name}");
+        static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
             Log.Info($"type: {Type.AssemblyQualifiedName}");
-            
+
             var prefix = SelfType.StaticMethod(nameof(Prefix));
             var suffix = SelfType.StaticMethod(nameof(Suffix));
 
@@ -30,7 +30,7 @@ namespace Profiler.Core.Patches
         // ReSharper disable once UnusedParameter.Local
         static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category, DateTime.UtcNow);
+            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
         }
 
         static void Suffix(ref ProfilerToken? __localProfilerHandle)

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
 using TorchUtils;
@@ -15,86 +13,32 @@ namespace Profiler.Basics
     /// <remarks>You can use ProfilerPatch without this class.</remarks>
     public abstract class BaseProfiler<K> : IProfiler, IDisposable
     {
-        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-
-        // Holds onto ProfileResults until processed.
-        readonly ConcurrentQueue<ProfilerResult> _queuedProfilerResults;
-
-        /// <summary>
-        /// Cancels processing the ProfilerResult queue.
-        /// </summary>
-        readonly CancellationTokenSource _queueCanceller;
-
         // Thread-safe dictionary of ProfilerEntry with an arbitrary type of keys.
         readonly ConcurrentDictionary<K, ProfilerEntry> _profilerEntries;
 
         // Cached function to unpool (or create) a new ProfilerEntity instance.
         readonly Func<K, ProfilerEntry> _makeProfilerEntity;
 
-        ulong _startTick;
+        ulong _startFrameCount;
         DateTime _startTime;
-
-        bool _disposed;
 
         protected BaseProfiler()
         {
-            _queuedProfilerResults = new ConcurrentQueue<ProfilerResult>();
-            _queueCanceller = new CancellationTokenSource();
             _profilerEntries = new ConcurrentDictionary<K, ProfilerEntry>();
             _makeProfilerEntity = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
         }
 
-        /// <inheritdoc/>
-        void IProfiler.OnProfileComplete(in ProfilerResult profilerResult)
-        {
-            _queuedProfilerResults.Enqueue(profilerResult);
-        }
-
         /// <summary>
-        /// Start a thread to process ProfilerResults that are queued by ProfilerPatch.
+        /// Mark the beginning of profiling. Must be called once to properly retrieve the profiling data.
         /// </summary>
-        public void StartProcessQueue()
+        public void MarkStart()
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(GetType().FullName);
-            }
-
-            Task.Factory
-                .StartNew(ProcessQueue)
-                .Forget(Log);
+            _startFrameCount = VRageUtils.CurrentGameFrameCount;
+            _startTime = DateTime.UtcNow;
         }
 
-        void ProcessQueue()
-        {
-            try
-            {
-                _startTick = ProfilerPatch.CurrentTick;
-                _startTime = DateTime.UtcNow;
-
-                var queueCancellerToken = _queueCanceller.Token;
-                while (!_queueCanceller.IsCancellationRequested)
-                {
-                    while (_queuedProfilerResults.TryDequeue(out var profilerResult))
-                    {
-                        OnProfilerResultDequeued(profilerResult);
-                    }
-
-                    // wait for the next interval, or throws if cancelled
-                    queueCancellerToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(0.1f));
-                }
-            }
-            catch (ObjectDisposedException)
-            {
-                // pass
-            }
-            catch (OperationCanceledException)
-            {
-                // pass
-            }
-        }
-
-        void OnProfilerResultDequeued(in ProfilerResult profilerResult)
+        /// <inheritdoc/>
+        void IProfiler.ReceiveProfilerResult(in ProfilerResult profilerResult)
         {
             try
             {
@@ -126,9 +70,9 @@ namespace Profiler.Basics
         /// <returns></returns>
         public BaseProfilerResult<K> GetResult()
         {
-            var totalTick = ProfilerPatch.CurrentTick - _startTick;
-            var totalTime = DateTime.UtcNow - _startTime;
-            return new BaseProfilerResult<K>(totalTick, totalTime, _profilerEntries);
+            var totalFrameCount = VRageUtils.CurrentGameFrameCount - _startFrameCount;
+            var totalTime = (DateTime.UtcNow - _startTime).TotalMilliseconds;
+            return new BaseProfilerResult<K>(totalFrameCount, totalTime, _profilerEntries);
         }
 
         /// <summary>
@@ -143,11 +87,8 @@ namespace Profiler.Basics
         /// <inheritdoc/>
         public virtual void Dispose()
         {
-            _disposed = true;
-            _queueCanceller.Cancel();
-            _queueCanceller.Dispose();
-
             ProfilerEntry.Pool.Instance.PoolAll(_profilerEntries.Values);
+            _profilerEntries.Clear();
         }
     }
 }

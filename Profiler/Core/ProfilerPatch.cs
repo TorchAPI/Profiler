@@ -6,10 +6,8 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
 using Profiler.Core.Patches;
-using Profiler.Util;
-using Sandbox.Engine.Platform;
+using Profiler.TorchUtils;
 using Sandbox.Game.Entities;
-using Sandbox.Game.Entities.Blocks;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
 using Torch.Utils;
@@ -39,14 +37,9 @@ namespace Profiler.Core
         [ReflectedMethodInfo(typeof(MyGameLogic), nameof(MyGameLogic.UpdateOnceBeforeFrame))]
         private static readonly MethodInfo _gameLogicUpdateOnceBeforeFrame;
 
-        [ReflectedMethodInfo(typeof(Game), nameof(Game.RunSingleFrame))]
-        private static readonly MethodInfo _gameRunSingleFrame;
+        static readonly MethodInfo GetGenericProfilerToken = typeof(ProfilerPatch).StaticMethod(nameof(Start));
 
-        static readonly MethodInfo GetGenericProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Start));
-
-        public static readonly MethodInfo StopProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(StopToken));
-
-        static readonly MethodInfo DoTick = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Tick));
+        public static readonly MethodInfo StopProfilerToken = typeof(ProfilerPatch).StaticMethod(nameof(StopToken));
 
         private static readonly ListReader<string> ParallelEntityUpdateMethods = new List<string>
         {
@@ -68,11 +61,6 @@ namespace Profiler.Core
 
         private static readonly MethodInfo _generalizedUpdateTranspiler = typeof(ProfilerPatch).StaticMethod(nameof(TranspilerForUpdate));
 
-        static readonly List<IProfiler> _observers = new List<IProfiler>();
-        static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
-
-        public static ulong CurrentTick { get; private set; }
-
         public static bool Enabled { get; set; } = true;
 
         internal static void Patch(PatchContext ctx)
@@ -80,8 +68,6 @@ namespace Profiler.Core
             Log.Trace("Profiler patch started");
 
             ReflectedManager.Process(typeof(ProfilerPatch));
-
-            ctx.GetPattern(_gameRunSingleFrame).Suffixes.Add(DoTick);
 
             foreach (var parallelUpdateMethod in ParallelEntityUpdateMethods)
             {
@@ -189,13 +175,13 @@ namespace Profiler.Core
                         {
                             Log.Error(
                                 $"Failed attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}."
-                                + $"  Running back through the parameters left the stack in an invalid state.");
+                                + "  Running back through the parameters left the stack in an invalid state.");
                             continue;
                         }
 
                         foundAny = true;
 
-                        var mappingIndex = MethodIndexer.Instance.GetOrCreateIndexOf(methodName);
+                        var mappingIndex = StringIndexer.Instance.IndexOf(methodName);
 
                         Log.Trace($"Attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}");
                         var startProfiler = new[]
@@ -241,15 +227,15 @@ namespace Profiler.Core
             {
                 case MyEntityComponentBase componentBase:
                 {
-                    return new ProfilerToken(componentBase.Entity, mappingIndex, ProfilerCategory.General, DateTime.UtcNow);
+                    return new ProfilerToken(componentBase.Entity, mappingIndex, ProfilerCategory.General);
                 }
                 case IMyEntity entity:
                 {
-                    return new ProfilerToken(entity, mappingIndex, ProfilerCategory.General, DateTime.UtcNow);
+                    return new ProfilerToken(entity, mappingIndex, ProfilerCategory.General);
                 }
                 default:
                 {
-                    return new ProfilerToken(null, mappingIndex, ProfilerCategory.General, DateTime.UtcNow);
+                    return new ProfilerToken(null, mappingIndex, ProfilerCategory.General);
                 }
             }
         }
@@ -261,78 +247,9 @@ namespace Profiler.Core
 
             if (!(tokenOrNull is ProfilerToken token)) return;
 
-            var result = new ProfilerResult(
-                token.GameEntity,
-                token.MethodIndex,
-                token.Category,
-                token.StartTimestamp,
-                DateTime.UtcNow,
-                mainThreadUpdate);
+            var result = new ProfilerResult(token, mainThreadUpdate);
 
-            lock (_observers)
-            {
-                foreach (var observer in _observers)
-                {
-                    observer.OnProfileComplete(result);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Add an observer to receive profiling data of every update method in the game world.
-        /// </summary>
-        /// <param name="observer">Observer object to receive profiling data until removed.</param>
-        public static void AddProfiler(IProfiler observer)
-        {
-            lock (_observers)
-            {
-                if (_observers.Contains(observer))
-                {
-                    Log.Warn($"Observer already added: {observer}");
-                    return;
-                }
-
-                _observers.Add(observer);
-            }
-        }
-
-        /// <summary>
-        /// Remove an observer to stop receiving profiling data.
-        /// </summary>
-        /// <param name="observer">Observer object to remove from the profiler.</param>
-        public static void RemoveProfiler(IProfiler observer)
-        {
-            lock (_observers)
-            {
-                _observers.Remove(observer);
-            }
-        }
-
-        /// <summary>
-        /// Add an observer and, when the returned IDisposable object is disposed, remove the observer from the profiler.
-        /// </summary>
-        /// <param name="observer">Observer to add/remove.</param>
-        /// <returns>IDisposable object that, when disposed, removes the observer from the profiler.</returns>
-        public static IDisposable Profile(IProfiler observer)
-        {
-            AddProfiler(observer);
-            return new ActionDisposable(() => RemoveProfiler(observer));
-        }
-
-        static void Tick()
-        {
-            CurrentTick++;
-
-            _tickTaskSource.Tick(CurrentTick);
-        }
-
-        /// <summary>
-        /// Waits until the next tick of the game.
-        /// </summary>
-        /// <returns>Awaitable object that retrieves the current tick when the game ticks next time.</returns>
-        public static TickTaskSource.TickTask WaitUntilNextGameTick()
-        {
-            return _tickTaskSource.GetTask();
+            ProfilerResultQueue.Instance.Enqueue(result);
         }
     }
 }

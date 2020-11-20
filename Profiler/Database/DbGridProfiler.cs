@@ -18,9 +18,9 @@ namespace Profiler.Database
             {
                 var gameEntityMask = new GameEntityMask(null, null, null);
                 using (var profiler = new GridProfiler(gameEntityMask))
-                using (ProfilerPatch.Profile(profiler))
+                using (ProfilerResultQueue.Instance.Profile(profiler))
                 {
-                    profiler.StartProcessQueue();
+                    profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
 
                     var result = profiler.GetResult();
@@ -31,12 +31,12 @@ namespace Profiler.Database
 
         void OnProfilingFinished(BaseProfilerResult<MyCubeGrid> result)
         {
-            foreach (var (grid, entity) in result.GetTop(MaxDisplayCount))
+            foreach (var (grid, entity) in result.GetTopEntities(MaxDisplayCount))
             {
                 InfluxDbPointFactory
                     .Measurement("profiler")
                     .Tag("grid_name", grid.DisplayName)
-                    .Field("main_ms", (float) entity.TotalMainThreadTimeMs / result.TotalTicks)
+                    .Field("main_ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

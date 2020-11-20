@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace Profiler.Util
+namespace Profiler.TorchUtils
 {
     /// <summary>
     /// Generate awaitable objects that complete whenever a tick is registered.
