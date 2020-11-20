@@ -14,10 +14,10 @@ using TorchUtils;
 
 namespace Profiler.Core.Patches
 {
-    public static class MySession_Update_Parallel_Wait_Transpile
+    public static class MySession_Update_Transpile
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        static readonly Type SelfType = typeof(MySession_Update_Parallel_Wait_Transpile);
+        static readonly Type SelfType = typeof(MySession_Update_Transpile);
         static readonly Type Type = typeof(MySession);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.Update));
 

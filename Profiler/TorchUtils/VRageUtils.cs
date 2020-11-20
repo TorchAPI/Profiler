@@ -12,22 +12,6 @@ namespace TorchUtils
 {
     internal static class VRageUtils
     {
-        public static IEnumerable<long> Owners(this IMyCubeGrid self)
-        {
-            var ownerIds = new HashSet<long>();
-            foreach (var owner in self.BigOwners)
-            {
-                ownerIds.Add(owner);
-            }
-
-            foreach (var owner in self.SmallOwners)
-            {
-                ownerIds.Add(owner);
-            }
-
-            return ownerIds;
-        }
-
         public static ulong SteamId(this MyPlayer p)
         {
             return p.Id.SteamId;
@@ -36,11 +20,6 @@ namespace TorchUtils
         public static long PlayerId(this MyPlayer p)
         {
             return p.Identity.IdentityId;
-        }
-
-        public static MyCubeGrid GetTopGrid(this IEnumerable<MyCubeGrid> group)
-        {
-            return group.MaxBy(g => g.Mass);
         }
 
         public static ISet<long> BigOwnersSet(this IEnumerable<MyCubeGrid> group)
@@ -104,6 +83,32 @@ namespace TorchUtils
             }
 
             return true;
+        }
+
+        public static bool TryGetPlayerById(long playerId, out MyPlayer player)
+        {
+            if (MySession.Static.Players.TryGetPlayerId(playerId, out var identity) &&
+                MySession.Static.Players.TryGetPlayerById(identity, out player))
+            {
+                return true;
+            }
+
+            player = default;
+            return false;
+        }
+
+        public static IEnumerable<MyPlayer> GetBigOwnerPlayers(this IMyCubeGrid self)
+        {
+            var players = new List<MyPlayer>();
+            foreach (var bigOwnerId in self.BigOwners)
+            {
+                if (TryGetPlayerById(bigOwnerId, out var player))
+                {
+                    players.Add(player);
+                }
+            }
+
+            return players;
         }
     }
 }

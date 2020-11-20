@@ -42,11 +42,6 @@ namespace Profiler.Core
         [ReflectedMethodInfo(typeof(Game), nameof(Game.RunSingleFrame))]
         private static readonly MethodInfo _gameRunSingleFrame;
 
-        const string ProgrammableBlockActionName = "RunSandboxedProgramAction";
-
-        [ReflectedMethodInfo(typeof(MyProgrammableBlock), ProgrammableBlockActionName)]
-        private static readonly MethodInfo _programmableRunSandboxed;
-
         static readonly MethodInfo GetGenericProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(Start));
 
         public static readonly MethodInfo StopProfilerToken = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(StopToken));
@@ -71,17 +66,16 @@ namespace Profiler.Core
 
         #endregion
 
-        private static readonly MethodInfo _generalizedUpdateTranspiler = ReflectionUtils.StaticMethod(typeof(ProfilerPatch), nameof(TranspilerForUpdate));
+        private static readonly MethodInfo _generalizedUpdateTranspiler = typeof(ProfilerPatch).StaticMethod(nameof(TranspilerForUpdate));
 
         static readonly List<IProfiler> _observers = new List<IProfiler>();
         static readonly TickTaskSource _tickTaskSource = new TickTaskSource();
-        static int _programmableBlockActionMethodIndex;
 
         public static ulong CurrentTick { get; private set; }
 
         public static bool Enabled { get; set; } = true;
 
-        public static void Patch(PatchContext ctx)
+        internal static void Patch(PatchContext ctx)
         {
             Log.Trace("Profiler patch started");
 
@@ -92,14 +86,13 @@ namespace Profiler.Core
             foreach (var parallelUpdateMethod in ParallelEntityUpdateMethods)
             {
                 var method = typeof(MyParallelEntityUpdateOrchestrator).GetMethod(parallelUpdateMethod, ReflectionUtils.StaticFlags | ReflectionUtils.InstanceFlags);
-                if (method != null)
-                {
-                    ctx.GetPattern(method).PostTranspilers.Add(_generalizedUpdateTranspiler);
-                }
-                else
+                if (method == null)
                 {
                     Log.Error($"Unable to find {typeof(MyParallelEntityUpdateOrchestrator)}#{parallelUpdateMethod}.  Some profiling data will be missing");
+                    continue;
                 }
+
+                ctx.GetPattern(method).PostTranspilers.Add(_generalizedUpdateTranspiler);
             }
 
             ctx.GetPattern(_gameLogicUpdateOnceBeforeFrame).PostTranspilers.Add(_generalizedUpdateTranspiler);
@@ -121,10 +114,7 @@ namespace Profiler.Core
                 Log.Error("Unable to find MyDistributedUpdater.Iterate(Delegate) method.  Some profiling data will be missing.");
             }
 
-            ctx.GetPattern(_programmableRunSandboxed).Prefixes.Add(typeof(ProfilerPatch).StaticMethod(nameof(PrefixProfilePb)));
-            ctx.GetPattern(_programmableRunSandboxed).Suffixes.Add(typeof(ProfilerPatch).StaticMethod(nameof(SuffixProfilePb)));
-
-            _programmableBlockActionMethodIndex = MethodIndexer.Instance.GetOrCreateIndexOf(ProgrammableBlockActionName);
+            MyProgrammableBlock_RunSandboxedProgramAction.Patch(ctx);
 
             Game_UpdateInternal.Patch(ctx);
             {
@@ -133,7 +123,7 @@ namespace Profiler.Core
                 MyNetworkReader_Process.Patch(ctx);
                 MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
                 {
-                    MySession_Update_Parallel_Wait_Transpile.Patch(ctx);
+                    MySession_Update_Transpile.Patch(ctx);
                     MyReplicationServer_UpdateBefore.Patch(ctx);
                     MySession_UpdateComponents.Patch(ctx);
                     {
@@ -147,20 +137,6 @@ namespace Profiler.Core
             }
 
             Log.Trace("Profiler patch ended");
-        }
-
-        // ReSharper disable InconsistentNaming
-        // ReSharper disable once SuggestBaseTypeForParameter
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void PrefixProfilePb(MyProgrammableBlock __instance, ref ProfilerToken? __localProfilerHandle)
-        {
-            __localProfilerHandle = StartProgrammableBlock(__instance);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void SuffixProfilePb(ref ProfilerToken? __localProfilerHandle)
-        {
-            StopToken(__localProfilerHandle, true);
         }
 
         private static IEnumerable<MsilInstruction> TranspilerForUpdate(
@@ -276,12 +252,6 @@ namespace Profiler.Core
                     return new ProfilerToken(null, mappingIndex, ProfilerCategory.General, DateTime.UtcNow);
                 }
             }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? StartProgrammableBlock(MyProgrammableBlock block)
-        {
-            return new ProfilerToken(block, _programmableBlockActionMethodIndex, ProfilerCategory.Scripts, DateTime.UtcNow);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
