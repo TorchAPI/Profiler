@@ -26,7 +26,7 @@ namespace Profiler.Database
             }
         }
 
-        void OnProfilingFinished(BaseProfilerResult<string> result)
+        void OnProfilingFinished(BaseProfilerResult<ProfilerCategory> result)
         {
             var updateMs = (float) result.GetMainThreadTickMsOrElse(ProfilerCategory.Update, 0);
             var waitMs = result.TotalTime - updateMs;

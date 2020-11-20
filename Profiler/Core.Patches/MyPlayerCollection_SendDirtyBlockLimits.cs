@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public static class MyPlayerCollection_SendDirtyBlockLimits
     {
-        const string Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
         static readonly Type SelfType = typeof(MyPlayerCollection_SendDirtyBlockLimits);
         static readonly Type Type = typeof(MyPlayerCollection);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyPlayerCollection.SendDirtyBlockLimits));

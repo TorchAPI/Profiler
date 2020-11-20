@@ -23,7 +23,7 @@ namespace Profiler.Core
         /// <summary>
         /// Category of the profiled method.
         /// </summary>
-        public readonly string Category;
+        public readonly ProfilerCategory Category;
 
         /// <summary>
         /// Time spent during profiling in 100 nanoseconds.

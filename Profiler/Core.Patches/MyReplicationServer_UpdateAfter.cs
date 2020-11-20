@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public static class MyReplicationServer_UpdateAfter
     {
-        const string Category = ProfilerCategory.UpdateReplication;
+        const ProfilerCategory Category = ProfilerCategory.UpdateReplication;
         static readonly Type SelfType = typeof(MyReplicationServer_UpdateAfter);
         static readonly Type Type = typeof(MyReplicationServer);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyReplicationServer.UpdateAfter));

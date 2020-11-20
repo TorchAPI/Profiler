@@ -3,13 +3,12 @@ using System.Reflection;
 using Profiler.TorchUtils;
 using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
-using TorchUtils;
 
 namespace Profiler.Core.Patches
 {
     internal static class Game_UpdateInternal
     {
-        const string Category = ProfilerCategory.Update;
+        const ProfilerCategory Category = ProfilerCategory.Update;
         static readonly Type SelfType = typeof(Game_UpdateInternal);
         static readonly Type Type = typeof(Game);
         static readonly MethodInfo Method = Type.InstanceMethod("UpdateInternal");

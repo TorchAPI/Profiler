@@ -8,7 +8,7 @@ namespace Profiler.Core.Patches
 {
     public static class MyNetworkReader_Process
     {
-        const string Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
         static readonly Type SelfType = typeof(MyNetworkReader_Process);
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type Type = ReflectionUtils.GetTypeByName("Sandbox.Engine.Networking.MyNetworkReader");
