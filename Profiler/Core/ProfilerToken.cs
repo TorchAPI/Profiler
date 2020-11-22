@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace Profiler.Core
 {
@@ -17,7 +18,7 @@ namespace Profiler.Core
             GameEntity = gameEntity;
             MethodIndex = methodIndex;
             Category = category;
-            StartTick = DateTime.UtcNow.Ticks;
+            StartTick = Stopwatch.GetTimestamp();
         }
     }
 }
