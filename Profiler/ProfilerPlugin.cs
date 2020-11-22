@@ -58,35 +58,41 @@ namespace Profiler
 
             _dbProfilers.AddRange(new IDbProfiler[]
             {
-                new DbTotalProfiler(),
+                new DbGameLoopProfiler(),
                 new DbGridProfiler(),
                 new DbFactionProfiler(),
                 new DbBlockTypeProfiler(),
                 new DbFactionGridProfiler(config),
                 new DbMethodNameProfiler(),
+                new DbSessionComponentsProfiler(),
             });
 
             _dbProfilersCanceller = new CancellationTokenSource();
 
             Task.Factory
-                .StartNew(() =>
+                .StartNew(RunDbProfilers)
+                .Forget(Log);
+
+            Log.Info("database writing started");
+        }
+
+        void RunDbProfilers()
+        {
+            Parallel.ForEach(_dbProfilers, dbProfiler =>
+            {
+                try
                 {
-                    Parallel.ForEach(_dbProfilers, dbProfiler =>
-                    {
-                        try
-                        {
-                            dbProfiler.StartProfiling(_dbProfilersCanceller.Token);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            // pass
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Warn(e);
-                        }
-                    });
-                }).Forget(Log);
+                    dbProfiler.StartProfiling(_dbProfilersCanceller.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // pass
+                }
+                catch (Exception e)
+                {
+                    Log.Warn(e);
+                }
+            });
         }
 
         void OnGameUnloading()

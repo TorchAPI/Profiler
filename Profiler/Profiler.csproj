@@ -150,6 +150,7 @@
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
     <Compile Include="Basics\BaseProfiler.cs" />
+    <Compile Include="Basics\BaseProfilerResult.cs" />
     <Compile Include="Basics\BlockDefinitionProfiler.cs" />
     <Compile Include="Basics\BlockTypeProfiler.cs" />
     <Compile Include="Basics\FactionProfiler.cs" />
@@ -158,17 +159,35 @@
     <Compile Include="Basics\MethodNameProfiler.cs" />
     <Compile Include="Basics\PlayerProfiler.cs" />
     <Compile Include="Basics\ProfilerEntry.cs" />
-    <Compile Include="Basics\TotalProfiler.cs" />
+    <Compile Include="Basics\GameLoopProfiler.cs" />
+    <Compile Include="Basics\SessionComponentsProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
+    <Compile Include="Core.Patches\Game_UpdateInternal.cs" />
+    <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
+    <Compile Include="Core.Patches\MyDedicatedServer_Tick.cs" />
+    <Compile Include="Core.Patches\MyPlayerCollection_SendDirtyBlockLimits.cs" />
+    <Compile Include="Core.Patches\MyProgrammableBlock_RunSandboxedProgramAction.cs" />
+    <Compile Include="Core.Patches\MyReplicationServer_UpdateAfter.cs" />
+    <Compile Include="Core.Patches\MyReplicationServer_UpdateBefore.cs" />
+    <Compile Include="Core.Patches\MyGameService_Update.cs" />
+    <Compile Include="Core.Patches\MyDedicatedServer_ReportReplicatedObjects.cs" />
+    <Compile Include="Core.Patches\MyNetworkReader_Process.cs" />
+    <Compile Include="Core.Patches\MySession_Update_Transpile.cs" />
+    <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
+    <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
+    <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
     <Compile Include="Core\IProfiler.cs" />
-    <Compile Include="Core\MethodIndexer.cs" />
+    <Compile Include="Core\StringIndexer.cs" />
+    <Compile Include="Core\ProfilerCategory.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
+    <Compile Include="Core\ProfilerResultQueue.cs" />
     <Compile Include="Database\DbBlockTypeProfiler.cs" />
     <Compile Include="Database\DbFactionGridProfiler.cs" />
     <Compile Include="Database\DbFactionProfiler.cs" />
     <Compile Include="Database\DbMethodNameProfiler.cs" />
     <Compile Include="Database\DbProfilerConfig.cs" />
-    <Compile Include="Database\DbTotalProfiler.cs" />
+    <Compile Include="Database\DbGameLoopProfiler.cs" />
+    <Compile Include="Database\DbSessionComponentsProfiler.cs" />
     <Compile Include="Database\IDbProfiler.cs" />
     <Compile Include="Database\DbGridProfiler.cs" />
     <Compile Include="Core\MyDistributedUpdaterReflection.cs" />
@@ -185,21 +204,18 @@
     <Compile Include="TorchUtils\DebugUtils.cs" />
     <Compile Include="TorchUtils\DisposableCollection.cs" />
     <Compile Include="TorchUtils\DisposableUtils.cs" />
+    <Compile Include="TorchUtils\ObjectPool.cs" />
+    <Compile Include="TorchUtils\ReflectionUtils.cs" />
     <Compile Include="TorchUtils\StringFloatConverter.cs" />
     <Compile Include="TorchUtils\TaskUtils.cs" />
     <Compile Include="TorchUtils\ThreadPoolTask.cs" />
     <Compile Include="TorchUtils\ThreadSafeThrottle.cs" />
+    <Compile Include="TorchUtils\TickTaskSource.cs" />
     <Compile Include="TorchUtils\TorchPluginUtils.cs" />
     <Compile Include="TorchUtils\TorchUtils.cs" />
     <Compile Include="TorchUtils\VRageUtils.cs" />
     <Compile Include="TorchUtils\XmlUtils.cs" />
-    <Compile Include="Util\ActionDisposable.cs" />
-    <Compile Include="Util\IterableWeakTable.cs" />
-    <Compile Include="Util\ObjectPool.cs" />
-    <Compile Include="Util\ProfilerUtils.cs" />
-    <Compile Include="Util\ReflectionUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
-    <Compile Include="Util\TickTaskSource.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

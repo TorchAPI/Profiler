@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Threading;
+using InfluxDb;
 using Profiler.Basics;
 using Profiler.Core;
-using InfluxDb;
+using VRage.Game.Components;
 
 namespace Profiler.Database
 {
-    public sealed class DbMethodNameProfiler : IDbProfiler
+    public sealed class DbSessionComponentsProfiler : IDbProfiler
     {
         const int SamplingSeconds = 10;
 
@@ -14,7 +15,7 @@ namespace Profiler.Database
         {
             while (!canceller.IsCancellationRequested)
             {
-                using (var profiler = new MethodNameProfiler())
+                using (var profiler = new SessionComponentsProfiler())
                 using (ProfilerResultQueue.Instance.Profile(profiler))
                 {
                     profiler.MarkStart();
@@ -26,14 +27,14 @@ namespace Profiler.Database
             }
         }
 
-        void OnProfilingFinished(BaseProfilerResult<string> result)
+        void OnProfilingFinished(BaseProfilerResult<MySessionComponentBase> result)
         {
-            foreach (var (name, entity) in result.GetTopEntities())
+            foreach (var (comp, entity) in result.GetTopEntities())
             {
                 InfluxDbPointFactory
-                    .Measurement("profiler_method_names")
-                    .Tag("method_name", name)
-                    .Field("ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
+                    .Measurement("profiler_game_loop_session_components")
+                    .Tag("comp_name", comp.GetType().Name)
+                    .Field("main_ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

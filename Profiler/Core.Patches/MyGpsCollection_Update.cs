@@ -1,0 +1,38 @@
+﻿using System;
+using System.Reflection;
+using Profiler.TorchUtils;
+using Sandbox.Game.Multiplayer;
+using Torch.Managers.PatchManager;
+
+namespace Profiler.Core.Patches
+{
+    public static class MyGpsCollection_Update
+    {
+        const ProfilerCategory Category = ProfilerCategory.UpdateGps;
+        static readonly Type SelfType = typeof(MyGpsCollection_Update);
+        static readonly Type Type = typeof(MyGpsCollection);
+        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyGpsCollection.Update));
+        static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
+
+        public static void Patch(PatchContext ctx)
+        {
+            var prefix = SelfType.StaticMethod(nameof(Prefix));
+            var suffix = SelfType.StaticMethod(nameof(Suffix));
+
+            ctx.GetPattern(Method).Prefixes.Add(prefix);
+            ctx.GetPattern(Method).Suffixes.Add(suffix);
+        }
+
+        // ReSharper disable once RedundantAssignment
+        // ReSharper disable once UnusedParameter.Local
+        static void Prefix(ref ProfilerToken? __localProfilerHandle)
+        {
+            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
+        }
+
+        static void Suffix(ref ProfilerToken? __localProfilerHandle)
+        {
+            ProfilerPatch.StopToken(in __localProfilerHandle, true);
+        }
+    }
+}

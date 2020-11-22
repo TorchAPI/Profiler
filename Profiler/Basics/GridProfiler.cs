@@ -1,8 +1,9 @@
 ﻿using System;
 using Profiler.Core;
-using Profiler.Util;
 using Sandbox.Game.Entities;
+using TorchUtils;
 using VRage.Game.Entity;
+using VRage.ModAPI;
 
 namespace Profiler.Basics
 {
@@ -28,9 +29,9 @@ namespace Profiler.Basics
         {
             key = null;
 
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
+            if (profilerResult.Category != ProfilerCategory.General) return false;
 
-            var grid = profilerResult.GameEntity.GetParentEntityOfType<MyCubeGrid>();
+            var grid = (profilerResult.GameEntity as IMyEntity).GetParentEntityOfType<MyCubeGrid>();
             if (grid == null) return false;
             if (!_mask.AcceptGrid(grid)) return false;
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace Profiler.Util
+namespace Profiler.TorchUtils
 {
     /// <summary>
     /// Typical object pool with thread-safe pooling/unpooling functions.
@@ -11,7 +11,6 @@ namespace Profiler.Util
     public abstract class ObjectPool<T>
     {
         readonly Queue<T> _pooledObjects;
-        int _objectCount;
 
         protected ObjectPool()
         {
@@ -23,7 +22,7 @@ namespace Profiler.Util
         /// </summary>
         /// <returns>New object.</returns>
         protected abstract T CreateNew();
-        
+
         /// <summary>
         /// Initialize given object. Called when an object is pooled.
         /// </summary>
@@ -38,13 +37,11 @@ namespace Profiler.Util
         [MethodImpl(MethodImplOptions.Synchronized)]
         public T UnpoolOrCreate()
         {
-            if (_objectCount == 0)
+            if (!_pooledObjects.TryDequeue(out var pooledObject))
             {
                 return CreateNew();
             }
 
-            var pooledObject = _pooledObjects.Dequeue();
-            _objectCount -= 1;
             return pooledObject;
         }
 
@@ -57,7 +54,6 @@ namespace Profiler.Util
         {
             Reset(obj);
             _pooledObjects.Enqueue(obj);
-            _objectCount += 1;
         }
 
         /// <summary>

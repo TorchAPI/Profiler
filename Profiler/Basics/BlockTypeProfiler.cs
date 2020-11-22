@@ -1,7 +1,8 @@
 ﻿using System;
 using Profiler.Core;
-using Profiler.Util;
 using Sandbox.Game.Entities;
+using TorchUtils;
+using VRage.ModAPI;
 
 namespace Profiler.Basics
 {
@@ -17,9 +18,9 @@ namespace Profiler.Basics
         protected override bool TryAccept(ProfilerResult profilerResult, out Type key)
         {
             key = null;
-            if (profilerResult.Entrypoint != ProfilerPatch.GeneralEntrypoint) return false;
+            if (profilerResult.Category != ProfilerCategory.General) return false;
 
-            var block = profilerResult.GameEntity.GetParentEntityOfType<MyCubeBlock>();
+            var block = (profilerResult.GameEntity as IMyEntity).GetParentEntityOfType<MyCubeBlock>();
             if (block == null) return false;
             if (!_mask.AcceptBlock(block)) return false;
             if (block.BlockDefinition == null) return false;

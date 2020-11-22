@@ -3,18 +3,21 @@ using System.Collections.Generic;
 
 namespace Profiler.Core
 {
-    internal sealed class MethodIndexer
+    /// <summary>
+    /// Keeps string objects alive across patching.
+    /// </summary>
+    internal sealed class StringIndexer
     {
-        public static readonly MethodIndexer Instance = new MethodIndexer();
+        public static readonly StringIndexer Instance = new StringIndexer();
 
         readonly List<string> _mapping;
 
-        MethodIndexer()
+        StringIndexer()
         {
             _mapping = new List<string>();
         }
 
-        public int GetOrCreateIndexOf(string methodName)
+        public int IndexOf(string methodName)
         {
             var existingIndex = _mapping.IndexOf(methodName);
             if (existingIndex >= 0) return existingIndex;
@@ -23,7 +26,7 @@ namespace Profiler.Core
             return _mapping.Count - 1;
         }
 
-        public string GetMethodNameOf(int index)
+        public string StringAt(int index)
         {
             if (index >= _mapping.Count)
             {
