@@ -41,7 +41,7 @@ namespace Profiler.Core
         /// Instantiate.
         /// </summary>
         /// <param name="token">Token which stores the profiled entity's metadata and timestamp.</param>
-        internal ProfilerResult(ProfilerToken token)
+        internal ProfilerResult(in ProfilerToken token)
         {
             _methodIndex = token.MethodIndex;
             GameEntity = token.GameEntity;

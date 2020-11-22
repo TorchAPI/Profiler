@@ -4,7 +4,7 @@ namespace Profiler.Basics
 {
     public sealed class MethodNameProfiler : BaseProfiler<string>
     {
-        protected override bool TryAccept(ProfilerResult profilerResult, out string key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out string key)
         {
             key = profilerResult.MethodName;
             return profilerResult.Category == ProfilerCategory.General;

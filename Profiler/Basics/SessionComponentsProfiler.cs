@@ -5,7 +5,7 @@ namespace Profiler.Basics
 {
     public sealed class SessionComponentsProfiler : BaseProfiler<MySessionComponentBase>
     {
-        protected override bool TryAccept(ProfilerResult profilerResult, out MySessionComponentBase key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out MySessionComponentBase key)
         {
             key = default;
             if (profilerResult.Category != ProfilerCategory.UpdateSessionComponents) return false;

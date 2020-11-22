@@ -16,7 +16,7 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(ProfilerResult profilerResult, out MyCubeBlockDefinition key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out MyCubeBlockDefinition key)
         {
             key = null;
             if (profilerResult.Category != ProfilerCategory.General) return false;

@@ -25,7 +25,7 @@ namespace Profiler.Basics
             MyEntities.OnEntityRemove += _onGameEntityRemoved;
         }
 
-        protected override bool TryAccept(ProfilerResult profilerResult, out MyCubeGrid key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out MyCubeGrid key)
         {
             key = null;
 
