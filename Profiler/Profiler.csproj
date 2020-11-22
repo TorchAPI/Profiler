@@ -32,9 +32,6 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="TorchInfluxDb">
-      <HintPath>$(SolutionDir)\..\TorchInfluxDb\TorchInfluxDb\bin\Release\TorchInfluxDb.dll</HintPath>
-    </Reference>
     <Reference Include="NLog">
       <HintPath>$(SolutionDir)\TorchBinaries\NLog.dll</HintPath>
       <Private>False</Private>
@@ -185,15 +182,6 @@
     <Compile Include="Core\ProfilerCategory.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
     <Compile Include="Core\ProfilerResultQueue.cs" />
-    <Compile Include="Database\DbBlockTypeProfiler.cs" />
-    <Compile Include="Database\DbFactionGridProfiler.cs" />
-    <Compile Include="Database\DbFactionProfiler.cs" />
-    <Compile Include="Database\DbMethodNameProfiler.cs" />
-    <Compile Include="Database\DbProfilerConfig.cs" />
-    <Compile Include="Database\DbGameLoopProfiler.cs" />
-    <Compile Include="Database\DbSessionComponentsProfiler.cs" />
-    <Compile Include="Database\IDbProfiler.cs" />
-    <Compile Include="Database\DbGridProfiler.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
@@ -222,9 +210,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="postbuild.bat" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
