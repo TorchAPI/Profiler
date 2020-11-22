@@ -16,7 +16,7 @@ namespace Profiler.Database
             while (!canceller.IsCancellationRequested)
             {
                 using (var profiler = new SessionComponentsProfiler())
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));

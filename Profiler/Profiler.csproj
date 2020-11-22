@@ -163,8 +163,12 @@
     <Compile Include="Basics\SessionComponentsProfiler.cs" />
     <Compile Include="Basics\UserScriptProfiler.cs" />
     <Compile Include="Core.Patches\Game_UpdateInternal.cs" />
+    <Compile Include="Core.Patches\MyEntity_Transpile.cs" />
+    <Compile Include="Core.Patches\MyDistributedUpdater_Iterate.cs" />
+    <Compile Include="Core.Patches\MyGameLogic_Update.cs" />
     <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
     <Compile Include="Core.Patches\MyDedicatedServer_Tick.cs" />
+    <Compile Include="Core.Patches\MyParallelEntityUpdateOrchestrator_Transpile.cs" />
     <Compile Include="Core.Patches\MyPlayerCollection_SendDirtyBlockLimits.cs" />
     <Compile Include="Core.Patches\MyProgrammableBlock_RunSandboxedProgramAction.cs" />
     <Compile Include="Core.Patches\MyReplicationServer_UpdateAfter.cs" />
@@ -190,7 +194,6 @@
     <Compile Include="Database\DbSessionComponentsProfiler.cs" />
     <Compile Include="Database\IDbProfiler.cs" />
     <Compile Include="Database\DbGridProfiler.cs" />
-    <Compile Include="Core\MyDistributedUpdaterReflection.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />

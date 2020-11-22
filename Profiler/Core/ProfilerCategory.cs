@@ -8,6 +8,7 @@
         UpdateNetwork,
         UpdateReplication,
         UpdateParallelWait,
+        UpdateParallelRun,
         UpdateSessionComponents,
         UpdateSessionComponentsAll,
         UpdateGps,

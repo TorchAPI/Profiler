@@ -48,7 +48,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new BlockTypeProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling by block type, result in {_args.Seconds}s");
 
@@ -76,7 +76,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new BlockDefinitionProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling by block definition, result in {_args.Seconds}s");
 
@@ -99,7 +99,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new GridProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling grids, result in {_args.Seconds}s");
 
@@ -135,7 +135,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new FactionProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling factions, result in {_args.Seconds}s");
 
@@ -158,7 +158,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new PlayerProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling players, result in {_args.Seconds}s");
 
@@ -181,7 +181,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new UserScriptProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling scripts, result in {_args.Seconds}s");
 
@@ -206,7 +206,7 @@ namespace Profiler
             Log.Info("Got result from profiling via command");
 
             var messageBuilder = new StringBuilder();
-            messageBuilder.AppendLine($"Finished profiling; past {result.TotalTime:0.00}ms and {result.TotalFrameCount} frames");
+            messageBuilder.AppendLine($"Finished profiling; past {result.TotalTime:0.00}ms ({result.TotalTime / 1000:0.00}s) and {result.TotalFrameCount} frames");
 
             foreach (var (name, profilerEntry) in result.GetTopEntities(_args.Top))
             {
