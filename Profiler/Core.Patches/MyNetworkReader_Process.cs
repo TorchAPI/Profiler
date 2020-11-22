@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using NLog;
 using Profiler.TorchUtils;
 using Torch.Managers.PatchManager;
@@ -33,11 +34,13 @@ namespace Profiler.Core.Patches
 
         // ReSharper disable once RedundantAssignment
         // ReSharper disable once UnusedParameter.Local
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
             __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Suffix(ref ProfilerToken? __localProfilerHandle)
         {
             ProfilerPatch.StopToken(in __localProfilerHandle, true);
