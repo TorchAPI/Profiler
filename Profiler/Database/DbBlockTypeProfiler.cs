@@ -35,7 +35,7 @@ namespace Profiler.Database
                 InfluxDbPointFactory
                     .Measurement("profiler_block_types")
                     .Tag("block_type", type.Name)
-                    .Field("main_ms", (float) entry.TotalMainThreadTime / result.TotalFrameCount)
+                    .Field("main_ms", (float) entry.MainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

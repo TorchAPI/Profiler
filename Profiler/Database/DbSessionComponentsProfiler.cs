@@ -34,7 +34,7 @@ namespace Profiler.Database
                 InfluxDbPointFactory
                     .Measurement("profiler_game_loop_session_components")
                     .Tag("comp_name", comp.GetType().Name)
-                    .Field("main_ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
+                    .Field("main_ms", (float) entity.MainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

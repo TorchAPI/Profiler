@@ -42,7 +42,7 @@ namespace Profiler.Basics
 
         public double GetMainThreadTickMsOrElse(K key, long defaultValue)
         {
-            return TryGet(key, out var e) ? e.TotalMainThreadTime : defaultValue;
+            return TryGet(key, out var e) ? e.MainThreadTime : defaultValue;
         }
 
         /// <summary>
@@ -64,13 +64,23 @@ namespace Profiler.Basics
         /// <param name="f">Function to map existing keys to new keys.</param>
         /// <typeparam name="K1">New type of keys.</typeparam>
         /// <returns>Object with the same list of entities but with a different key mapping.</returns>
-        public BaseProfilerResult<K1> Select<K1>(Func<K, K1> f)
+        public BaseProfilerResult<K1> MapKeys<K1>(Func<K, K1> f)
         {
-            var entities = _entities
-                .Select(kv => (f(kv.Key), kv.Value))
-                .ToDictionary(kv => kv.Item1, kv => kv.Item2);
+            var mappedEntities = new Dictionary<K1, ProfilerEntry>();
+            foreach (var (key, entity) in _entities)
+            {
+                var newKey = f(key);
+                if (mappedEntities.TryGetValue(newKey, out var mappedEntity))
+                {
+                    mappedEntity.MergeWith(entity);
+                }
+                else
+                {
+                    mappedEntities[newKey] = entity;
+                }
+            }
 
-            return new BaseProfilerResult<K1>(TotalFrameCount, TotalTime, entities);
+            return new BaseProfilerResult<K1>(TotalFrameCount, TotalTime, mappedEntities);
         }
     }
 }

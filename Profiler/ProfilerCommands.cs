@@ -56,7 +56,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(b => BlockTypeToString(b)));
+                    RespondResult(result.MapKeys(b => BlockTypeToString(b)));
                 }
             });
         }
@@ -84,7 +84,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(k => k.BlockPairName));
+                    RespondResult(result.MapKeys(k => k.BlockPairName));
                 }
             });
         }
@@ -107,7 +107,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(g => g.DisplayName));
+                    RespondResult(result.MapKeys(g => g.DisplayName));
 
                     // Sending GPS of laggy grids to caller
                     if (_args.SendGpsToPlayer)
@@ -143,7 +143,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(f => f.Tag));
+                    RespondResult(result.MapKeys(f => f.Tag));
                 }
             });
         }
@@ -166,7 +166,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(k => k.DisplayName));
+                    RespondResult(result.MapKeys(k => k.DisplayName));
                 }
             });
         }
@@ -189,7 +189,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(p => PbToString(p)));
+                    RespondResult(result.MapKeys(p => PbToString(p)));
                 }
             });
         }
@@ -199,6 +199,27 @@ namespace Profiler
             var blockName = pb.DisplayName;
             var gridName = pb.GetParentEntityOfType<MyCubeGrid>()?.DisplayName ?? "<none>";
             return $"'{blockName}' (in '{gridName}')";
+        }
+
+        [Command("session", "Profiles performance of session components")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileSession()
+        {
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                using (var profiler = new SessionComponentsProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling sessions, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(p => p.GetType().Name));
+                }
+            });
         }
 
         void RespondResult(BaseProfilerResult<string> result)
@@ -211,8 +232,8 @@ namespace Profiler
             foreach (var (name, profilerEntry) in result.GetTopEntities(_args.Top))
             {
                 var totalTime = $"{profilerEntry.TotalTime:0.00}ms";
-                var mainThreadTime = $"{profilerEntry.TotalMainThreadTime / result.TotalFrameCount:0.00}ms/f";
-                var offThreadTime = $"{profilerEntry.TotalOffThreadTime / result.TotalFrameCount:0.00}ms/f";
+                var mainThreadTime = $"{profilerEntry.MainThreadTime / result.TotalFrameCount:0.00}ms/f";
+                var offThreadTime = $"{profilerEntry.OffThreadTime / result.TotalFrameCount:0.00}ms/f";
                 messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel (total {totalTime})");
             }
 
