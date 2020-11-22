@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace Profiler.Core
@@ -45,7 +46,7 @@ namespace Profiler.Core
             _methodIndex = token.MethodIndex;
             GameEntity = token.GameEntity;
             Category = token.Category;
-            TotalTick = DateTime.UtcNow.Ticks - token.StartTick;
+            TotalTick = Stopwatch.GetTimestamp() - token.StartTick;
             IsMainThread = Thread.CurrentThread.ManagedThreadId == ProfilerPatch.MainThreadId;
         }
 
