@@ -28,7 +28,7 @@ namespace Profiler.Database
                 var gameEntityMask = new GameEntityMask(null, null, factionId);
 
                 using (var profiler = new GridProfiler(gameEntityMask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
@@ -47,7 +47,7 @@ namespace Profiler.Database
                     .Measurement("profiler_faction_grids")
                     .Tag("faction_tag", _config.FactionTag)
                     .Tag("grid_name", grid.DisplayName)
-                    .Field("main_ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
+                    .Field("main_ms", (float) entity.MainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

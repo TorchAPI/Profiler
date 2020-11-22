@@ -15,7 +15,7 @@ namespace Profiler.Database
             while (!canceller.IsCancellationRequested)
             {
                 using (var profiler = new MethodNameProfiler())
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));
@@ -33,7 +33,7 @@ namespace Profiler.Database
                 InfluxDbPointFactory
                     .Measurement("profiler_method_names")
                     .Tag("method_name", name)
-                    .Field("ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
+                    .Field("ms", (float) entity.MainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }

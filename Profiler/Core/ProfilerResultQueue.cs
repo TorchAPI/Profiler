@@ -11,15 +11,13 @@ namespace Profiler.Core
     /// <summary>
     /// Receives ProfilerResults from patched methods & distributes them to multiple observers in a separate thread
     /// </summary>
-    public sealed class ProfilerResultQueue
+    public static class ProfilerResultQueue
     {
-        public static readonly ProfilerResultQueue Instance = new ProfilerResultQueue();
-
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        readonly ConcurrentQueue<ProfilerResult> _profilerResults;
-        readonly List<IProfiler> _profilers;
+        static readonly ConcurrentQueue<ProfilerResult> _profilerResults;
+        static readonly List<IProfiler> _profilers;
 
-        ProfilerResultQueue()
+        static ProfilerResultQueue()
         {
             _profilerResults = new ConcurrentQueue<ProfilerResult>();
             _profilers = new List<IProfiler>();
@@ -31,18 +29,18 @@ namespace Profiler.Core
         /// <param name="observer">Observer to add/remove.</param>
         /// <returns>IDisposable object that, when disposed, removes the profiler from the profiler.</returns>
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public IDisposable Profile(IProfiler observer)
+        public static IDisposable Profile(IProfiler observer)
         {
             AddProfiler(observer);
             return new ActionDisposable(() => RemoveProfiler(observer));
         }
 
-        internal void Enqueue(in ProfilerResult result)
+        internal static void Enqueue(in ProfilerResult result)
         {
             _profilerResults.Enqueue(result);
         }
 
-        internal void Start(CancellationToken canceller)
+        internal static void Start(CancellationToken canceller)
         {
             while (!canceller.IsCancellationRequested)
             {
@@ -63,7 +61,7 @@ namespace Profiler.Core
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        void ProcessResult(in ProfilerResult result)
+        static void ProcessResult(in ProfilerResult result)
         {
             foreach (var profiler in _profilers)
             {
@@ -79,7 +77,7 @@ namespace Profiler.Core
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        void AddProfiler(IProfiler profiler)
+        static void AddProfiler(IProfiler profiler)
         {
             if (_profilers.Contains(profiler))
             {
@@ -91,7 +89,7 @@ namespace Profiler.Core
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        void RemoveProfiler(IProfiler profiler)
+        static void RemoveProfiler(IProfiler profiler)
         {
             _profilers.Remove(profiler);
         }

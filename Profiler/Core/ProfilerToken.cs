@@ -12,7 +12,7 @@ namespace Profiler.Core
         public readonly ProfilerCategory Category;
         public readonly long StartTick; // in 100 nanoseconds
 
-        public ProfilerToken(object gameEntity, int methodIndex, ProfilerCategory category)
+        internal ProfilerToken(object gameEntity, int methodIndex, ProfilerCategory category)
         {
             GameEntity = gameEntity;
             MethodIndex = methodIndex;

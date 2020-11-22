@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Profiler.Core
 {
@@ -39,14 +40,13 @@ namespace Profiler.Core
         /// Instantiate.
         /// </summary>
         /// <param name="token">Token which stores the profiled entity's metadata and timestamp.</param>
-        /// <param name="isMainThread">True if the profiled method was executed in the main thread, otherwise false.</param>
-        internal ProfilerResult(ProfilerToken token, bool isMainThread)
+        internal ProfilerResult(ProfilerToken token)
         {
             _methodIndex = token.MethodIndex;
             GameEntity = token.GameEntity;
             Category = token.Category;
             TotalTick = DateTime.UtcNow.Ticks - token.StartTick;
-            IsMainThread = isMainThread;
+            IsMainThread = Thread.CurrentThread.ManagedThreadId == ProfilerPatch.MainThreadId;
         }
 
         /// <summary>

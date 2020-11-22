@@ -48,7 +48,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new BlockTypeProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling by block type, result in {_args.Seconds}s");
 
@@ -56,7 +56,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(b => BlockTypeToString(b)));
+                    RespondResult(result.MapKeys(b => BlockTypeToString(b)));
                 }
             });
         }
@@ -76,7 +76,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new BlockDefinitionProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling by block definition, result in {_args.Seconds}s");
 
@@ -84,7 +84,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(k => k.BlockPairName));
+                    RespondResult(result.MapKeys(k => k.BlockPairName));
                 }
             });
         }
@@ -99,7 +99,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new GridProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling grids, result in {_args.Seconds}s");
 
@@ -107,7 +107,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(g => g.DisplayName));
+                    RespondResult(result.MapKeys(g => g.DisplayName));
 
                     // Sending GPS of laggy grids to caller
                     if (_args.SendGpsToPlayer)
@@ -135,7 +135,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new FactionProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling factions, result in {_args.Seconds}s");
 
@@ -143,7 +143,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(f => f.Tag));
+                    RespondResult(result.MapKeys(f => f.Tag));
                 }
             });
         }
@@ -158,7 +158,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new PlayerProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling players, result in {_args.Seconds}s");
 
@@ -166,7 +166,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(k => k.DisplayName));
+                    RespondResult(result.MapKeys(k => k.DisplayName));
                 }
             });
         }
@@ -181,7 +181,7 @@ namespace Profiler
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
                 using (var profiler = new UserScriptProfiler(mask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling scripts, result in {_args.Seconds}s");
 
@@ -189,7 +189,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.Select(p => PbToString(p)));
+                    RespondResult(result.MapKeys(p => PbToString(p)));
                 }
             });
         }
@@ -201,18 +201,39 @@ namespace Profiler
             return $"'{blockName}' (in '{gridName}')";
         }
 
+        [Command("session", "Profiles performance of session components")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileSession()
+        {
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                using (var profiler = new SessionComponentsProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling sessions, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(p => p.GetType().Name));
+                }
+            });
+        }
+
         void RespondResult(BaseProfilerResult<string> result)
         {
             Log.Info("Got result from profiling via command");
 
             var messageBuilder = new StringBuilder();
-            messageBuilder.AppendLine($"Finished profiling; past {result.TotalTime:0.00}ms and {result.TotalFrameCount} frames");
+            messageBuilder.AppendLine($"Finished profiling; past {result.TotalTime:0.00}ms ({result.TotalTime / 1000:0.00}s) and {result.TotalFrameCount} frames");
 
             foreach (var (name, profilerEntry) in result.GetTopEntities(_args.Top))
             {
                 var totalTime = $"{profilerEntry.TotalTime:0.00}ms";
-                var mainThreadTime = $"{profilerEntry.TotalMainThreadTime / result.TotalFrameCount:0.00}ms/f";
-                var offThreadTime = $"{profilerEntry.TotalOffThreadTime / result.TotalFrameCount:0.00}ms/f";
+                var mainThreadTime = $"{profilerEntry.MainThreadTime / result.TotalFrameCount:0.00}ms/f";
+                var offThreadTime = $"{profilerEntry.OffThreadTime / result.TotalFrameCount:0.00}ms/f";
                 messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel (total {totalTime})");
             }
 

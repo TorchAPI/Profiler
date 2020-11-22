@@ -14,15 +14,15 @@ namespace Profiler.Core
 
 #pragma warning disable 649
         [Dependency(Ordered = false)]
-        private readonly PatchManager _patchMgr;
+        readonly PatchManager _patchMgr;
 #pragma warning restore 649
 
         public ProfilerManager(ITorchBase torchInstance) : base(torchInstance)
         {
         }
 
-        private static bool _patched = false;
-        private PatchContext _patchContext;
+        static bool _patched;
+        PatchContext _patchContext;
 
         /// <inheritdoc cref="Manager.Attach"/>
         public override void Attach()
@@ -42,7 +42,7 @@ namespace Profiler.Core
                 {
                     try
                     {
-                        ProfilerResultQueue.Instance.Start(_canceller.Token);
+                        ProfilerResultQueue.Start(_canceller.Token);
                     }
                     catch (Exception e)
                     {
