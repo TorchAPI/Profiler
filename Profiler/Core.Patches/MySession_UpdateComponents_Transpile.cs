@@ -52,8 +52,15 @@ namespace Profiler.Core.Patches
 
         public static void Patch(PatchContext ctx)
         {
-            var transpiler = SelfType.StaticMethod(nameof(Transpiler));
-            ctx.GetPattern(Method).PostTranspilers.Add(transpiler);
+            try
+            {
+                var transpiler = SelfType.StaticMethod(nameof(Transpiler));
+                ctx.GetPattern(Method).PostTranspilers.Add(transpiler);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Failed to patch: {e.Message}");
+            }
         }
 
         // ReSharper disable once InconsistentNaming

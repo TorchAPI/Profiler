@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using NLog;
 using Profiler.TorchUtils;
 using Torch.Managers.PatchManager;
 using VRage.Network;
@@ -9,6 +10,7 @@ namespace Profiler.Core.Patches
     public static class MyReplicationServer_UpdateBefore
     {
         const ProfilerCategory Category = ProfilerCategory.UpdateReplication;
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MyReplicationServer_UpdateBefore);
         static readonly Type Type = typeof(MyReplicationServer);
         static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyReplicationServer.UpdateBefore));
@@ -16,11 +18,18 @@ namespace Profiler.Core.Patches
 
         public static void Patch(PatchContext ctx)
         {
-            var prefix = SelfType.StaticMethod(nameof(Prefix));
-            var suffix = SelfType.StaticMethod(nameof(Suffix));
+            try
+            {
+                var prefix = SelfType.StaticMethod(nameof(Prefix));
+                var suffix = SelfType.StaticMethod(nameof(Suffix));
 
-            ctx.GetPattern(Method).Prefixes.Add(prefix);
-            ctx.GetPattern(Method).Suffixes.Add(suffix);
+                ctx.GetPattern(Method).Prefixes.Add(prefix);
+                ctx.GetPattern(Method).Suffixes.Add(suffix);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"Failed to patch: {e.Message}");
+            }
         }
 
         // ReSharper disable once RedundantAssignment
