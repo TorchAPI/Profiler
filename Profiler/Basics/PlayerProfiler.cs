@@ -13,7 +13,7 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(ProfilerResult profilerResult, out MyIdentity key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out MyIdentity key)
         {
             key = null;
             if (profilerResult.Category != ProfilerCategory.General) return false;

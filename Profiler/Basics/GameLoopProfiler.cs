@@ -4,7 +4,7 @@ namespace Profiler.Basics
 {
     public sealed class GameLoopProfiler : BaseProfiler<ProfilerCategory>
     {
-        protected override bool TryAccept(ProfilerResult profilerResult, out ProfilerCategory key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out ProfilerCategory key)
         {
             key = profilerResult.Category;
             switch (profilerResult.Category)

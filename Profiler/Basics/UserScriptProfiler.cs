@@ -13,7 +13,7 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(ProfilerResult profilerResult, out MyProgrammableBlock key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out MyProgrammableBlock key)
         {
             key = null;
 

@@ -15,7 +15,7 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(ProfilerResult profilerResult, out IMyFaction key)
+        protected override bool TryAccept(in ProfilerResult profilerResult, out IMyFaction key)
         {
             key = null;
 
