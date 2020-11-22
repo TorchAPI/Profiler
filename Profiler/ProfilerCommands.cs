@@ -201,6 +201,27 @@ namespace Profiler
             return $"'{blockName}' (in '{gridName}')";
         }
 
+        [Command("session", "Profiles performance of session components")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileSession()
+        {
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                using (var profiler = new SessionComponentsProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling sessions, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.Select(p => p.GetType().Name));
+                }
+            });
+        }
+
         void RespondResult(BaseProfilerResult<string> result)
         {
             Log.Info("Got result from profiling via command");
