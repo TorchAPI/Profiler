@@ -15,7 +15,7 @@ namespace Profiler.Database
             while (!canceller.IsCancellationRequested)
             {
                 var profiler = new GameLoopProfiler();
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));

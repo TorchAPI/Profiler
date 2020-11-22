@@ -51,7 +51,7 @@ namespace Profiler.Core.Patches
         {
             try
             {
-                var transpiler = SelfType.StaticMethod(nameof(Transpiler));
+                var transpiler = SelfType.StaticMethod(nameof(Transpile));
                 ctx.GetPattern(Method).PostTranspilers.Add(transpiler);
             }
             catch (Exception e)
@@ -61,7 +61,7 @@ namespace Profiler.Core.Patches
         }
 
         // ReSharper disable once InconsistentNaming
-        static IEnumerable<MsilInstruction> Transpiler(IEnumerable<MsilInstruction> insns, Func<Type, MsilLocal> __localCreator)
+        static IEnumerable<MsilInstruction> Transpile(IEnumerable<MsilInstruction> insns, Func<Type, MsilLocal> __localCreator)
         {
             var localTokenValue = __localCreator(typeof(ProfilerToken?));
             var oldInsns = insns.ToArray();
@@ -93,12 +93,12 @@ namespace Profiler.Core.Patches
                 Log.Trace($"index: {i}, insert index: {insertIndex}");
 
                 // create a method index
-                var mappingIndex = StringIndexer.Instance.IndexOf($"{method.DeclaringType}#{method.Name}");
+                var methodIndex = StringIndexer.Instance.IndexOf($"{method.DeclaringType}#{method.Name}");
 
                 // make a ProfilerToken instance
                 var createTokenInsns = new List<MsilInstruction>
                 {
-                    new MsilInstruction(OpCodes.Ldc_I4).InlineValue(mappingIndex), // pass the method index to token
+                    new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex), // pass the method index to token
                     new MsilInstruction(OpCodes.Call).InlineValue(tokenCreatorMethod), // create the token
                     localTokenValue.AsValueStore(), // store
                 };
@@ -114,8 +114,7 @@ namespace Profiler.Core.Patches
                 var submitTokenInsns = new List<MsilInstruction>
                 {
                     localTokenValue.AsReferenceLoad(), // pass the token
-                    new MsilInstruction(OpCodes.Ldc_I4_1), // pass true (as in main thread)
-                    new MsilInstruction(OpCodes.Call).InlineValue(ProfilerPatch.StopProfilerToken), // submit
+                    new MsilInstruction(OpCodes.Call).InlineValue(ProfilerPatch.StopTokenFunc), // submit
                 };
 
                 newInsns.InsertRange(insertIndex, submitTokenInsns);
@@ -126,17 +125,17 @@ namespace Profiler.Core.Patches
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? CreateTokenInParallelWait(int mappingIndex)
+        static ProfilerToken? CreateTokenInParallelWait(int methodIndex)
         {
             //Log.Trace($"session component: {obj?.GetType()}");
-            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait);
+            return ProfilerPatch.StartToken(null, methodIndex, ProfilerCategory.UpdateParallelWait);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static ProfilerToken? CreateTokenInParallelRun(int mappingIndex)
+        static ProfilerToken? CreateTokenInParallelRun(int methodIndex)
         {
             //Log.Trace($"replication layer: {obj?.GetType()}");
-            return new ProfilerToken(null, mappingIndex, ProfilerCategory.UpdateParallelWait);
+            return ProfilerPatch.StartToken(null, methodIndex, ProfilerCategory.UpdateParallelRun);
         }
     }
 }

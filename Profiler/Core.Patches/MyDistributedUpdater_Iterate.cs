@@ -8,34 +8,45 @@ using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
 using VRage.Collections;
 
-namespace Profiler.Core
+namespace Profiler.Core.Patches
 {
-    public static class MyDistributedUpdaterReflection
+    public static class MyDistributedUpdater_Iterate
     {
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        static MethodInfo _distributedUpdaterIterate = typeof(MyDistributedUpdater<,>).GetMethod("Iterate");
+        static readonly MethodInfo Method = typeof(MyDistributedUpdater<,>).GetMethod("Iterate");
 
         public static bool ApiExists()
         {
-            var duiP = _distributedUpdaterIterate?.GetParameters();
-            return _distributedUpdaterIterate != null && duiP != null && duiP.Length == 1 && typeof(Action<>) == duiP[0].ParameterType.GetGenericTypeDefinition();
+            var duiP = Method?.GetParameters();
+
+            return Method != null &&
+                   duiP != null &&
+                   duiP.Length == 1 &&
+                   typeof(Action<>) == duiP[0].ParameterType.GetGenericTypeDefinition();
         }
 
         static bool IsDistributedIterate(MethodInfo info)
         {
             if (info == null) return false;
             if (!info.DeclaringType?.IsGenericType ?? true) return false;
-            if (info.DeclaringType?.GetGenericTypeDefinition() != _distributedUpdaterIterate.DeclaringType) return false;
-            var aps = _distributedUpdaterIterate.GetParameters();
+            if (info.DeclaringType?.GetGenericTypeDefinition() != Method.DeclaringType) return false;
+
+            var aps = Method.GetParameters();
             var ops = info.GetParameters();
             if (aps.Length != ops.Length) return false;
+
             for (var i = 0; i < aps.Length; i++)
+            {
                 if (aps[i].ParameterType.GetGenericTypeDefinition() != ops[i].ParameterType.GetGenericTypeDefinition())
+                {
                     return false;
+                }
+            }
+
             return true;
         }
 
-        public static IEnumerable<MethodBase> GetUpdateMethods(MethodBase callerMethod)
+        public static IEnumerable<MethodBase> FindUpdateMethods(MethodBase callerMethod)
         {
             var updateMethods = new List<MethodBase>();
 
@@ -44,9 +55,8 @@ namespace Profiler.Core
             for (var i = 0; i < msil.Count; i++)
             {
                 var insn = msil[i];
-                if ((insn.OpCode != OpCodes.Callvirt && insn.OpCode != OpCodes.Call) ||
-                    !IsDistributedIterate((insn.Operand as MsilOperandInline<MethodBase>)?.Value as MethodInfo))
-                    continue;
+                if (insn.OpCode != OpCodes.Callvirt && insn.OpCode != OpCodes.Call) continue;
+                if (!IsDistributedIterate((insn.Operand as MsilOperandInline<MethodBase>)?.Value as MethodInfo)) continue;
 
                 foundAnyIterate = true;
                 // Call to Iterate().  Backtrace up the instruction stack to find the statement creating the delegate.
@@ -55,13 +65,14 @@ namespace Profiler.Core
                 {
                     var insn2 = msil[j];
                     if (insn2.OpCode != OpCodes.Newobj) continue;
+
                     var ctorType = (insn2.Operand as MsilOperandInline<MethodBase>)?.Value?.DeclaringType;
                     if (ctorType == null || !ctorType.IsGenericType || ctorType.GetGenericTypeDefinition() != typeof(Action<>)) continue;
+
                     foundNewDel = true;
                     // Find the instruction loading the function pointer this delegate is created with
                     var ldftn = msil[j - 1];
-                    if (ldftn.OpCode != OpCodes.Ldftn ||
-                        !(ldftn.Operand is MsilOperandInline<MethodBase> targetMethod))
+                    if (ldftn.OpCode != OpCodes.Ldftn || !(ldftn.Operand is MsilOperandInline<MethodBase> targetMethod))
                     {
                         Log.Error($"Unable to find ldftn instruction for call to Iterate in {callerMethod.DeclaringType}#{callerMethod}");
                     }
@@ -82,7 +93,7 @@ namespace Profiler.Core
 
             if (!foundAnyIterate)
             {
-                Log.Error($"Unable to find any calls to {_distributedUpdaterIterate} in {callerMethod.DeclaringType}#{callerMethod}");
+                Log.Error($"Unable to find any calls to {Method} in {callerMethod.DeclaringType}#{callerMethod}");
             }
 
             return updateMethods;

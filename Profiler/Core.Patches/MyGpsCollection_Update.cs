@@ -38,13 +38,13 @@ namespace Profiler.Core.Patches
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
+            __localProfilerHandle = ProfilerPatch.StartToken(null, MethodIndex, Category);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Suffix(ref ProfilerToken? __localProfilerHandle)
         {
-            ProfilerPatch.StopToken(in __localProfilerHandle, true);
+            ProfilerPatch.StopToken(in __localProfilerHandle);
         }
     }
 }

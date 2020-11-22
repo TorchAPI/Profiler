@@ -28,7 +28,7 @@ namespace Profiler.Database
                 var gameEntityMask = new GameEntityMask(null, null, factionId);
 
                 using (var profiler = new GridProfiler(gameEntityMask))
-                using (ProfilerResultQueue.Instance.Profile(profiler))
+                using (ProfilerResultQueue.Profile(profiler))
                 {
                     profiler.MarkStart();
                     canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(SamplingSeconds));

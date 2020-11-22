@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using NLog;
 using Profiler.TorchUtils;
 using Sandbox.Engine.Platform;
@@ -38,13 +39,16 @@ namespace Profiler.Core.Patches
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = new ProfilerToken(null, MethodIndex, Category);
+            __localProfilerHandle = ProfilerPatch.StartToken(__instance, MethodIndex, Category);
+
+            // mark the thread running the game loop
+            ProfilerPatch.MainThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Suffix(ref ProfilerToken? __localProfilerHandle)
         {
-            ProfilerPatch.StopToken(in __localProfilerHandle, true);
+            ProfilerPatch.StopToken(in __localProfilerHandle);
         }
     }
 }
