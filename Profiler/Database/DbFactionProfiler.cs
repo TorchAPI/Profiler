@@ -51,7 +51,7 @@ namespace Profiler.Database
                 InfluxDbPointFactory
                     .Measurement("profiler_factions")
                     .Tag("faction_tag", faction.Tag)
-                    .Field("main_ms", entity.TotalMainThreadTime / result.TotalFrameCount)
+                    .Field("main_ms", entity.MainThreadTime / result.TotalFrameCount)
                     .Field("online_player_count", onlinePlayerCount)
                     .Write();
             }

@@ -19,34 +19,40 @@ namespace Profiler.Basics
         /// <summary>
         /// Total main-thread computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public double TotalMainThreadTime { get; private set; }
+        public double MainThreadTime { get; private set; }
 
         /// <summary>
         /// Total not-main-thread computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public double TotalOffThreadTime { get; private set; }
+        public double OffThreadTime { get; private set; }
 
         /// <summary>
         /// Total computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public double TotalTime => TotalMainThreadTime + TotalOffThreadTime;
+        public double TotalTime => MainThreadTime + OffThreadTime;
 
         internal void Add(in ProfilerResult profilerResult)
         {
             if (profilerResult.IsMainThread)
             {
-                TotalMainThreadTime += profilerResult.TotalTick * TickToTime;
+                MainThreadTime += profilerResult.TotalTick * TickToTime;
             }
             else
             {
-                TotalOffThreadTime += profilerResult.TotalTick * TickToTime;
+                OffThreadTime += profilerResult.TotalTick * TickToTime;
             }
+        }
+
+        internal void MergeWith(ProfilerEntry other)
+        {
+            MainThreadTime += other.MainThreadTime;
+            OffThreadTime += other.OffThreadTime;
         }
 
         void Reset()
         {
-            TotalMainThreadTime = 0;
-            TotalOffThreadTime = 0;
+            MainThreadTime = 0;
+            OffThreadTime = 0;
         }
 
         // Pool for ProfilerEntity instances to prevent GC

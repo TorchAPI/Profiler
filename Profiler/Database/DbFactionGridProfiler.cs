@@ -47,7 +47,7 @@ namespace Profiler.Database
                     .Measurement("profiler_faction_grids")
                     .Tag("faction_tag", _config.FactionTag)
                     .Tag("grid_name", grid.DisplayName)
-                    .Field("main_ms", (float) entity.TotalMainThreadTime / result.TotalFrameCount)
+                    .Field("main_ms", (float) entity.MainThreadTime / result.TotalFrameCount)
                     .Write();
             }
         }
