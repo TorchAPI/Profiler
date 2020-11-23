@@ -1,5 +1,5 @@
 using Profiler.Core;
-using Profiler.TorchUtils;
+using Profiler.Utils;
 
 namespace Profiler.Basics
 {

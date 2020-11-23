@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TorchUtils
+namespace Profiler.Utils
 {
     internal sealed class ActionDisposable : IDisposable
     {

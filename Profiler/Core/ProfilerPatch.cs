@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using NLog;
 using Profiler.Core.Patches;
-using Profiler.TorchUtils;
+using Profiler.Utils;
 using Torch.Managers.PatchManager;
 using Torch.Utils;
 using Torch.Utils.Reflected;

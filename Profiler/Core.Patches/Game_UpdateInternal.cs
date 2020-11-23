@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using NLog;
-using Profiler.TorchUtils;
+using Profiler.Utils;
 using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
 

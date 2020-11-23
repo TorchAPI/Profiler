@@ -1,8 +1,8 @@
 ﻿using System;
 using Profiler.Core;
+using Profiler.Utils;
 using Sandbox.Definitions;
 using Sandbox.Game.Entities;
-using TorchUtils;
 using VRage.ModAPI;
 
 namespace Profiler.Basics

@@ -1,6 +1,6 @@
-﻿using Sandbox.Game.Entities;
+﻿using Profiler.Utils;
+using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using TorchUtils;
 using VRage.ModAPI;
 
 namespace Profiler.Basics

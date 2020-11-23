@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace TorchUtils
+namespace Profiler.Utils
 {
     internal static class CollectionUtils
     {
@@ -30,25 +30,6 @@ namespace TorchUtils
 
             foundValue = default;
             return false;
-        }
-
-        public static bool ContainsAny<T>(this ISet<T> self, IEnumerable<T> values)
-        {
-            foreach (var value in values)
-            {
-                if (self.Contains(value))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        public static void Increment<K>(this IDictionary<K, int> self, K key)
-        {
-            self.TryGetValue(key, out var value);
-            self[key] = value + 1;
         }
     }
 }

@@ -6,11 +6,10 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
 using ParallelTasks;
-using Profiler.TorchUtils;
+using Profiler.Utils;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
-using TorchUtils;
 
 namespace Profiler.Core.Patches
 {

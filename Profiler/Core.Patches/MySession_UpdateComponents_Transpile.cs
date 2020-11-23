@@ -5,11 +5,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.TorchUtils;
+using Profiler.Utils;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
-using TorchUtils;
 using VRage.Game.Components;
 using VRage.Network;
 

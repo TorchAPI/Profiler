@@ -188,24 +188,12 @@
     <Compile Include="Interactive\GpsSendClient.cs" />
     <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />
-    <Compile Include="TorchUtils\AbsJsonConverter.cs" />
-    <Compile Include="TorchUtils\ActionDisposable.cs" />
-    <Compile Include="TorchUtils\CollectionUtils.cs" />
-    <Compile Include="TorchUtils\CommandErrorResponseGenerator.cs" />
-    <Compile Include="TorchUtils\DebugUtils.cs" />
-    <Compile Include="TorchUtils\DisposableCollection.cs" />
-    <Compile Include="TorchUtils\DisposableUtils.cs" />
-    <Compile Include="TorchUtils\ObjectPool.cs" />
-    <Compile Include="TorchUtils\ReflectionUtils.cs" />
-    <Compile Include="TorchUtils\StringFloatConverter.cs" />
-    <Compile Include="TorchUtils\TaskUtils.cs" />
-    <Compile Include="TorchUtils\ThreadPoolTask.cs" />
-    <Compile Include="TorchUtils\ThreadSafeThrottle.cs" />
-    <Compile Include="TorchUtils\TickTaskSource.cs" />
-    <Compile Include="TorchUtils\TorchPluginUtils.cs" />
-    <Compile Include="TorchUtils\TorchUtils.cs" />
-    <Compile Include="TorchUtils\VRageUtils.cs" />
-    <Compile Include="TorchUtils\XmlUtils.cs" />
+    <Compile Include="Utils\ActionDisposable.cs" />
+    <Compile Include="Utils\CollectionUtils.cs" />
+    <Compile Include="Utils\CommandErrorResponseGenerator.cs" />
+    <Compile Include="Utils\ObjectPool.cs" />
+    <Compile Include="Utils\ReflectionUtils.cs" />
+    <Compile Include="Utils\VRageUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
   </ItemGroup>
   <ItemGroup>

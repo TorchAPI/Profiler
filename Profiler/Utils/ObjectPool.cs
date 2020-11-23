@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace Profiler.TorchUtils
+namespace Profiler.Utils
 {
     /// <summary>
     /// Typical object pool with thread-safe pooling/unpooling functions.

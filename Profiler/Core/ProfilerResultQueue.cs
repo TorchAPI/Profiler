@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using NLog;
-using TorchUtils;
+using Profiler.Utils;
 using VRage.Collections;
 
 namespace Profiler.Core

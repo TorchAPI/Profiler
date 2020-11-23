@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using NLog;
 using Profiler.Core;
-using TorchUtils;
+using Profiler.Utils;
 
 namespace Profiler.Basics
 {

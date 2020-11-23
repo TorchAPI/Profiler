@@ -1,6 +1,6 @@
 ﻿using System;
 using NLog;
-using Profiler.TorchUtils;
+using Profiler.Utils;
 using Torch.Managers.PatchManager;
 using VRage.Game.Entity;
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Profiler.TorchUtils
+namespace Profiler.Utils
 {
     public static class ReflectionUtils
     {

@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.TorchUtils;
+using Profiler.Utils;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
 

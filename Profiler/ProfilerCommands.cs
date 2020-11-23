@@ -6,11 +6,11 @@ using NLog;
 using Profiler.Basics;
 using Profiler.Core;
 using Profiler.Interactive;
+using Profiler.Utils;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
-using TorchUtils;
 using VRage.Game.ModAPI;
 
 namespace Profiler
