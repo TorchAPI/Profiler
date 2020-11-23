@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
+using Sandbox;
 
 namespace Profiler.Core
 {
@@ -47,7 +48,7 @@ namespace Profiler.Core
             GameEntity = token.GameEntity;
             Category = token.Category;
             TotalTick = Stopwatch.GetTimestamp() - token.StartTick;
-            IsMainThread = Thread.CurrentThread.ManagedThreadId == ProfilerPatch.MainThreadId;
+            IsMainThread = Thread.CurrentThread.ManagedThreadId == MySandboxGame.Static.UpdateThread.ManagedThreadId;
         }
 
         /// <summary>

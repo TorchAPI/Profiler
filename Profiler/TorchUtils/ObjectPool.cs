@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Runtime.CompilerServices;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace Profiler.TorchUtils
 {
@@ -10,11 +10,11 @@ namespace Profiler.TorchUtils
     /// <typeparam name="T">Type of objects to be stored in this pool.</typeparam>
     public abstract class ObjectPool<T>
     {
-        readonly Queue<T> _pooledObjects;
+        readonly ConcurrentBag<T> _pooledObjects;
 
         protected ObjectPool()
         {
-            _pooledObjects = new Queue<T>();
+            _pooledObjects = new ConcurrentBag<T>();
         }
 
         /// <summary>
@@ -34,10 +34,9 @@ namespace Profiler.TorchUtils
         /// </summary>
         /// <remarks>New object will be instantiated if no objects are present in the pool.</remarks>
         /// <returns>An unpooled object or new object if the pool is empty.</returns>
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public T UnpoolOrCreate()
         {
-            if (!_pooledObjects.TryDequeue(out var pooledObject))
+            if (!_pooledObjects.TryTake(out var pooledObject))
             {
                 return CreateNew();
             }
@@ -49,11 +48,10 @@ namespace Profiler.TorchUtils
         /// Pool an object.
         /// </summary>
         /// <param name="obj">Object to pool.</param>
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Pool(T obj)
         {
             Reset(obj);
-            _pooledObjects.Enqueue(obj);
+            _pooledObjects.Add(obj);
         }
 
         /// <summary>

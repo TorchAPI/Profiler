@@ -40,9 +40,6 @@ namespace Profiler.Core.Patches
         static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
         {
             __localProfilerHandle = ProfilerPatch.StartToken(__instance, MethodIndex, Category);
-
-            // mark the thread running the game loop
-            ProfilerPatch.MainThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
