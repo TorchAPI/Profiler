@@ -7,9 +7,10 @@ using TorchUtils;
 namespace Profiler.Basics
 {
     /// <summary>
-    /// Implement basic features of a profiler that makes use of ProfilerEntry.
+    /// Smart baseclass of IProfiler to support the most common use case of ProfilerResultQueue.
+    /// Stacks up profiler results and retrieves the total profiled time of each "key" object,
+    /// defined by the implementation of abstract method `TryAccept()`.
     /// </summary>
-    /// <remarks>You can use ProfilerPatch without this class.</remarks>
     public abstract class BaseProfiler<K> : IProfiler, IDisposable
     {
         // Thread-safe dictionary of ProfilerEntry with an arbitrary type of keys.
@@ -55,9 +56,11 @@ namespace Profiler.Basics
         }
 
         /// <summary>
-        /// Make a key object using a ProfilerResult sent from ProfilerPatch, or ignore by returning false.
+        /// Make a "key" object or ignore the profiler result.
         /// </summary>
-        /// <remarks>When accepted, the key object will be registered and will affect this profiler's final result.</remarks>
+        /// <remarks>
+        /// Called from a single worker thread.
+        /// </remarks>
         /// <param name="profilerResult">Profiling result of a method invocation sent from ProfilerPatch.</param>
         /// <param name="key">Key object to be registered to this profiler if accepted.</param>
         /// <returns>True if given ProfilerResult is accepted, otherwise false.</returns>
