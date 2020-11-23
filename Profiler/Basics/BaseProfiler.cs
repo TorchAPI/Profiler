@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using NLog;
 using Profiler.Core;
 using TorchUtils;
@@ -73,15 +72,6 @@ namespace Profiler.Basics
             var totalFrameCount = VRageUtils.CurrentGameFrameCount - _startFrameCount;
             var totalTime = (DateTime.UtcNow - _startTime).TotalMilliseconds;
             return new BaseProfilerResult<K>(totalFrameCount, totalTime, _profilerEntries);
-        }
-
-        /// <summary>
-        /// Removes ProfilerEntity paired with given key object.
-        /// </summary>
-        /// <param name="key">Key object to remove its associated ProfilerEntity in this profiler.</param>
-        protected void RemoveEntry(K key)
-        {
-            _profilerEntries.Remove(key);
         }
 
         /// <inheritdoc/>

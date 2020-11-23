@@ -2,7 +2,6 @@
 using Profiler.Core;
 using Sandbox.Game.Entities;
 using TorchUtils;
-using VRage.Game.Entity;
 using VRage.ModAPI;
 
 namespace Profiler.Basics
@@ -10,19 +9,10 @@ namespace Profiler.Basics
     public sealed class GridProfiler : BaseProfiler<MyCubeGrid>
     {
         readonly GameEntityMask _mask;
-        readonly Action<MyEntity> _onGameEntityRemoved;
 
         public GridProfiler(GameEntityMask mask)
         {
             _mask = mask;
-
-            _onGameEntityRemoved = gameEntity =>
-            {
-                if (!(gameEntity is MyCubeGrid grid)) return;
-                RemoveEntry(grid);
-            };
-
-            MyEntities.OnEntityRemove += _onGameEntityRemoved;
         }
 
         protected override bool TryAccept(in ProfilerResult profilerResult, out MyCubeGrid key)
@@ -37,12 +27,6 @@ namespace Profiler.Basics
 
             key = grid;
             return true;
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            MyEntities.OnEntityRemove -= _onGameEntityRemoved;
         }
     }
 }
