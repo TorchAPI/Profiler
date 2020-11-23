@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using NLog;
 using Profiler.Core;
 using Profiler.Database;
-using Sandbox.Engine.Multiplayer;
 using Torch;
 using Torch.API;
 using TorchUtils;
@@ -41,8 +40,6 @@ namespace Profiler
         void OnGameLoaded()
         {
             StartDbProfilers();
-
-            MyMultiplayer.Static.Tick();
         }
 
         void StartDbProfilers()

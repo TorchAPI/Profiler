@@ -16,7 +16,6 @@ namespace Profiler.Core
 
         public static readonly MethodInfo StopTokenFunc = typeof(ProfilerPatch).StaticMethod(nameof(StopToken));
         public static bool Enabled { get; set; } = true;
-        public static int MainThreadId { get; internal set; }
 
         public static void Patch(PatchContext ctx)
         {
