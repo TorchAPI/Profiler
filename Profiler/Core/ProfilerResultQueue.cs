@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using NLog;
 using TorchUtils;
+using VRage.Collections;
 
 namespace Profiler.Core
 {
@@ -15,12 +14,12 @@ namespace Profiler.Core
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly ConcurrentQueue<ProfilerResult> _profilerResults;
-        static readonly List<IProfiler> _profilers;
+        static readonly ConcurrentCachingList<IProfiler> _profilers;
 
         static ProfilerResultQueue()
         {
             _profilerResults = new ConcurrentQueue<ProfilerResult>();
-            _profilers = new List<IProfiler>();
+            _profilers = new ConcurrentCachingList<IProfiler>();
         }
 
         /// <summary>
@@ -28,7 +27,6 @@ namespace Profiler.Core
         /// </summary>
         /// <param name="observer">Observer to add/remove.</param>
         /// <returns>IDisposable object that, when disposed, removes the profiler from the profiler.</returns>
-        [MethodImpl(MethodImplOptions.Synchronized)]
         public static IDisposable Profile(IProfiler observer)
         {
             AddProfiler(observer);
@@ -44,9 +42,21 @@ namespace Profiler.Core
         {
             while (!canceller.IsCancellationRequested)
             {
+                _profilers.ApplyChanges();
+
                 while (_profilerResults.TryDequeue(out var result))
                 {
-                    ProcessResult(result);
+                    foreach (var profiler in _profilers)
+                    {
+                        try
+                        {
+                            profiler.ReceiveProfilerResult(result);
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error($"{profiler}: {e.Message}");
+                        }
+                    }
                 }
 
                 try
@@ -60,35 +70,11 @@ namespace Profiler.Core
             }
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        static void ProcessResult(in ProfilerResult result)
-        {
-            foreach (var profiler in _profilers)
-            {
-                try
-                {
-                    profiler.ReceiveProfilerResult(result);
-                }
-                catch (Exception e)
-                {
-                    Log.Error($"{profiler}: {e.Message}");
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.Synchronized)]
         static void AddProfiler(IProfiler profiler)
         {
-            if (_profilers.Contains(profiler))
-            {
-                Log.Warn($"Observer already added: {profiler}");
-                return;
-            }
-
             _profilers.Add(profiler);
         }
 
-        [MethodImpl(MethodImplOptions.Synchronized)]
         static void RemoveProfiler(IProfiler profiler)
         {
             _profilers.Remove(profiler);
