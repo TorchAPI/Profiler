@@ -1,5 +1,5 @@
-﻿using Profiler.Core;
-using Profiler.Util;
+using System;
+using Profiler.Core;
 using Torch;
 using Torch.API;
 
@@ -13,6 +13,7 @@ namespace Profiler
         /// <inheritdoc cref="TorchPluginBase.Init"/>
         public override void Init(ITorchBase torch)
         {
+            base.Init(torch);
             var pgmr = new ProfilerManager(torch);
             torch.Managers.AddManager(pgmr);
         }

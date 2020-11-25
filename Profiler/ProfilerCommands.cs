@@ -1,19 +1,16 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Runtime.Remoting.Contexts;
-using System.Windows.Media;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using NLog;
+using Profiler.Basics;
 using Profiler.Core;
-using Sandbox.Definitions;
-using Sandbox.Engine.Multiplayer;
+using Profiler.Interactive;
+using Profiler.Utils;
 using Sandbox.Game.Entities;
-using Sandbox.Game.Screens.Helpers;
-using Sandbox.Game.World;
-using Sandbox.ModAPI;
+using Sandbox.Game.Entities.Blocks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
-using VRage.Game;
 using VRage.Game.ModAPI;
 
 namespace Profiler
@@ -21,52 +18,227 @@ namespace Profiler
     [Category("profile")]
     public class ProfilerCommands : CommandModule
     {
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        const string HelpText = "--secs=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
+        static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        static readonly GpsSendClient _gpsSendClient = new GpsSendClient();
 
-        private const ulong SampleTicks = 900;
-        private const int Top = 10;
-        private const string HelpText = "--ticks=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
+        RequestParamParser _args;
+
+        [Command("on", "Enable profiling", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void Enable()
+        {
+            ProfilerPatch.Enabled = true;
+        }
+
+        [Command("off", "Disable profiling", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void Disable()
+        {
+            ProfilerPatch.Enabled = false;
+        }
 
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void BlockType()
+        public void ProfileBlockType()
         {
-            Handle(ProfilerRequestType.BlockType);
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                using (var profiler = new BlockTypeProfiler(mask))
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling by block type, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(b => BlockTypeToString(b)));
+                }
+            });
+        }
+
+        static string BlockTypeToString(Type type)
+        {
+            return type.ToString().Split('.').LastOrDefault() ?? "unknown";
         }
 
         [Command("blocks", "Profiles performance per block definition", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Block()
+        public void ProfileBlock()
         {
-            Handle(ProfilerRequestType.BlockDef);
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                using (var profiler = new BlockDefinitionProfiler(mask))
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling by block definition, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(k => k.BlockPairName));
+                }
+            });
         }
 
         [Command("grids", "Profiles performance per grid", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Grids()
+        public void ProfileGrids()
         {
-            Handle(ProfilerRequestType.Grid);
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                using (var profiler = new GridProfiler(mask))
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling grids, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(g => g.DisplayName));
+
+                    // Sending GPS of laggy grids to caller
+                    if (_args.SendGpsToPlayer)
+                    {
+                        _gpsSendClient.CleanGPS(_args.PlayerIdToSendGps);
+
+                        foreach (var (grid, profilerEntry) in result.GetTopEntities(_args.Top))
+                        {
+                            var gpsName = $"{grid.DisplayName} ({profilerEntry.TotalTime / result.TotalFrameCount:0.0000}ms/f)";
+                            var gpsPosition = grid.PositionComp.WorldAABB.Center;
+                            _gpsSendClient.SendGps(_args.PlayerIdToSendGps, gpsName, gpsPosition);
+                        }
+                    }
+                }
+            });
         }
 
         [Command("factions", "Profiles performance per faction", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Factions()
+        public void ProfileFactions()
         {
-            Handle(ProfilerRequestType.Faction);
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                using (var profiler = new FactionProfiler(mask))
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling factions, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(f => f.Tag));
+                }
+            });
         }
 
         [Command("players", "Profiles performance per player", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Players()
+        public void ProfilePlayers()
         {
-            Handle(ProfilerRequestType.Player);
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                using (var profiler = new PlayerProfiler(mask))
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling players, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(k => k.DisplayName));
+                }
+            });
         }
 
         [Command("scripts", "Profiles performance of programmable blocks")]
         [Permission(MyPromoteLevel.Moderator)]
-        public void Scripts()
+        public void ProfileScripts()
         {
-            Handle(ProfilerRequestType.Scripts);
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                using (var profiler = new UserScriptProfiler(mask))
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling scripts, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(p => PbToString(p)));
+                }
+            });
+        }
+
+        static string PbToString(MyProgrammableBlock pb)
+        {
+            var blockName = pb.DisplayName;
+            var gridName = pb.GetParentEntityOfType<MyCubeGrid>()?.DisplayName ?? "<none>";
+            return $"'{blockName}' (in '{gridName}')";
+        }
+
+        [Command("session", "Profiles performance of session components")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileSession()
+        {
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                using (var profiler = new SessionComponentsProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling sessions, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(p => p.GetType().Name));
+                }
+            });
+        }
+
+        void RespondResult(BaseProfilerResult<string> result)
+        {
+            Log.Info("Got result from profiling via command");
+
+            var messageBuilder = new StringBuilder();
+            messageBuilder.AppendLine($"Finished profiling; past {result.TotalTime:0.00}ms ({result.TotalTime / 1000:0.00}s) and {result.TotalFrameCount} frames");
+
+            foreach (var (name, profilerEntry) in result.GetTopEntities(_args.Top))
+            {
+                var totalTime = $"{profilerEntry.TotalTime:0.00}ms";
+                var mainThreadTime = $"{profilerEntry.MainThreadTime / result.TotalFrameCount:0.00}ms/f";
+                var offThreadTime = $"{profilerEntry.OffThreadTime / result.TotalFrameCount:0.00}ms/f";
+                messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel (total {totalTime})");
+            }
+
+            Log.Info("Finished showing profiler result via command");
+            Context.Respond(messageBuilder.ToString());
         }
 
         [Command("cleangps", "Cleans GPS markers created by the profiling system")]
@@ -76,11 +248,11 @@ namespace Profiler
             var controlled = Context.Player;
             if (controlled == null)
             {
-                Context.Respond($"GPS clean can only be used by players");
+                Context.Respond("GPS clean can only be used by players");
                 return;
             }
 
-            CleanGPS(controlled.IdentityId);
+            _gpsSendClient.CleanGPS(controlled.IdentityId);
         }
 
         [Command("help", "Reports output format")]
@@ -94,253 +266,6 @@ namespace Profiler
             Context.Respond("Add --this to profile the entity you're currently controlling (players only)");
             Context.Respond("Add --gps to show positional results as GPS points (players only)");
             Context.Respond("Results are reported as entry description, milliseconds per tick (updates per tick)");
-        }
-
-        private void CleanGPS(long gpsId)
-        {
-            if (!GpsForIdentity.TryGetValue(gpsId, out var data))
-                return;
-            var e = MyAPIGateway.Session?.GPS.GetGpsList(gpsId);
-            if (e == null)
-                return;
-            lock (data)
-            {
-                foreach (var k in data)
-                {
-                    IMyGps existing = null;
-                    foreach (var ex in e)
-                        if (ex.Hash == k)
-                        {
-                            existing = ex;
-                            break;
-                        }
-
-                    if (existing != null && existing.DiscardAt.HasValue)
-                        MyAPIGateway.Session.GPS.RemoveGps(gpsId, existing.Hash);
-                }
-
-                data.Clear();
-            }
-        }
-
-        private static readonly ConcurrentDictionary<long, HashSet<int>> GpsForIdentity = new ConcurrentDictionary<long, HashSet<int>>();
-
-        private void Handle(ProfilerRequestType type)
-        {
-            var ticks = SampleTicks;
-            var top = Top;
-            long? factionMask = null;
-            long? playerMask = null;
-            long? gridMask = null;
-            long? reportGPS = null;
-            foreach (var arg in Context.Args)
-                if (arg.StartsWith("--ticks="))
-                    ticks = ulong.Parse(arg.Substring("--ticks=".Length));
-                else if (arg.StartsWith("--top="))
-                    top = int.Parse(arg.Substring("--top=".Length));
-                else if (arg.StartsWith("--faction="))
-                {
-                    var name = arg.Substring("--faction=".Length);
-                    if (!ResolveFaction(name, out var id))
-                    {
-                        Context.Respond($"Failed to find faction {name}");
-                        return;
-                    }
-
-                    factionMask = id?.FactionId ?? 0;
-                }
-                else if (arg.StartsWith("--player="))
-                {
-                    var name = arg.Substring("--player=".Length);
-                    if (!ResolveIdentity(name, out var id))
-                    {
-                        Context.Respond($"Failed to find player {name}");
-                        return;
-                    }
-
-                    playerMask = id?.IdentityId ?? 0;
-                }
-                else if (arg.StartsWith("--entity="))
-                {
-                    var id = long.Parse(arg.Substring("--entity=".Length));
-                    var ent = MyEntities.GetEntityById(id);
-                    if (!(ent is MyCubeGrid))
-                    {
-                        Context.Respond($"Failed to find grid with ID={id}");
-                        return;
-                    }
-
-                    gridMask = ent.EntityId;
-                }
-                else if (arg == "--this")
-                {
-                    var controlled = Context.Player?.Controller?.ControlledEntity?.Entity;
-                    if (controlled == null)
-                    {
-                        Context.Respond($"You must have a controlled entity to use the --this argument");
-                        return;
-                    }
-
-                    MyCubeGrid grid;
-                    var tmp = controlled;
-                    do
-                    {
-                        grid = tmp as MyCubeGrid;
-                        if (grid != null)
-                            break;
-                        tmp = tmp.Parent;
-                    } while (tmp != null);
-
-                    if (grid == null)
-                    {
-                        Context.Respond($"You must be controlling a grid to use the --this argument");
-                        return;
-                    }
-
-                    gridMask = grid.EntityId;
-                }
-                else if (arg == "--gps")
-                {
-                    var controlled = Context.Player;
-                    if (controlled == null)
-                    {
-                        Context.Respond($"GPS return can only be used by players");
-                        return;
-                    }
-
-                    reportGPS = controlled.IdentityId;
-                    CleanGPS(reportGPS.Value);
-                }
-
-            var req = new ProfilerRequest(type, ticks);
-            var context = Context;
-            req.OnFinished += (results) =>
-            {
-                for (var i = 0; i < Math.Min(top, results.Length); i++)
-                {
-                    var r = results[i];
-                    var mainThreadTime = FormatTime(r.MainThreadMsPerTick);
-                    var offThreadTime = FormatTime(r.OffThreadMsPerTick);
-                    if (reportGPS.HasValue && r.Position.HasValue)
-                    {
-                        var gpsDisplay = $"{mainThreadTime} / {offThreadTime}: {r.Name}";
-                        var gps = new MyGps(new MyObjectBuilder_Gps.Entry
-                        {
-                            name = gpsDisplay,
-                            DisplayName = gpsDisplay,
-                            coords = r.Position.Value,
-                            showOnHud = true,
-                            color = VRageMath.Color.Purple,
-                            description = "",
-                            entityId = 0,
-                            isFinal = false
-                        });
-                        MyAPIGateway.Session?.GPS.AddGps(reportGPS.Value, gps);
-                        var set = GpsForIdentity.GetOrAdd(reportGPS.Value, (x) => new HashSet<int>());
-                        lock (set)
-                            set.Add(gps.Hash);
-                        continue;
-                    }
-
-                    var msg = $"{r.Name} {r.Description} took {mainThreadTime} main, {offThreadTime} parallel";
-                    if (r.Position.HasValue)
-                    {
-                        msg += " @ " +
-                               r.Position.Value.X.ToString(ProfilerRequest.DistanceFormat) + "," +
-                               r.Position.Value.Y.ToString(ProfilerRequest.DistanceFormat) + "," +
-                               r.Position.Value.Z.ToString(ProfilerRequest.DistanceFormat);
-                    }
-
-                    Log.Debug(msg);
-                    context.Respond(msg);
-                }
-
-                {
-                    var otherCount = 0;
-                    var totalMainThreadTime = 0d;
-                    var totalOffThreadTime = 0d;
-                    for (var i = Math.Min(top, results.Length) + 1; i < results.Length; i++)
-                    {
-                        var r = results[i];
-                        otherCount++;
-                        totalMainThreadTime += r.MainThreadMsPerTick;
-                        totalOffThreadTime += r.OffThreadMsPerTick;
-                    }
-
-                    if (otherCount > 0)
-                    {
-                        var msg = $"Others took {FormatTime(totalMainThreadTime)} main, {FormatTime(totalOffThreadTime)} parallel";
-                        context.Respond(msg);
-                        Log.Debug(msg);
-                    }
-                }
-                var finishMsg = $"Finished profiling {req.Type} for {req.SamplingTicks} ticks";
-                context.Respond(finishMsg);
-                Log.Debug(finishMsg);
-            };
-
-            var timeEstMs = ticks * MyEngineConstants.UPDATE_STEP_SIZE_IN_SECONDS * 1000f / (MyMultiplayer.Static?.ServerSimulationRatio ?? 1);
-            if (!ProfilerData.Submit(req, gridMask, playerMask, factionMask))
-                Context.Respond("Profiler is already active.  Only one profiling command can be active at a time");
-            else
-            {
-                context.Respond($"Profiling for {type} started, results in {ticks} ticks (about {FormatTime(timeEstMs)})");
-                Log.Debug($"Start profiling {req.Type} for {req.SamplingTicks} ticks");
-            }
-        }
-
-        private static string FormatTime(double ms)
-        {
-            if (ms > 1000)
-                return $"{ms / 1000:F0}s";
-            if (ms > 1)
-                return $"{ms:F0}ms";
-            ms *= 1000;
-            if (ms > 1)
-                return $"{ms:F0}us";
-            ms *= 1000;
-            return $"{ms:F0}ns";
-        }
-
-        private static bool ResolveIdentity(string name, out MyIdentity id)
-        {
-            long identityId;
-            if (name.StartsWith("sid/", StringComparison.OrdinalIgnoreCase))
-            {
-                var num = ulong.Parse(name.Substring("sid/".Length));
-                identityId = MySession.Static.Players.TryGetIdentityId(num);
-            }
-            else if (!long.TryParse(name, out identityId))
-            {
-                foreach (var p in MySession.Static.Players.GetAllPlayers())
-                {
-                    if (p.SerialId != 0)
-                        continue;
-                    var identity = MySession.Static.Players.TryGetPlayerIdentity(p);
-                    if (identity == null)
-                        continue;
-                    if (!identity.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase)) continue;
-                    id = identity;
-                    return true;
-                }
-            }
-
-            id = MySession.Static.Players.TryGetIdentity(identityId);
-            return id != null;
-        }
-
-        private static bool ResolveFaction(string name, out MyFaction faction)
-        {
-            foreach (var fac in MySession.Static.Factions)
-                if (fac.Value.Tag.Equals(name, StringComparison.OrdinalIgnoreCase) || fac.Value.Name.Equals(name, StringComparison.OrdinalIgnoreCase) ||
-                    fac.Key.ToString().Equals(name, StringComparison.OrdinalIgnoreCase))
-                {
-                    faction = fac.Value;
-                    return true;
-                }
-
-            faction = null;
-            return (name.Equals("nil", StringComparison.OrdinalIgnoreCase) || name.Equals("null", StringComparison.OrdinalIgnoreCase) || name.Equals("0"));
         }
     }
 }

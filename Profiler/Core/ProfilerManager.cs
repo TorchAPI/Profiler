@@ -1,4 +1,6 @@
-﻿using NLog;
+﻿using System;
+using System.Threading;
+using NLog;
 using Torch.API;
 using Torch.Managers;
 using Torch.Managers.PatchManager;
@@ -7,19 +9,20 @@ namespace Profiler.Core
 {
     public class ProfilerManager : Manager
     {
-        private static readonly Logger _log = LogManager.GetCurrentClassLogger();
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+        CancellationTokenSource _canceller;
 
 #pragma warning disable 649
         [Dependency(Ordered = false)]
-        private readonly PatchManager _patchMgr;
+        readonly PatchManager _patchMgr;
 #pragma warning restore 649
 
         public ProfilerManager(ITorchBase torchInstance) : base(torchInstance)
         {
         }
 
-        private static bool _patched = false;
-        private PatchContext _patchContext;
+        static bool _patched;
+        PatchContext _patchContext;
 
         /// <inheritdoc cref="Manager.Attach"/>
         public override void Attach()
@@ -30,6 +33,22 @@ namespace Profiler.Core
                 _patched = true;
                 _patchContext = _patchMgr.AcquireContext();
                 ProfilerPatch.Patch(_patchContext);
+
+                _canceller?.Cancel();
+                _canceller?.Dispose();
+                _canceller = new CancellationTokenSource();
+
+                ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        ProfilerResultQueue.Start(_canceller.Token);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e);
+                    }
+                });
             }
         }
 
@@ -41,6 +60,10 @@ namespace Profiler.Core
             {
                 _patched = false;
                 _patchMgr.FreeContext(_patchContext);
+
+                _canceller?.Cancel();
+                _canceller?.Dispose();
+                _canceller = null;
             }
         }
     }
