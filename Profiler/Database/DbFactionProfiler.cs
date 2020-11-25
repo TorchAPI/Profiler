@@ -47,12 +47,15 @@ namespace Profiler.Database
             foreach (var (faction, entity) in result.GetTopEntities())
             {
                 onlineFactions.TryGetValue(faction.Tag, out var onlinePlayerCount);
+                onlinePlayerCount = Math.Max(1, onlinePlayerCount); // fix zero division
+                var mainMs = entity.MainThreadTime / result.TotalFrameCount;
+                var mainMsPerMember = mainMs / onlinePlayerCount;
 
                 InfluxDbPointFactory
                     .Measurement("profiler_factions")
                     .Tag("faction_tag", faction.Tag)
-                    .Field("main_ms", entity.MainThreadTime / result.TotalFrameCount)
-                    .Field("online_player_count", onlinePlayerCount)
+                    .Field("main_ms", mainMs)
+                    .Field("main_ms_per_member", mainMsPerMember)
                     .Write();
             }
         }
