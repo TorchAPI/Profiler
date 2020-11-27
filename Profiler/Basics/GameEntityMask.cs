@@ -22,10 +22,10 @@ namespace Profiler.Basics
         {
             if (entity is MyCubeGrid grid)
             {
-                if (grid.BigOwners.Count == 0) return null;
+                if (!grid.BigOwners.TryGetFirst(out var bigOwner)) return null;
                 if (!AcceptGrid(grid)) return null;
                 // Use player mask if present instead of the first big owner
-                return _playerMask ?? grid.BigOwners[0];
+                return _playerMask ?? bigOwner;
             }
 
             var block = entity.GetParentEntityOfType<MyCubeBlock>();
