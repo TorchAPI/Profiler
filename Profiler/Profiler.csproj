@@ -31,6 +31,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
+  <PropertyGroup>
+    <SolutionDir>$([System.IO.Path]::GetDirectoryName($(MSBuildProjectDirectory)))\</SolutionDir>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="TorchInfluxDb">
       <HintPath>$(SolutionDir)\..\TorchInfluxDb\TorchInfluxDb\bin\Release\TorchInfluxDb.dll</HintPath>
