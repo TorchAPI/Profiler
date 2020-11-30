@@ -79,14 +79,13 @@ node('windows') {
 			powershell "Add-Type -Assembly System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory(\"\$PWD\\${packageDir}\", \"\$PWD\\${zipFile}\")"
 			archiveArtifacts artifacts: zipFile, caseSensitive: false, onlyIfSuccessful: true
 		}
-		stage('Release') {
-			  when{
-			    branch 'master'
-			  }
-		          withCredentials([usernamePassword(credentialsId: 'jimmacle-plugin-publish', usernameVariable: 'USERNAME', passwordVariable: 'TOKEN')]) {
-						bat "Jenkins\\PluginPush.exe \"bin\\profiler.zip\" \"$USERNAME\" \"$TOKEN\""
-				    }
-		   }
+		if (env.BRANCH_NAME == "master") {
+			stage('Release') {
+		        	withCredentials([usernamePassword(credentialsId: 'jimmacle-plugin-publish', usernameVariable: 'USERNAME', passwordVariable: 'TOKEN')]) {
+					bat "Jenkins\\PluginPush.exe \"bin\\profiler.zip\" \"$USERNAME\" \"$TOKEN\""
+				}
+		   	}
+		}
 	}
 	else
 		currentBuild.result = "FAIL"
