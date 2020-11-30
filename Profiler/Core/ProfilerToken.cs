@@ -1,16 +1,24 @@
+using System;
 using System.Diagnostics;
 
 namespace Profiler.Core
 {
+    /// <summary>
+    /// Mark the beginning of a method profiling and be consumed in the end of profiling.
+    /// </summary>
     internal readonly struct ProfilerToken
     {
-        public readonly ProfilerEntry Entry;
-        public readonly long Start;
+        public readonly object GameEntity;
+        public readonly int MethodIndex;
+        public readonly ProfilerCategory Category;
+        public readonly long StartTick; // in 100 nanoseconds
 
-        public ProfilerToken(ProfilerEntry entry)
+        internal ProfilerToken(object gameEntity, int methodIndex, ProfilerCategory category)
         {
-            Entry = entry;
-            Start = Stopwatch.GetTimestamp();
+            GameEntity = gameEntity;
+            MethodIndex = methodIndex;
+            Category = category;
+            StartTick = Stopwatch.GetTimestamp();
         }
     }
 }

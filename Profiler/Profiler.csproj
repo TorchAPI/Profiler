@@ -32,7 +32,11 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NLog">
       <HintPath>..\packages\NLog.4.4.12\lib\net45\NLog.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -143,15 +147,54 @@
     <Compile Include="..\Versioning\AssemblyVersion.cs">
       <Link>Properties\AssemblyVersion.cs</Link>
     </Compile>
-    <Compile Include="Core\ProfilerData.cs" />
-    <Compile Include="Core\ProfilerEntry.cs" />
+    <Compile Include="Basics\BaseProfiler.cs" />
+    <Compile Include="Basics\BaseProfilerResult.cs" />
+    <Compile Include="Basics\BlockDefinitionProfiler.cs" />
+    <Compile Include="Basics\BlockTypeProfiler.cs" />
+    <Compile Include="Basics\FactionProfiler.cs" />
+    <Compile Include="Basics\GameEntityMask.cs" />
+    <Compile Include="Basics\GridProfiler.cs" />
+    <Compile Include="Basics\MethodNameProfiler.cs" />
+    <Compile Include="Basics\PlayerProfiler.cs" />
+    <Compile Include="Basics\ProfilerEntry.cs" />
+    <Compile Include="Basics\GameLoopProfiler.cs" />
+    <Compile Include="Basics\SessionComponentsProfiler.cs" />
+    <Compile Include="Basics\UserScriptProfiler.cs" />
+    <Compile Include="Core.Patches\Game_UpdateInternal.cs" />
+    <Compile Include="Core.Patches\MyEntity_Transpile.cs" />
+    <Compile Include="Core.Patches\MyDistributedUpdater_Iterate.cs" />
+    <Compile Include="Core.Patches\MyGameLogic_Update.cs" />
+    <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
+    <Compile Include="Core.Patches\MyDedicatedServer_Tick.cs" />
+    <Compile Include="Core.Patches\MyParallelEntityUpdateOrchestrator_Transpile.cs" />
+    <Compile Include="Core.Patches\MyPlayerCollection_SendDirtyBlockLimits.cs" />
+    <Compile Include="Core.Patches\MyProgrammableBlock_RunSandboxedProgramAction.cs" />
+    <Compile Include="Core.Patches\MyReplicationServer_UpdateAfter.cs" />
+    <Compile Include="Core.Patches\MyReplicationServer_UpdateBefore.cs" />
+    <Compile Include="Core.Patches\MyGameService_Update.cs" />
+    <Compile Include="Core.Patches\MyDedicatedServer_ReportReplicatedObjects.cs" />
+    <Compile Include="Core.Patches\MyNetworkReader_Process.cs" />
+    <Compile Include="Core.Patches\MySession_Update_Transpile.cs" />
+    <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
+    <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
+    <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
+    <Compile Include="Core\IProfiler.cs" />
+    <Compile Include="Core\StringIndexer.cs" />
+    <Compile Include="Core\ProfilerCategory.cs" />
+    <Compile Include="Core\ProfilerResult.cs" />
+    <Compile Include="Core\ProfilerResultQueue.cs" />
     <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
-    <Compile Include="Core\ProfilerRequest.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
+    <Compile Include="Interactive\GpsSendClient.cs" />
+    <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />
-    <Compile Include="Util\IterableWeakTable.cs" />
-    <Compile Include="Util\ReflectionUtils.cs" />
+    <Compile Include="Utils\ActionDisposable.cs" />
+    <Compile Include="Utils\CollectionUtils.cs" />
+    <Compile Include="Utils\CommandErrorResponseGenerator.cs" />
+    <Compile Include="Utils\ObjectPool.cs" />
+    <Compile Include="Utils\ReflectionUtils.cs" />
+    <Compile Include="Utils\VRageUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
   </ItemGroup>
   <ItemGroup>
