@@ -49,11 +49,11 @@ namespace Profiler.Basics
         /// Top entities from the profiler sorted by their total profiled time.
         /// </summary>
         /// <returns>Sorted entities per their profiled time, descending.</returns>
-        public IEnumerable<(K Key, ProfilerEntry Entity)> GetTopEntities(int? limit = null)
+        public IEnumerable<KeyedEntity> GetTopEntities(int? limit = null)
         {
             return _entities
                 .OrderByDescending(r => r.Value.TotalTime)
-                .Select(kv => (kv.Key, kv.Value))
+                .Select(kv => new KeyedEntity(kv.Key, kv.Value))
                 .Take(limit ?? int.MaxValue)
                 .ToArray();
         }
@@ -81,6 +81,37 @@ namespace Profiler.Basics
             }
 
             return new BaseProfilerResult<K1>(TotalFrameCount, TotalTime, mappedEntities);
+        }
+
+        /// <summary>
+        /// ValueTuple, basically. Workaround of a .NET cross-version issue, where
+        /// Torch is largely on .NET framework v4.6.1 which doesn't support ValueTuple.
+        /// </summary>
+        /// <remarks>
+        /// Don't use as a hash key.
+        /// </remarks>
+        public readonly struct KeyedEntity
+        {
+            public readonly K Key;
+            public readonly ProfilerEntry Entity;
+
+            public KeyedEntity(K key, ProfilerEntry entity)
+            {
+                Key = key;
+                Entity = entity;
+            }
+
+            public override string ToString()
+            {
+                return $"({Key}, {Entity})";
+            }
+
+            // https://docs.microsoft.com/en-us/dotnet/csharp/deconstruct#deconstructing-user-defined-types
+            public void Deconstruct(out K key, out ProfilerEntry entity)
+            {
+                key = Key;
+                entity = Entity;
+            }
         }
     }
 }
