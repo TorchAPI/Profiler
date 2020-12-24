@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Profiler.Core;
 using Profiler.Utils;
 
@@ -8,8 +9,8 @@ namespace Profiler.Basics
     /// </summary>
     public sealed class ProfilerEntry
     {
-        // https://docs.microsoft.com/en-us/dotnet/api/system.datetime.ticks
-        const double TickToTime = 1D / 10000;
+        long _rawMainThreadTime;
+        long _rawOffThreadTime;
 
         // Use Pool
         ProfilerEntry()
@@ -19,40 +20,45 @@ namespace Profiler.Basics
         /// <summary>
         /// Total main-thread computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public double MainThreadTime { get; private set; }
+        public double MainThreadTime => FromStopwatchTickToMs(_rawMainThreadTime);
 
         /// <summary>
         /// Total not-main-thread computation time of the game associated with the key object in milliseconds.
         /// </summary>
-        public double OffThreadTime { get; private set; }
+        public double OffThreadTime => FromStopwatchTickToMs(_rawOffThreadTime);
 
         /// <summary>
         /// Total computation time of the game associated with the key object in milliseconds.
         /// </summary>
         public double TotalTime => MainThreadTime + OffThreadTime;
 
+        static double FromStopwatchTickToMs(long time)
+        {
+            return time * 1000.0D / Stopwatch.Frequency;
+        }
+
         internal void Add(in ProfilerResult profilerResult)
         {
             if (profilerResult.IsMainThread)
             {
-                MainThreadTime += profilerResult.TotalTick * TickToTime;
+                _rawMainThreadTime += profilerResult.TotalTick;
             }
             else
             {
-                OffThreadTime += profilerResult.TotalTick * TickToTime;
+                _rawOffThreadTime += profilerResult.TotalTick;
             }
         }
 
         internal void MergeWith(ProfilerEntry other)
         {
-            MainThreadTime += other.MainThreadTime;
-            OffThreadTime += other.OffThreadTime;
+            _rawMainThreadTime += other._rawMainThreadTime;
+            _rawOffThreadTime += other._rawOffThreadTime;
         }
 
         void Reset()
         {
-            MainThreadTime = 0;
-            OffThreadTime = 0;
+            _rawMainThreadTime = 0;
+            _rawOffThreadTime = 0;
         }
 
         // Pool for ProfilerEntity instances to prevent GC

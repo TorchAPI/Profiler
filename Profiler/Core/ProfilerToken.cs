@@ -11,7 +11,7 @@ namespace Profiler.Core
         public readonly object GameEntity;
         public readonly int MethodIndex;
         public readonly ProfilerCategory Category;
-        public readonly long StartTick; // in 100 nanoseconds
+        public readonly long StartTick; // depends on Stopwatch.Frequency
 
         internal ProfilerToken(object gameEntity, int methodIndex, ProfilerCategory category)
         {
