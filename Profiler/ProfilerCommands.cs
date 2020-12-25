@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Profiler.Interactive;
 using Profiler.Utils;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
+using Sandbox.Game.World;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
@@ -107,7 +109,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(g => g.DisplayName));
+                    RespondResult(result.MapKeys(g => GridToResultText(g)));
 
                     // Sending GPS of laggy grids to caller
                     if (_args.SendGpsToPlayer)
@@ -123,6 +125,36 @@ namespace Profiler
                     }
                 }
             });
+        }
+
+        string GridToResultText(MyCubeGrid grid)
+        {
+            if (!_args.ShowDetails)
+            {
+                return grid.DisplayName;
+            }
+
+            if (!grid.BigOwners.Any())
+            {
+                return $"{grid.DisplayName} (no owners)";
+            }
+
+            var names = new List<string>();
+
+            foreach (var bigOwner in grid.BigOwners)
+            {
+                var id = MySession.Static.Players.TryGetIdentity(bigOwner);
+                if (id == null) continue;
+
+                var faction = MySession.Static.Factions.GetPlayerFaction(bigOwner);
+
+                var playerName = id.DisplayName;
+                var factionTag = faction?.Tag ?? "<single>";
+
+                names.Add($"{playerName} [{factionTag}]");
+            }
+
+            return $"{grid.DisplayName} ({string.Join(", ", names)})";
         }
 
         [Command("factions", "Profiles performance per faction", HelpText)]
