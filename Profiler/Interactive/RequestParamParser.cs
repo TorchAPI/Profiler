@@ -15,6 +15,8 @@ namespace Profiler.Interactive
         public int Top { get; } = DefaultTop;
         public bool SendGpsToPlayer { get; }
         public long PlayerIdToSendGps { get; }
+        public bool ShowDetails { get; }
+
         public long? PlayerMask { get; }
         public long? GridMask { get; }
         public long? FactionMask { get; }
@@ -29,7 +31,7 @@ namespace Profiler.Interactive
                 var arg = argument.Substring(2, argument.Length - 2);
                 var keyValuePair = arg.Split('=');
                 var key = keyValuePair[0];
-                var value = keyValuePair.Length >= 2 ? keyValuePair[1] : "";
+                var value = keyValuePair.Length >= 2 ? keyValuePair[1] : ""; // empty string if parameter-less
                 args[key] = value;
             }
 
@@ -62,6 +64,12 @@ namespace Profiler.Interactive
 
                 SendGpsToPlayer = true;
                 PlayerIdToSendGps = player.IdentityId;
+            }
+
+            if (args.TryGetValue("details", out _) ||
+                args.TryGetValue("detail", out _))
+            {
+                ShowDetails = true;
             }
 
             if (args.TryGetValue("faction", out var factionName))
