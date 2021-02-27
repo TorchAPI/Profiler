@@ -14,7 +14,7 @@ namespace Profiler.Core
     {
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        public static readonly MethodInfo StopTokenFunc = typeof(ProfilerPatch).StaticMethod(nameof(StopToken));
+        public static readonly MethodInfo StopTokenFunc = typeof(ProfilerPatch).GetStaticMethod(nameof(StopToken));
         public static bool Enabled { get; set; } = true;
 
         public static void Patch(PatchContext ctx)
@@ -29,24 +29,41 @@ namespace Profiler.Core
             MyProgrammableBlock_RunSandboxedProgramAction.Patch(ctx);
 
             // Game loop in call hierarchy
-            Game_UpdateInternal.Patch(ctx);
+            Game_RunSingleFrame.Patch(ctx);
             {
-                MyTransportLayer_Tick.Patch(ctx);
-                MyGameService_Update.Patch(ctx);
-                MyNetworkReader_Process.Patch(ctx);
-                MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
+                Game_UpdateInternal.Patch(ctx);
                 {
-                    MySession_Update_Transpile.Patch(ctx);
-                    MyReplicationServer_UpdateBefore.Patch(ctx);
-                    MySession_UpdateComponents.Patch(ctx);
+                    MyTransportLayer_Tick.Patch(ctx);
+                    MyGameService_Update.Patch(ctx);
+                    MyNetworkReader_Process.Patch(ctx);
                     {
-                        MySession_UpdateComponents_Transpile.Patch(ctx);
+                        MyDedicatedServerBase_ClientConnected.Patch(ctx);
+                        MyMultiplayerServerBase_ClientReady.Patch(ctx);
+                        MyReplicationServer_OnClientAcks.Patch(ctx);
+                        MyReplicationServer_OnClientUpdate.Patch(ctx);
+                        MyReplicationServer_ReplicableReady.Patch(ctx);
+                        MyReplicationServer_ReplicableRequest.Patch(ctx);
+                        MyReplicationServer_OnEvent.Patch(ctx);
                     }
-                    MyGpsCollection_Update.Patch(ctx);
-                    MyReplicationServer_UpdateAfter.Patch(ctx);
-                    MyDedicatedServer_Tick.Patch(ctx);
-                    MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
+                    MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
+                    {
+                        MySession_Update_Transpile.Patch(ctx);
+                        MyReplicationServer_UpdateBefore.Patch(ctx);
+                        MySession_UpdateComponents.Patch(ctx);
+                        {
+                            MySession_UpdateComponents_Transpile.Patch(ctx);
+                        }
+                        MyGpsCollection_Update.Patch(ctx);
+                        MyReplicationServer_UpdateAfter.Patch(ctx);
+                        MyDedicatedServer_Tick.Patch(ctx);
+                        {
+                            MyReplicationServer_SendUpdate.Patch(ctx);
+                            
+                        }
+                        MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
+                    }
                 }
+                FixedLoop_Run.Patch(ctx);
             }
 
             Log.Trace("Profiler patch ended");

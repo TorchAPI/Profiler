@@ -19,6 +19,11 @@ namespace Profiler.Core
 
         public int IndexOf(string methodName)
         {
+            if (string.IsNullOrEmpty(methodName))
+            {
+                throw new Exception("method name null");
+            }
+
             var existingIndex = _mapping.IndexOf(methodName);
             if (existingIndex >= 0) return existingIndex;
 

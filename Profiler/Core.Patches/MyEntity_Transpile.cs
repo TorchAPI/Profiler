@@ -16,11 +16,11 @@ namespace Profiler.Core.Patches
     {
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MyEntity_Transpile);
-        static readonly MethodInfo StartTokenFunc = typeof(MyEntity_Transpile).StaticMethod(nameof(StartToken));
+        static readonly MethodInfo StartTokenFunc = SelfType.GetStaticMethod(nameof(StartToken));
 
         public static void Patch(PatchContext ctx, MethodBase method)
         {
-            var transpiler = SelfType.StaticMethod(nameof(Transpile));
+            var transpiler = SelfType.GetStaticMethod(nameof(Transpile));
             ctx.GetPattern(method).PostTranspilers.Add(transpiler);
         }
 

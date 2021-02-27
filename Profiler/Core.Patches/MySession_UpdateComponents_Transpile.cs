@@ -19,10 +19,10 @@ namespace Profiler.Core.Patches
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MySession_UpdateComponents_Transpile);
         static readonly Type Type = typeof(MySession);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.UpdateComponents));
+        static readonly MethodInfo Method = Type.GetInstanceMethod(nameof(MySession.UpdateComponents));
 
-        static readonly MethodInfo UpdateSessionComponentsCategoryTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInUpdateSessionComponentsCategory));
-        static readonly MethodInfo UpdateReplicationCategoryTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInUpdateReplicationCategory));
+        static readonly MethodInfo UpdateSessionComponentsCategoryTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInUpdateSessionComponentsCategory));
+        static readonly MethodInfo UpdateReplicationCategoryTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInUpdateReplicationCategory));
 
         static readonly (Type Type, string Method, MethodInfo TokenCreataor)[] TargetCalls =
         {
@@ -53,7 +53,7 @@ namespace Profiler.Core.Patches
         {
             try
             {
-                var transpiler = SelfType.StaticMethod(nameof(Transpile));
+                var transpiler = SelfType.GetStaticMethod(nameof(Transpile));
                 ctx.GetPattern(Method).PostTranspilers.Add(transpiler);
             }
             catch (Exception e)

@@ -3,18 +3,18 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
 using Profiler.Utils;
-using Sandbox.Game.Multiplayer;
 using Torch.Managers.PatchManager;
+using VRage.Network;
 
 namespace Profiler.Core.Patches
 {
-    public static class MyPlayerCollection_SendDirtyBlockLimits
+    public sealed class MyReplicationServer_OnClientUpdate
     {
-        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.UpdateNetworkEvent;
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        static readonly Type SelfType = typeof(MyPlayerCollection_SendDirtyBlockLimits);
-        static readonly Type Type = typeof(MyPlayerCollection);
-        static readonly MethodInfo Method = Type.GetInstanceMethod(nameof(MyPlayerCollection.SendDirtyBlockLimits));
+        static readonly Type SelfType = typeof(MyReplicationServer_OnClientUpdate);
+        static readonly Type Type = typeof(MyReplicationServer);
+        static readonly MethodInfo Method = Type.GetInstanceMethod("OnClientUpdate");
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
@@ -45,6 +45,6 @@ namespace Profiler.Core.Patches
         static void Suffix(ref ProfilerToken? __localProfilerHandle)
         {
             ProfilerPatch.StopToken(in __localProfilerHandle);
-        }
+        } 
     }
 }

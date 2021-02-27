@@ -3,18 +3,18 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
 using Profiler.Utils;
-using Sandbox.Game.Multiplayer;
+using Sandbox.Engine.Multiplayer;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
 {
-    public static class MyPlayerCollection_SendDirtyBlockLimits
+    public static class MyDedicatedServerBase_ClientConnected
     {
-        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.UpdateNetworkEvent;
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        static readonly Type SelfType = typeof(MyPlayerCollection_SendDirtyBlockLimits);
-        static readonly Type Type = typeof(MyPlayerCollection);
-        static readonly MethodInfo Method = Type.GetInstanceMethod(nameof(MyPlayerCollection.SendDirtyBlockLimits));
+        static readonly Type SelfType = typeof(MyDedicatedServerBase_ClientConnected);
+        static readonly Type Type = typeof(MyDedicatedServerBase);
+        static readonly MethodInfo Method = Type.GetInstanceMethod("ClientConnected");
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)

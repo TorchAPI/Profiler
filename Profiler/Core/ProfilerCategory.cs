@@ -6,11 +6,14 @@
         Scripts,
         Update,
         UpdateNetwork,
+        UpdateNetworkEvent,
         UpdateReplication,
         UpdateParallelWait,
         UpdateParallelRun,
         UpdateSessionComponents,
         UpdateSessionComponentsAll,
         UpdateGps,
+        Lock,
+        Frame,
     }
 }
