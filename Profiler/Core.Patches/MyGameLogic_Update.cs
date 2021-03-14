@@ -13,18 +13,18 @@ namespace Profiler.Core.Patches
 
         public static void Patch(PatchContext ctx)
         {
-            var UpdateOnceBeforeFrameMethod = Type.StaticMethod(nameof(MyGameLogic.UpdateOnceBeforeFrame));
+            var UpdateOnceBeforeFrameMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateOnceBeforeFrame));
             MyEntity_Transpile.Patch(ctx, UpdateOnceBeforeFrameMethod);
 
             if (MyDistributedUpdater_Iterate.ApiExists())
             {
-                var UpdateBeforeSimulationMethod = Type.StaticMethod(nameof(MyGameLogic.UpdateBeforeSimulation));
+                var UpdateBeforeSimulationMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateBeforeSimulation));
                 foreach (var updateMethod in MyDistributedUpdater_Iterate.FindUpdateMethods(UpdateBeforeSimulationMethod))
                 {
                     MyEntity_Transpile.Patch(ctx, updateMethod);
                 }
 
-                var UpdateAfterSimulationMethod = Type.StaticMethod(nameof(MyGameLogic.UpdateAfterSimulation));
+                var UpdateAfterSimulationMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateAfterSimulation));
                 foreach (var updateMethod in MyDistributedUpdater_Iterate.FindUpdateMethods(UpdateAfterSimulationMethod))
                 {
                     MyEntity_Transpile.Patch(ctx, updateMethod);

@@ -3,18 +3,18 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
 using Profiler.Utils;
-using Sandbox.Game.Multiplayer;
+using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
 
 namespace Profiler.Core.Patches
 {
-    public static class MyPlayerCollection_SendDirtyBlockLimits
+    public sealed class Game_RunSingleFrame
     {
-        const ProfilerCategory Category = ProfilerCategory.UpdateNetwork;
+        const ProfilerCategory Category = ProfilerCategory.Frame;
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        static readonly Type SelfType = typeof(MyPlayerCollection_SendDirtyBlockLimits);
-        static readonly Type Type = typeof(MyPlayerCollection);
-        static readonly MethodInfo Method = Type.GetInstanceMethod(nameof(MyPlayerCollection.SendDirtyBlockLimits));
+        static readonly Type SelfType = typeof(Game_RunSingleFrame);
+        static readonly Type Type = typeof(Game);
+        static readonly MethodInfo Method = Type.GetInstanceMethod(nameof(Game.RunSingleFrame));
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
@@ -36,9 +36,9 @@ namespace Profiler.Core.Patches
         // ReSharper disable once RedundantAssignment
         // ReSharper disable once UnusedParameter.Local
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static void Prefix(object __instance, ref ProfilerToken? __localProfilerHandle)
+        static void Prefix(ref ProfilerToken? __localProfilerHandle)
         {
-            __localProfilerHandle = ProfilerPatch.StartToken(__instance, MethodIndex, Category);
+            __localProfilerHandle = ProfilerPatch.StartToken(null, MethodIndex, Category);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

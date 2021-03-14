@@ -13,15 +13,15 @@ namespace Profiler.Core.Patches
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MyTransportLayer_Tick);
         static readonly Type Type = ReflectionUtils.GetTypeByName("Sandbox.Engine.Multiplayer.MyTransportLayer");
-        static readonly MethodInfo Method = Type.InstanceMethod("Tick");
+        static readonly MethodInfo Method = Type.GetInstanceMethod("Tick");
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
             try
             {
-                var prefix = SelfType.StaticMethod(nameof(Prefix));
-                var suffix = SelfType.StaticMethod(nameof(Suffix));
+                var prefix = SelfType.GetStaticMethod(nameof(Prefix));
+                var suffix = SelfType.GetStaticMethod(nameof(Suffix));
 
                 ctx.GetPattern(Method).Prefixes.Add(prefix);
                 ctx.GetPattern(Method).Suffixes.Add(suffix);

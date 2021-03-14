@@ -16,6 +16,8 @@ namespace Profiler.Basics
                 case ProfilerCategory.UpdateSessionComponentsAll:
                 case ProfilerCategory.UpdateGps:
                 case ProfilerCategory.UpdateParallelWait:
+                case ProfilerCategory.Lock:
+                case ProfilerCategory.Frame:
                     return true;
                 default: return false;
             }

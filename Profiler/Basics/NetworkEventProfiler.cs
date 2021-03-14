@@ -2,12 +2,12 @@
 
 namespace Profiler.Basics
 {
-    public sealed class MethodNameProfiler : BaseProfiler<string>
+    public sealed class NetworkEventProfiler : BaseProfiler<string>
     {
         protected override bool TryAccept(in ProfilerResult profilerResult, out string key)
         {
             key = profilerResult.MethodName;
-            return true;
+            return profilerResult.Category == ProfilerCategory.UpdateNetworkEvent;
         }
     }
 }

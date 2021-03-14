@@ -18,10 +18,10 @@ namespace Profiler.Core.Patches
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MySession_Update_Transpile);
         static readonly Type Type = typeof(MySession);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MySession.Update));
+        static readonly MethodInfo Method = Type.GetInstanceMethod(nameof(MySession.Update));
 
-        static readonly MethodInfo ParallelWaitTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInParallelWait));
-        static readonly MethodInfo ParallelRunTokenMethod = SelfType.StaticMethod(nameof(CreateTokenInParallelRun));
+        static readonly MethodInfo ParallelWaitTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInParallelWait));
+        static readonly MethodInfo ParallelRunTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInParallelRun));
 
         static readonly (Type Type, string Method, MethodInfo TokenCreataor)[] TargetCalls =
         {
@@ -50,7 +50,7 @@ namespace Profiler.Core.Patches
         {
             try
             {
-                var transpiler = SelfType.StaticMethod(nameof(Transpile));
+                var transpiler = SelfType.GetStaticMethod(nameof(Transpile));
                 ctx.GetPattern(Method).PostTranspilers.Add(transpiler);
             }
             catch (Exception e)

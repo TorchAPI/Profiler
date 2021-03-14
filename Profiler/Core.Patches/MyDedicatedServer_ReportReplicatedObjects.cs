@@ -14,15 +14,15 @@ namespace Profiler.Core.Patches
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MyDedicatedServer_ReportReplicatedObjects);
         static readonly Type Type = typeof(MyDedicatedServer);
-        static readonly MethodInfo Method = Type.InstanceMethod(nameof(MyDedicatedServer.ReportReplicatedObjects));
+        static readonly MethodInfo Method = Type.GetInstanceMethod(nameof(MyDedicatedServer.ReportReplicatedObjects));
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{Type.FullName}#{Method.Name}");
 
         public static void Patch(PatchContext ctx)
         {
             try
             {
-                var prefix = SelfType.StaticMethod(nameof(Prefix));
-                var suffix = SelfType.StaticMethod(nameof(Suffix));
+                var prefix = SelfType.GetStaticMethod(nameof(Prefix));
+                var suffix = SelfType.GetStaticMethod(nameof(Suffix));
 
                 ctx.GetPattern(Method).Prefixes.Add(prefix);
                 ctx.GetPattern(Method).Suffixes.Add(suffix);
