@@ -26,6 +26,7 @@ namespace Profiler.Core.Patches
 
         static readonly ProfileBeginTokenTarget[] TargetCalls =
         {
+            new ProfileBeginTokenTarget(typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdatedBeforeInit), UpdateSessionComponentsCategoryTokenMethod),
             new ProfileBeginTokenTarget(typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateBeforeSimulation), UpdateSessionComponentsCategoryTokenMethod),
             new ProfileBeginTokenTarget(typeof(MyReplicationLayer), nameof(MyReplicationLayer.Simulate), UpdateReplicationCategoryTokenMethod),
             new ProfileBeginTokenTarget(typeof(MySessionComponentBase), nameof(MySessionComponentBase.Simulate), UpdateSessionComponentsCategoryTokenMethod),
