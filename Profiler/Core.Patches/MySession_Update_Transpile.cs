@@ -15,6 +15,8 @@ namespace Profiler.Core.Patches
 {
     public static class MySession_Update_Transpile
     {
+        
+        
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MySession_Update_Transpile);
         static readonly Type Type = typeof(MySession);
@@ -23,22 +25,17 @@ namespace Profiler.Core.Patches
         static readonly MethodInfo ParallelWaitTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInParallelWait));
         static readonly MethodInfo ParallelRunTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInParallelRun));
 
-        static readonly (Type Type, string Method, MethodInfo TokenCreataor)[] TargetCalls =
+        static readonly ProfileBeginTokenTarget[] TargetCalls =
         {
-            (typeof(IWorkScheduler), nameof(IWorkScheduler.WaitForTasksToFinish), ParallelWaitTokenMethod),
-            (typeof(Parallel), nameof(Parallel.RunCallbacks), ParallelRunTokenMethod),
+            new ProfileBeginTokenTarget(typeof(IWorkScheduler), nameof(IWorkScheduler.WaitForTasksToFinish), ParallelWaitTokenMethod),
+            new ProfileBeginTokenTarget(typeof(Parallel), nameof(Parallel.RunCallbacks), ParallelRunTokenMethod),
         };
-
-        static bool Matches(MethodBase method, Type type, string name)
-        {
-            return method.DeclaringType == type && method.Name == name;
-        }
 
         static bool TryGetTokenCreatorMethod(MethodBase method, out MethodInfo tokenCreatorMethod)
         {
-            if (TargetCalls.TryGetFirst(c => Matches(method, c.Type, c.Method), out var call))
+            if (TargetCalls.TryGetFirst(c => c.Matches(method), out var call))
             {
-                tokenCreatorMethod = call.TokenCreataor;
+                tokenCreatorMethod = call.TokenCreator;
                 return true;
             }
 
