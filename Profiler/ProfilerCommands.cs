@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Havok;
 using NLog;
 using Profiler.Basics;
 using Profiler.Core;
 using Profiler.Interactive;
 using Profiler.Utils;
+using Sandbox.Engine.Physics;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.World;
@@ -250,6 +252,28 @@ namespace Profiler
 
                     var result = profiler.GetResult();
                     RespondResult(result.MapKeys(p => p.GetType().Name));
+                }
+            });
+        }
+
+        [Command("physics", "Profiles performance of physics clusters")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfilePhysics()
+        {
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                using (var profiler = new ClusterTreeProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Log.Warn("Physics profiling needs to sync all threads! This may cause performance impact.");
+                    Context.Respond($"Started profiling clusters, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result.MapKeys(p => ((HkWorld)p.UserData).RigidBodies.MaxBy(c => c.Mass).GetSingleEntity()?.DisplayName));
                 }
             });
         }
