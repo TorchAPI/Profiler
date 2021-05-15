@@ -9,7 +9,7 @@
     <AssemblyName>Profiler</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <LangVersion>7.2</LangVersion>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -151,6 +151,7 @@
     <Compile Include="Basics\BaseProfilerResult.cs" />
     <Compile Include="Basics\BlockDefinitionProfiler.cs" />
     <Compile Include="Basics\BlockTypeProfiler.cs" />
+    <Compile Include="Basics\ClusterTreeProfiler.cs" />
     <Compile Include="Basics\FactionProfiler.cs" />
     <Compile Include="Basics\GameEntityMask.cs" />
     <Compile Include="Basics\GridProfiler.cs" />
@@ -171,6 +172,7 @@
     <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
     <Compile Include="Core.Patches\MyDedicatedServer_Tick.cs" />
     <Compile Include="Core.Patches\MyParallelEntityUpdateOrchestrator_Transpile.cs" />
+    <Compile Include="Core.Patches\MyPhysics_StepWorlds.cs" />
     <Compile Include="Core.Patches\MyPlayerCollection_SendDirtyBlockLimits.cs" />
     <Compile Include="Core.Patches\MyProgrammableBlock_RunSandboxedProgramAction.cs" />
     <Compile Include="Core.Patches\MyMultiplayerServerBase_ClientReady.cs" />
