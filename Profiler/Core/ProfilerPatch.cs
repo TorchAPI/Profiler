@@ -33,7 +33,6 @@ namespace Profiler.Core
             {
                 Game_UpdateInternal.Patch(ctx);
                 {
-                    MyPhysics_StepWorlds.Patch(ctx);
                     MyTransportLayer_Tick.Patch(ctx);
                     MyGameService_Update.Patch(ctx);
                     MyNetworkReader_Process.Patch(ctx);
