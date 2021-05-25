@@ -24,24 +24,20 @@ namespace Profiler.Core.Patches
         static readonly MethodInfo UpdateSessionComponentsCategoryTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInUpdateSessionComponentsCategory));
         static readonly MethodInfo UpdateReplicationCategoryTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInUpdateReplicationCategory));
 
-        static readonly (Type Type, string Method, MethodInfo TokenCreataor)[] TargetCalls =
+        static readonly ProfileBeginTokenTarget[] TargetCalls =
         {
-            (typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateBeforeSimulation), UpdateSessionComponentsCategoryTokenMethod),
-            (typeof(MyReplicationLayer), nameof(MyReplicationLayer.Simulate), UpdateReplicationCategoryTokenMethod),
-            (typeof(MySessionComponentBase), nameof(MySessionComponentBase.Simulate), UpdateSessionComponentsCategoryTokenMethod),
-            (typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateAfterSimulation), UpdateSessionComponentsCategoryTokenMethod),
+            new ProfileBeginTokenTarget(typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdatedBeforeInit), UpdateSessionComponentsCategoryTokenMethod),
+            new ProfileBeginTokenTarget(typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateBeforeSimulation), UpdateSessionComponentsCategoryTokenMethod),
+            new ProfileBeginTokenTarget(typeof(MyReplicationLayer), nameof(MyReplicationLayer.Simulate), UpdateReplicationCategoryTokenMethod),
+            new ProfileBeginTokenTarget(typeof(MySessionComponentBase), nameof(MySessionComponentBase.Simulate), UpdateSessionComponentsCategoryTokenMethod),
+            new ProfileBeginTokenTarget(typeof(MySessionComponentBase), nameof(MySessionComponentBase.UpdateAfterSimulation), UpdateSessionComponentsCategoryTokenMethod),
         };
-
-        static bool Matches(MethodBase method, Type type, string name)
-        {
-            return method.DeclaringType == type && method.Name == name;
-        }
-
+        
         static bool TryGetTokenCreatorMethod(MethodBase method, out MethodInfo tokenCreatorMethod)
         {
-            if (TargetCalls.TryGetFirst(c => Matches(method, c.Type, c.Method), out var call))
+            if (TargetCalls.TryGetFirst(c => c.Matches(method), out var call))
             {
-                tokenCreatorMethod = call.TokenCreataor;
+                tokenCreatorMethod = call.TokenCreator;
                 return true;
             }
 

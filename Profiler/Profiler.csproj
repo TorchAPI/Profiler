@@ -189,6 +189,7 @@
     <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
+    <Compile Include="Core.Patches\ProfileBeginTokenTarget.cs" />
     <Compile Include="Core\IProfiler.cs" />
     <Compile Include="Core\StringIndexer.cs" />
     <Compile Include="Core\ProfilerCategory.cs" />
