@@ -1,121 +1,81 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using Havok;
-using Profiler.Basics;
+using NLog;
+using Profiler.Utils;
 using Sandbox.Engine.Physics;
 using Sandbox.Engine.Utils;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
-using Torch.Utils;
-using VRage;
-using VRage.Library.Utils;
-using VRageMath.Spatial;
 
 namespace Profiler.Core.Patches
 {
     public static class MyPhysics_StepWorlds
     {
-        [ReflectedMethodInfo(typeof(MyPhysics_StepWorlds), nameof(StartToken))]
-#pragma warning disable 649
-        private static readonly MethodInfo _startTokenMethod;
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+        static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{typeof(MyPhysics).FullName}#StepSingleWorld");
 
-        [ReflectedMethodInfo(typeof(MyPhysics), "StepWorldsParallel")]
-        private static readonly MethodInfo _stepWorldsParallelMethod;
+        public static bool SimulatesParallel = true;
 
-        [ReflectedMethodInfo(typeof(MyPhysics), "StepWorldsInternal")]
-        private static readonly MethodInfo _stepWorldsMethod;
-
-        [ReflectedMethodInfo(typeof(MyPhysics_StepWorlds), nameof(StepWorldsPrefix))]
-        private static readonly MethodInfo _stepWorldsPrefixMethod;
-
-        [ReflectedMethodInfo(typeof(MyPhysics_StepWorlds), nameof(StepWorldsParallelTranspiler))]
-        private static readonly MethodInfo _stepWorldsParallelTranspilerMethod;
-#pragma warning restore 649
-
-        private static Action _stepWorldsParallel;
-        
-        private static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{typeof(MyPhysics).FullName}#StepWorlds");
-        
         public static void Patch(PatchContext ctx)
         {
-            ctx.GetPattern(_stepWorldsMethod).Prefixes.Add(_stepWorldsPrefixMethod);
-            ctx.GetPattern(_stepWorldsParallelMethod).Transpilers.Add(_stepWorldsParallelTranspilerMethod);
+            var stepWorldsInternalPatchee = typeof(MyPhysics).GetInstanceMethod("StepWorldsInternal");
+            var stepWorldsInternalPatcher = typeof(MyPhysics_StepWorlds).GetStaticMethod(nameof(StepWorldsInternalTranspiler));
+            ctx.GetPattern(stepWorldsInternalPatchee).Transpilers.Add(stepWorldsInternalPatcher);
+
+            var stepSingleWorldPatchee = typeof(MyPhysics).GetInstanceMethod("StepSingleWorld");
+            var stepSingleWorldPrefix = typeof(MyPhysics_StepWorlds).GetStaticMethod(nameof(StepSingleWorldPrefix));
+            var stepSingleWorldSuffix = typeof(MyPhysics_StepWorlds).GetStaticMethod(nameof(StepSingleWorldSuffix));
+            ctx.GetPattern(stepSingleWorldPatchee).Prefixes.Add(stepSingleWorldPrefix);
+            ctx.GetPattern(stepSingleWorldPatchee).Suffixes.Add(stepSingleWorldSuffix);
         }
 
-        private static bool StepWorldsPrefix(MyPhysics __instance)
+        static IEnumerable<MsilInstruction> StepWorldsInternalTranspiler(IEnumerable<MsilInstruction> insns)
         {
-            _stepWorldsParallel ??= _stepWorldsParallelMethod.CreateDelegate<Action>(__instance);
-            
-            if (ClusterTreeProfiler.Active)
+            var foundField = false;
+
+            foreach (var insn in insns)
             {
-                MyPhysics.ProfileHkCall(_stepWorldsParallel);
-            }
-            else
-            {
-                _stepWorldsParallel();
-            }
-            
-            if (HkBaseSystem.IsOutOfMemory)
-            {
-                throw new OutOfMemoryException("Havok run out of memory");
-            }
-            return false;
-        }
-        
-        private static IEnumerable<MsilInstruction> StepWorldsParallelTranspiler(IEnumerable<MsilInstruction> ins, Func<Type, MsilLocal> __localCreator)
-        {
-            var tokenStore = __localCreator(typeof(ProfilerToken?));
-            var initFound = false;
-            var finishFound = false;
-            foreach (var instruction in ins)
-            {
-                if (instruction.OpCode == OpCodes.Pop) continue;
-                if (instruction.OpCode == OpCodes.Callvirt &&
-                    instruction.Operand is MsilOperandInline.MsilOperandReflected<MethodBase> operand)
+                if (insn.OpCode == OpCodes.Ldsfld &&
+                    insn.Operand is MsilOperandInline<FieldInfo> field &&
+                    field.Value.Name == nameof(MyFakes.ENABLE_HAVOK_PARALLEL_SCHEDULING))
                 {
-                    switch (operand.Value.Name)
-                    {
-                        case "InitMtStep":
-                            // call virt
-                            yield return instruction;
-                            // pop
-                            yield return new MsilInstruction(OpCodes.Pop);
-                            // load cluster
-                            yield return new MsilInstruction(OpCodes.Ldloc_S).InlineValue(new MsilLocal(4));
-                            // create token
-                            yield return new MsilInstruction(OpCodes.Call).InlineValue(_startTokenMethod);
-                            // save token to local ver
-                            yield return tokenStore.AsValueStore();
-                        
-                            initFound = true;
-                            continue;
-                        case "FinishMtStep":
-                            // call virt
-                            yield return instruction;
-                            // pop
-                            yield return new MsilInstruction(OpCodes.Pop);
-                            // load saved token
-                            yield return tokenStore.AsReferenceLoad();
-                            // finish token
-                            yield return new MsilInstruction(OpCodes.Call).InlineValue(ProfilerPatch.StopTokenFunc);
-                        
-                            finishFound = true;
-                            continue;
-                    }
+                    var newField = typeof(MyPhysics_StepWorlds).GetField(nameof(SimulatesParallel), BindingFlags.Static | BindingFlags.Public);
+                    var newInsn = insn.CopyWith(OpCodes.Ldsfld).InlineValue(newField);
+                    yield return newInsn;
+
+                    Log.Info($"{insn} -> {newInsn}");
+
+                    foundField = true;
                 }
-                yield return instruction;
+                else
+                {
+                    yield return insn;
+                }
             }
 
-            if (!initFound || !finishFound)
-                throw new MissingMemberException();
+            if (!foundField)
+            {
+                throw new InvalidOperationException("Multithreading field not found");
+            }
         }
 
-        private static ProfilerToken? StartToken(MyClusterTree.MyCluster cluster)
+        // ReSharper disable once RedundantAssignment
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void StepSingleWorldPrefix(ref HkWorld world, ref ProfilerToken? __localProfilerHandle)
         {
-            return ProfilerPatch.StartToken(cluster, MethodIndex, ProfilerCategory.General);
+            if (SimulatesParallel) return;
+            __localProfilerHandle = ProfilerPatch.StartToken(world, MethodIndex, ProfilerCategory.Physics);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void StepSingleWorldSuffix(ref ProfilerToken? __localProfilerHandle)
+        {
+            if (SimulatesParallel) return;
+            ProfilerPatch.StopToken(in __localProfilerHandle);
         }
     }
 }

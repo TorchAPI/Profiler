@@ -7,9 +7,11 @@ namespace Profiler.Basics
 {
     public sealed class GameEntityMask
     {
-        long? _playerMask;
-        long? _gridMask;
-        long? _factionMask;
+        readonly long? _playerMask;
+        readonly long? _gridMask;
+        readonly long? _factionMask;
+
+        public static GameEntityMask Empty = new GameEntityMask(null, null, null);
 
         public GameEntityMask(long? playerMask, long? gridMask, long? factionMask)
         {
@@ -70,6 +72,16 @@ namespace Profiler.Basics
             }
 
             return true;
+        }
+
+        public bool AcceptEntity(IMyEntity entity)
+        {
+            return entity switch
+            {
+                MyCubeGrid grid => AcceptGrid(grid),
+                MyCubeBlock block => AcceptBlock(block),
+                _ => true,
+            };
         }
     }
 }

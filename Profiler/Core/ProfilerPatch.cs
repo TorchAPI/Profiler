@@ -27,13 +27,15 @@ namespace Profiler.Core
             MyGameLogic_Update.Patch(ctx);
             MyParallelEntityUpdateOrchestrator_Transpile.Patch(ctx);
             MyProgrammableBlock_RunSandboxedProgramAction.Patch(ctx);
+            
+            // Physics
+            MyPhysics_StepWorlds.Patch(ctx);
 
             // Game loop in call hierarchy
             Game_RunSingleFrame.Patch(ctx);
             {
                 Game_UpdateInternal.Patch(ctx);
                 {
-                    MyPhysics_StepWorlds.Patch(ctx);
                     MyTransportLayer_Tick.Patch(ctx);
                     MyGameService_Update.Patch(ctx);
                     MyNetworkReader_Process.Patch(ctx);

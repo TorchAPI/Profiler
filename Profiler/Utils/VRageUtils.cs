@@ -1,5 +1,10 @@
-﻿using Sandbox;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Havok;
+using Sandbox;
+using Sandbox.Engine.Physics;
 using VRage.ModAPI;
+using VRageMath;
 
 namespace Profiler.Utils
 {
@@ -20,6 +25,33 @@ namespace Profiler.Utils
             }
 
             return null;
+        }
+
+        public static IEnumerable<IMyEntity> GetEntities(this HkWorld world)
+        {
+            var entities = new List<IMyEntity>();
+            foreach (var rigidBody in world.RigidBodies)
+            {
+                var body = rigidBody.GetBody();
+                var entity = body.Entity;
+                entities.Add(entity);
+            }
+
+            return entities;
+        }
+
+        public static (double Size, Vector3D Center) GetBound(IEnumerable<IMyEntity> entities)
+        {
+            var minPos = entities.Aggregate(Vector3D.MaxValue, (s, n) => Vector3D.Min(s, n.GetPosition()));
+            var maxPos = entities.Aggregate(Vector3D.MinValue, (s, n) => Vector3D.Max(s, n.GetPosition()));
+            var size = Vector3D.Distance(minPos, maxPos);
+            var center = (minPos + maxPos) / 2;
+            return (size, center);
+        }
+
+        public static string MakeGpsString(string name, Vector3D coord)
+        {
+            return $":GPS:{name}:{coord.X:0}:{coord.Y:0}:{coord.Z:0}:";
         }
 
         public static ulong CurrentGameFrameCount => MySandboxGame.Static.SimulationFrameCounter;

@@ -31,7 +31,7 @@ namespace Profiler.Basics
         /// <summary>
         /// Mark the beginning of profiling. Must be called once to properly retrieve the profiling data.
         /// </summary>
-        public void MarkStart()
+        public virtual void MarkStart()
         {
             _startFrameCount = VRageUtils.CurrentGameFrameCount;
             _startTime = DateTime.UtcNow;
@@ -64,7 +64,7 @@ namespace Profiler.Basics
         /// <param name="profilerResult">Profiling result of a method invocation sent from ProfilerPatch.</param>
         /// <param name="key">Key object to be registered to this profiler if accepted.</param>
         /// <returns>True if given ProfilerResult is accepted, otherwise false.</returns>
-        abstract protected bool TryAccept(in ProfilerResult profilerResult, out K key);
+        protected abstract bool TryAccept(in ProfilerResult profilerResult, out K key);
 
         /// <summary>
         /// Generate a key-value-pair collection of the key objects and ProfilerEntries.
