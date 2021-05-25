@@ -278,6 +278,7 @@ namespace Profiler
                         msg.AppendLine($"[{grid.FirstOwnerFactionTag}] \"{grid.FirstOwnerName}\": \"{grid.Name}\"");
                     }
 
+                    msg.Append("(end of list)");
                     Context.Respond(msg.ToString());
                     return;
                 }
