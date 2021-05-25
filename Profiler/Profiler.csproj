@@ -201,6 +201,7 @@
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
     <Compile Include="Interactive\GpsSendClient.cs" />
+    <Compile Include="Interactive\PhysicsParamParser.cs" />
     <Compile Include="Interactive\PhysicsTakeMeClient.cs" />
     <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />

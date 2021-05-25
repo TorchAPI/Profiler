@@ -264,51 +264,49 @@ namespace Profiler
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+                var physicsParams = new PhysicsParamParser(Context.Args);
 
-                var tics = 10;
-                foreach (var arg in Context.Args)
+                if (physicsParams.InspectIndexOrNull is { } inspectIndex)
                 {
-                    if (arg == "--takeme=done")
+                    var msg = new StringBuilder();
+                    msg.AppendLine($"List of grids in a cluster at index {inspectIndex}:");
+
+                    var grids = _takeMeClient.GetGridsAt(inspectIndex);
+                    foreach (var factions in grids.GroupBy(g => g.FirstOwnerFactionTag))
+                    foreach (var grid in factions.OrderBy(g => g.FirstOwnerName))
                     {
-                        _takeMeClient.DeleteGpss(Context.Player.IdentityId);
-                        Context.Respond("Finished session");
-                        return;
+                        msg.AppendLine($"[{grid.FirstOwnerFactionTag}] \"{grid.FirstOwnerName}\": \"{grid.Name}\"");
                     }
 
-                    if (arg.StartsWith("--takeme="))
-                    {
-                        var indexStr = arg.Split('=')[1];
-                        if (!int.TryParse(indexStr, out var takeMeIndex))
-                        {
-                            throw new ArgumentException($"not a number: \"{indexStr}\"");
-                        }
+                    Context.Respond(msg.ToString());
+                    return;
+                }
 
-                        await _takeMeClient.TakeMe(Context.Player, takeMeIndex);
-                        Context.Respond("Move to another cluster by `--takeme=N` or end session by `--takeme=done`");
-                        return;
-                    }
+                if (physicsParams.TakeMeDone)
+                {
+                    _takeMeClient.DeleteGpss(Context.Player.IdentityId);
+                    Context.Respond("Finished session");
+                    return;
+                }
 
-                    if (arg.StartsWith("--tics="))
-                    {
-                        var ticsStr = arg.Split('=')[1];
-                        if (!int.TryParse(ticsStr, out tics))
-                        {
-                            throw new ArgumentException($"not a number: \"{ticsStr}\"");
-                        }
-                    }
+                if (physicsParams.TakeMeIndexOrNull is { } takeMeIndex)
+                {
+                    await _takeMeClient.TakeMe(Context.Player, takeMeIndex);
+                    Context.Respond("Move to another cluster by `--takeme=N` or end session by `--takeme=done`");
+                    return;
                 }
 
                 using (var profiler = new PhysicsProfiler())
                 using (ProfilerResultQueue.Profile(profiler))
                 {
                     Log.Warn("Physics profiling needs to sync all threads! This may cause performance impact.");
-                    Context.Respond($"Started profiling clusters, result in {tics} frames (--tics=N)");
+                    Context.Respond($"Started profiling clusters, result in {physicsParams.Tics} frames (--tics=N)");
 
                     await GameLoopObserver.MoveToGameLoop();
 
                     profiler.MarkStart();
 
-                    for (var _ = 0; _ < tics; _++)
+                    for (var _ = 0; _ < physicsParams.Tics; _++)
                     {
                         await GameLoopObserver.MoveToGameLoop();
                     }
@@ -320,7 +318,8 @@ namespace Profiler
                     var result = profiler.GetResult();
                     RespondResult(result, (w, i) => GetWorldName(w, i, mask));
 
-                    Context.Respond("Teleport to clusters by `--takeme=N`");
+                    Context.Respond("Teleport to a cluster by `--takeme=N`");
+                    Context.Respond("Show a list of grids by `--inspect=N`");
 
                     var topClusters = result.GetTopEntities(5).Select(e => e.Key).ToArray();
                     _takeMeClient.Update(topClusters);
@@ -336,7 +335,7 @@ namespace Profiler
                 .ToArray();
 
             var count = entities.Length;
-            var (size, _) = VRageUtils.GetBound(entities);
+            var (size, _) = VRageUtils.GetBound(entities.Select(e => e.GetPosition()));
             return $"{index}: {count} entities in {size / 1000:0.0}km";
         }
 
