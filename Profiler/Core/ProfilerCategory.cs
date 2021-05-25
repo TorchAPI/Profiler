@@ -15,5 +15,6 @@
         UpdateGps,
         Lock,
         Frame,
+        Physics,
     }
 }

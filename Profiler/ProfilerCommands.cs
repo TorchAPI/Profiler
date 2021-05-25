@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Havok;
 using NLog;
 using Profiler.Basics;
 using Profiler.Core;
@@ -18,11 +19,12 @@ using VRage.Game.ModAPI;
 namespace Profiler
 {
     [Category("profile")]
-    public class ProfilerCommands : CommandModule
+    public sealed class ProfilerCommands : CommandModule
     {
         const string HelpText = "--secs=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
-        static readonly GpsSendClient _gpsSendClient = new GpsSendClient();
+        static readonly GpsSendClient _gpsSendClient = new();
+        static readonly PhysicsTakeMeClient _takeMeClient = new();
 
         RequestParamParser _args;
 
@@ -58,7 +60,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(b => BlockTypeToString(b)));
+                    RespondResult(result, (b, _) => BlockTypeToString(b));
                 }
             });
         }
@@ -86,7 +88,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(k => k.BlockPairName));
+                    RespondResult(result, (k, _) => k.BlockPairName);
                 }
             });
         }
@@ -109,7 +111,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(g => GridToResultText(g)));
+                    RespondResult(result, (g, _) => GridToResultText(g));
 
                     // Sending GPS of laggy grids to caller
                     if (_args.SendGpsToPlayer)
@@ -175,7 +177,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(f => f.Tag));
+                    RespondResult(result, (f, _) => f.Tag);
                 }
             });
         }
@@ -198,7 +200,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(k => k.DisplayName));
+                    RespondResult(result, (k, _) => k.DisplayName);
                 }
             });
         }
@@ -221,7 +223,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(p => PbToString(p)));
+                    RespondResult(result, (p, _) => PbToString(p));
                 }
             });
         }
@@ -249,24 +251,108 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result.MapKeys(p => p.GetType().Name));
+                    RespondResult(result, (p, _) => p.GetType().Name);
                 }
             });
         }
 
-        void RespondResult(BaseProfilerResult<string> result)
+        [Command("physics", "Profiles performance of physics clusters")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfilePhysics()
+        {
+            this.CatchAndReport(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                var tics = 10;
+                foreach (var arg in Context.Args)
+                {
+                    if (arg == "--takeme=done")
+                    {
+                        _takeMeClient.DeleteGpss(Context.Player.IdentityId);
+                        Context.Respond("Finished session");
+                        return;
+                    }
+
+                    if (arg.StartsWith("--takeme="))
+                    {
+                        var indexStr = arg.Split('=')[1];
+                        if (!int.TryParse(indexStr, out var takeMeIndex))
+                        {
+                            throw new ArgumentException($"not a number: \"{indexStr}\"");
+                        }
+
+                        await _takeMeClient.TakeMe(Context.Player, takeMeIndex);
+                        Context.Respond("Move to another cluster by `--takeme=N` or end session by `--takeme=done`");
+                        return;
+                    }
+
+                    if (arg.StartsWith("--tics="))
+                    {
+                        var ticsStr = arg.Split('=')[1];
+                        if (!int.TryParse(ticsStr, out tics))
+                        {
+                            throw new ArgumentException($"not a number: \"{ticsStr}\"");
+                        }
+                    }
+                }
+
+                using (var profiler = new PhysicsProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Log.Warn("Physics profiling needs to sync all threads! This may cause performance impact.");
+                    Context.Respond($"Started profiling clusters, result in {tics} frames (--tics=N)");
+
+                    await GameLoopObserver.MoveToGameLoop();
+
+                    profiler.MarkStart();
+
+                    for (var _ = 0; _ < tics; _++)
+                    {
+                        await GameLoopObserver.MoveToGameLoop();
+                    }
+
+                    profiler.MarkEnd();
+
+                    await TaskUtils.MoveToThreadPool();
+
+                    var result = profiler.GetResult();
+                    RespondResult(result, (w, i) => GetWorldName(w, i, mask));
+
+                    Context.Respond("Teleport to clusters by `--takeme=N`");
+
+                    var topClusters = result.GetTopEntities(5).Select(e => e.Key).ToArray();
+                    _takeMeClient.Update(topClusters);
+                }
+            });
+        }
+
+        static string GetWorldName(HkWorld world, int index, GameEntityMask mask)
+        {
+            var entities = world
+                .GetEntities()
+                .Where(e => mask.AcceptEntity(e))
+                .ToArray();
+
+            var count = entities.Length;
+            var (size, _) = VRageUtils.GetBound(entities);
+            return $"{index}: {count} entities in {size / 1000:0.0}km";
+        }
+
+        void RespondResult<T>(BaseProfilerResult<T> result, Func<T, int, string> toName)
         {
             Log.Info("Got result from profiling via command");
 
             var messageBuilder = new StringBuilder();
             messageBuilder.AppendLine($"Finished profiling; past {result.TotalTime:0.00}ms ({result.TotalTime / 1000:0.00}s) and {result.TotalFrameCount} frames");
 
-            foreach (var (name, profilerEntry) in result.GetTopEntities(_args.Top))
+            foreach (var ((item, profilerEntry), index) in result.GetTopEntities(_args.Top).Select((v, i) => (v, i)))
             {
                 var totalTime = $"{profilerEntry.TotalTime:0.00}ms";
                 var mainThreadTime = $"{profilerEntry.MainThreadTime / result.TotalFrameCount:0.00}ms/f";
-                var offThreadTime = $"{profilerEntry.OffThreadTime / result.TotalFrameCount:0.00}ms/f";
-                messageBuilder.AppendLine($"'{name}' took {mainThreadTime} main, {offThreadTime} parallel (total {totalTime})");
+                var name = toName(item, index);
+                messageBuilder.AppendLine($"{name}: {mainThreadTime} (total {totalTime})");
             }
 
             Log.Info("Finished showing profiler result via command");
