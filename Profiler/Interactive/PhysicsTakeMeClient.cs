@@ -8,20 +8,44 @@ using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
 using VRage.Game;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using VRageMath;
 
 namespace Profiler.Interactive
 {
     public sealed class PhysicsTakeMeClient
     {
+        public readonly struct GridSnapshot
+        {
+            public readonly string Name;
+            public readonly Vector3D Position;
+            public readonly string FirstOwnerName;
+            public readonly string FirstOwnerFactionTag;
+
+            public GridSnapshot(IMyCubeGrid entity)
+            {
+                Name = entity.DisplayName;
+                Position = entity.GetPosition();
+
+                FirstOwnerName = "<null>";
+                FirstOwnerFactionTag = "<null>";
+                if (entity.BigOwners.TryGetFirst(out var ownerId))
+                {
+                    var id = MySession.Static.Players.TryGetIdentity(ownerId);
+                    FirstOwnerName = id?.DisplayName ?? "<null>";
+
+                    var faction = MySession.Static.Factions.TryGetPlayerFaction(ownerId);
+                    FirstOwnerFactionTag = faction?.Tag ?? "<null>";
+                }
+            }
+        }
+
         const string GpsNamePrefix = "Physics Profiler: ";
 
-        readonly List<IMyEntity[]> _clusters;
+        readonly List<GridSnapshot[]> _clusters;
 
         public PhysicsTakeMeClient()
         {
-            _clusters = new List<IMyEntity[]>();
+            _clusters = new List<GridSnapshot[]>();
         }
 
         public void Update(IEnumerable<HkWorld> clusters)
@@ -32,10 +56,17 @@ namespace Profiler.Interactive
                 var grids = cluster
                     .GetEntities()
                     .Where(e => e is IMyCubeGrid)
+                    .Cast<IMyCubeGrid>()
+                    .Select(g => new GridSnapshot(g))
                     .ToArray();
 
                 _clusters.Add(grids);
             }
+        }
+
+        public IEnumerable<GridSnapshot> GetGridsAt(int index)
+        {
+            return _clusters[index];
         }
 
         public async Task TakeMe(IMyPlayer player, int index)
@@ -51,7 +82,7 @@ namespace Profiler.Interactive
                 throw new InvalidOperationException("entities not found");
             }
 
-            var (_, center) = VRageUtils.GetBound(entities);
+            var (_, center) = VRageUtils.GetBound(entities.Select(e => e.Position));
             player.Character.SetPosition(center);
 
             DeleteGpss(player.IdentityId);
@@ -60,7 +91,7 @@ namespace Profiler.Interactive
 
             foreach (var grid in entities)
             {
-                var gps = CreateGridGps(grid, $"{GpsNamePrefix}{grid.DisplayName}", "", Color.Purple);
+                var gps = CreateGridGps($"{GpsNamePrefix}{grid.Name}", grid.Position, "", Color.Purple);
                 MySession.Static.Gpss.SendAddGps(player.IdentityId, ref gps);
             }
 
@@ -79,19 +110,18 @@ namespace Profiler.Interactive
             }
         }
 
-        static MyGps CreateGridGps(IMyEntity entity, string name, string description, Color color)
+        static MyGps CreateGridGps(string name, Vector3D position, string description, Color color)
         {
             var gps = new MyGps(new MyObjectBuilder_Gps.Entry
             {
                 name = name,
                 DisplayName = name,
-                coords = entity.PositionComp.GetPosition(),
+                coords = position,
                 showOnHud = true,
                 color = color,
                 description = description,
             });
 
-            gps.SetEntity(entity);
             gps.UpdateHash();
 
             return gps;

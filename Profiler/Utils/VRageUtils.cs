@@ -40,10 +40,10 @@ namespace Profiler.Utils
             return entities;
         }
 
-        public static (double Size, Vector3D Center) GetBound(IEnumerable<IMyEntity> entities)
+        public static (double Size, Vector3D Center) GetBound(IEnumerable<Vector3D> positions)
         {
-            var minPos = entities.Aggregate(Vector3D.MaxValue, (s, n) => Vector3D.Min(s, n.GetPosition()));
-            var maxPos = entities.Aggregate(Vector3D.MinValue, (s, n) => Vector3D.Max(s, n.GetPosition()));
+            var minPos = positions.Aggregate(Vector3D.MaxValue, (s, n) => Vector3D.Min(s, n));
+            var maxPos = positions.Aggregate(Vector3D.MinValue, (s, n) => Vector3D.Max(s, n));
             var size = Vector3D.Distance(minPos, maxPos);
             var center = (minPos + maxPos) / 2;
             return (size, center);
