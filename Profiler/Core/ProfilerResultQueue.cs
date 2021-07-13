@@ -35,6 +35,8 @@ namespace Profiler.Core
 
         internal static void Enqueue(in ProfilerResult result)
         {
+            if (_profilers.Count == 0) return;
+
             _profilerResults.Enqueue(result);
         }
 
