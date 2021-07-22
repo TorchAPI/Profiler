@@ -51,7 +51,10 @@ namespace Profiler.Basics
         /// <returns>Sorted entities per their profiled time, descending.</returns>
         public IEnumerable<KeyedEntity> GetTopEntities(int? limit = null)
         {
-            return _entities
+            //https://stackoverflow.com/questions/11692389
+            var entities = _entities.ToArray();
+            
+            return entities
                 .OrderByDescending(r => r.Value.TotalTime)
                 .Select(kv => new KeyedEntity(kv.Key, kv.Value))
                 .Take(limit ?? int.MaxValue)
