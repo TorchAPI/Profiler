@@ -102,7 +102,11 @@ namespace Profiler
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
 
-                using (var profiler = new GridProfiler(mask))
+                var profiler = _args.TryGetValue("block", out var blockMask)
+                    ? new GridByBlockTypeProfiler(mask, blockMask)
+                    : (BaseProfiler<MyCubeGrid>) new GridProfiler(mask);
+
+                using (profiler)
                 using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling grids, result in {_args.Seconds}s");

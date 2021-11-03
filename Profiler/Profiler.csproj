@@ -151,6 +151,7 @@
     <Compile Include="Basics\BaseProfilerResult.cs" />
     <Compile Include="Basics\BlockDefinitionProfiler.cs" />
     <Compile Include="Basics\BlockTypeProfiler.cs" />
+    <Compile Include="Basics\GridByBlockTypeProfiler.cs" />
     <Compile Include="Basics\CustomProfiler.cs" />
     <Compile Include="Basics\PhysicsProfiler.cs" />
     <Compile Include="Basics\FactionProfiler.cs" />
