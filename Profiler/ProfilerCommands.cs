@@ -46,7 +46,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlockType()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -60,7 +60,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (b, _) => BlockTypeToString(b));
+                    RespondResult(result, false, (b, _) => BlockTypeToString(b));
                 }
             });
         }
@@ -74,7 +74,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlock()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -88,7 +88,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (k, _) => k.BlockPairName);
+                    RespondResult(result, false, (k, _) => k.BlockPairName);
                 }
             });
         }
@@ -97,7 +97,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileGrids()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -111,7 +111,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (g, _) => GridToResultText(g));
+                    RespondResult(result, false, (g, _) => GridToResultText(g));
 
                     // Sending GPS of laggy grids to caller
                     if (_args.SendGpsToPlayer)
@@ -163,7 +163,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileFactions()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -177,7 +177,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (f, _) => f.Tag);
+                    RespondResult(result, false, (f, _) => f.Tag);
                 }
             });
         }
@@ -186,7 +186,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfilePlayers()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -200,7 +200,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (k, _) => k.DisplayName);
+                    RespondResult(result, false, (k, _) => k.DisplayName);
                 }
             });
         }
@@ -209,7 +209,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileScripts()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -223,7 +223,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (p, _) => PbToString(p));
+                    RespondResult(result, false, (p, _) => PbToString(p));
                 }
             });
         }
@@ -239,7 +239,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileSession()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 using (var profiler = new SessionComponentsProfiler())
@@ -251,7 +251,7 @@ namespace Profiler
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (p, _) => p.GetType().Name);
+                    RespondResult(result, false, (p, _) => p.GetType().Name);
                 }
             });
         }
@@ -260,7 +260,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfilePhysics()
         {
-            this.CatchAndReport(async () =>
+            this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
@@ -317,7 +317,7 @@ namespace Profiler
                     await TaskUtils.MoveToThreadPool();
 
                     var result = profiler.GetResult();
-                    RespondResult(result, (w, i) => GetWorldName(w, i, mask));
+                    RespondResult(result, false, (w, i) => GetWorldName(w, i, mask));
 
                     Context.Respond("Teleport to a cluster by `--takeme=N`");
                     Context.Respond("Show a list of grids by `--inspect=N`");
@@ -340,7 +340,33 @@ namespace Profiler
             return $"{index}: {count} entities in {size / 1000:0.0}km";
         }
 
-        void RespondResult<T>(BaseProfilerResult<T> result, Func<T, int, string> toName)
+        [Command("custom", "Profiles custom measurements. `--prefix=` to specify the path.")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileCustom() => this.CatchAndReportAsync(async () =>
+        {
+            _args = new RequestParamParser(Context.Player, Context.Args);
+            var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+            if (!_args.TryGetValue("prefix", out var prefix))
+            {
+                throw new InvalidOperationException("Must specify prefix by `--prefix=`");
+            }
+
+            using (var profiler = new CustomProfiler(mask, prefix))
+            using (ProfilerResultQueue.Profile(profiler))
+            {
+                Context.Respond($"Started profiling custom measurements, result in {_args.Seconds} seconds");
+                await GameLoopObserver.MoveToGameLoop();
+
+                profiler.MarkStart();
+                await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                var result = profiler.GetResult();
+                RespondResult(result, true, (p, _) => p);
+            }
+        });
+
+        void RespondResult<T>(BaseProfilerResult<T> result, bool showWorkerThreads, Func<T, int, string> toName)
         {
             Log.Info("Got result from profiling via command");
 
@@ -351,8 +377,11 @@ namespace Profiler
             {
                 var totalTime = $"{profilerEntry.TotalTime:0.00}ms";
                 var mainThreadTime = $"{profilerEntry.MainThreadTime / result.TotalFrameCount:0.00}ms/f";
+                var workerThreadTime = $"{profilerEntry.OffThreadTime / result.TotalFrameCount:0.00}ms/f";
                 var name = toName(item, index);
-                messageBuilder.AppendLine($"{name}: {mainThreadTime} (total {totalTime})");
+                messageBuilder.AppendLine(showWorkerThreads
+                    ? $"{name}: main: {mainThreadTime}, off: {workerThreadTime}, total: {totalTime}"
+                    : $"{name}: {mainThreadTime} (total {totalTime})");
             }
 
             Log.Info("Finished showing profiler result via command");

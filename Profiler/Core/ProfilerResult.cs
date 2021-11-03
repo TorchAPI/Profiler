@@ -52,8 +52,13 @@ namespace Profiler.Core
         }
 
         /// <summary>
-        /// Name of the profiled method.
+        /// Name of the profiled method or identifier if custom.
         /// </summary>
         public string MethodName => StringIndexer.Instance.StringAt(_methodIndex);
+
+        public override string ToString()
+        {
+            return $"{nameof(ProfilerResult)}({Category}, {MethodName}, {GameEntity}, {TotalTick}tics)";
+        }
     }
 }

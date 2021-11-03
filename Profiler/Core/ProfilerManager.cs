@@ -38,11 +38,11 @@ namespace Profiler.Core
                 _canceller?.Dispose();
                 _canceller = new CancellationTokenSource();
 
-                ThreadPool.QueueUserWorkItem(_ =>
+                ThreadPool.QueueUserWorkItem(async _ =>
                 {
                     try
                     {
-                        ProfilerResultQueue.Start(_canceller.Token);
+                        await ProfilerResultQueue.Start(_canceller.Token);
                     }
                     catch (Exception e)
                     {

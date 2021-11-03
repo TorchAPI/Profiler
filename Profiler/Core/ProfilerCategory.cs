@@ -16,5 +16,6 @@
         Lock,
         Frame,
         Physics,
+        Custom,
     }
 }

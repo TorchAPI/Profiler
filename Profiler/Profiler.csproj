@@ -151,6 +151,7 @@
     <Compile Include="Basics\BaseProfilerResult.cs" />
     <Compile Include="Basics\BlockDefinitionProfiler.cs" />
     <Compile Include="Basics\BlockTypeProfiler.cs" />
+    <Compile Include="Basics\CustomProfiler.cs" />
     <Compile Include="Basics\PhysicsProfiler.cs" />
     <Compile Include="Basics\FactionProfiler.cs" />
     <Compile Include="Basics\GameEntityMask.cs" />
@@ -192,6 +193,7 @@
     <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
     <Compile Include="Core.Patches\ProfileBeginTokenTarget.cs" />
+    <Compile Include="Core\CustomProfiling.cs" />
     <Compile Include="Core\IProfiler.cs" />
     <Compile Include="Core\StringIndexer.cs" />
     <Compile Include="Core\ProfilerCategory.cs" />
