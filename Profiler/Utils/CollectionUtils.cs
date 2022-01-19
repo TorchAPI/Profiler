@@ -31,5 +31,21 @@ namespace Profiler.Utils
             foundValue = default;
             return false;
         }
+
+        public static IEnumerable<U> Foo<T, U>(this IEnumerable<T> self)
+        {
+            foreach (var t in self)
+            {
+                if (t is U u)
+                {
+                    yield return u;
+                }
+            }
+        }
+
+        public static ISet<T> ToSet<T>(this IEnumerable<T> self)
+        {
+            return new HashSet<T>(self);
+        }
     }
 }

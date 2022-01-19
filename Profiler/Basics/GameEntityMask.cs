@@ -1,87 +1,82 @@
-﻿using Profiler.Utils;
+﻿using System.Collections.Generic;
+using NLog;
+using Profiler.Utils;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
-using VRage.ModAPI;
 
 namespace Profiler.Basics
 {
     public sealed class GameEntityMask
     {
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+        public static readonly GameEntityMask Empty = new GameEntityMask(null, null, null, null);
+
         readonly long? _playerMask;
         readonly long? _gridMask;
         readonly long? _factionMask;
+        readonly ISet<string> _exemptBlocks;
 
-        public static GameEntityMask Empty = new GameEntityMask(null, null, null);
-
-        public GameEntityMask(long? playerMask, long? gridMask, long? factionMask)
+        public GameEntityMask(long? playerMask = null, long? gridMask = null, long? factionMask = null, IEnumerable<string> exemptBlockTypeIds = null)
         {
             _playerMask = playerMask;
             _gridMask = gridMask;
             _factionMask = factionMask;
+            _exemptBlocks = exemptBlockTypeIds?.ToSet();
         }
 
-        public long? ExtractPlayer(IMyEntity entity)
+        public bool TestBlock(MyCubeBlock block)
         {
-            if (entity is MyCubeGrid grid)
+            if (_gridMask.HasValue)
             {
-                if (!grid.BigOwners.TryGetFirst(out var bigOwner)) return null;
-                if (!AcceptGrid(grid)) return null;
-                // Use player mask if present instead of the first big owner
-                return _playerMask ?? bigOwner;
+                if (_gridMask != block.Parent.EntityId) return false;
             }
 
-            var block = entity.GetParentEntityOfType<MyCubeBlock>();
-            if (block == null) return null;
-            if (!AcceptBlock(block)) return null;
+            if (_playerMask.HasValue)
+            {
+                if (block.OwnerId != _playerMask) return false;
+            }
 
-            return block.OwnerId;
-        }
-
-        public bool AcceptBlock(MyCubeBlock block)
-        {
-            if (_gridMask.HasValue && _gridMask != block.Parent.EntityId) return false;
-            if (_playerMask.HasValue && block.BuiltBy != _playerMask) return false;
             if (_factionMask.HasValue)
             {
-                var faction = MySession.Static.Factions.TryGetPlayerFaction(block.BuiltBy);
+                var faction = MySession.Static.Factions.TryGetPlayerFaction(block.OwnerId);
                 if (faction == null) return false;
                 if (faction.FactionId != _factionMask) return false;
             }
 
-            return true;
-        }
-
-        public bool AcceptGrid(MyCubeGrid grid)
-        {
-            if (_gridMask.HasValue && _gridMask != grid.EntityId) return false;
-            if (_playerMask.HasValue && !grid.BigOwners.Contains(_playerMask.Value)) return false;
-            if (_factionMask.HasValue)
+            if (_exemptBlocks is { Count: > 0 })
             {
-                var good = false;
-                foreach (var owner in grid.BigOwners)
+                var blockTypeId = BlockTypeIdPool.Instance.GetTypeId(block);
+                if (_exemptBlocks.Contains(blockTypeId))
                 {
-                    var faction = MySession.Static.Factions.TryGetPlayerFaction(owner);
-                    if (faction != null && faction.FactionId == _factionMask)
-                    {
-                        good = true;
-                        break;
-                    }
+                    return false;
                 }
-
-                if (!good) return false;
             }
 
             return true;
         }
 
-        public bool AcceptEntity(IMyEntity entity)
+        public bool TestGrid(MyCubeGrid grid)
         {
-            return entity switch
+            if (_gridMask.HasValue)
             {
-                MyCubeGrid grid => AcceptGrid(grid),
-                MyCubeBlock block => AcceptBlock(block),
-                _ => true,
-            };
+                if (_gridMask != grid.EntityId) return false;
+            }
+
+            if (_playerMask.HasValue)
+            {
+                if (!grid.BigOwners.Contains(_playerMask.Value)) return false;
+            }
+
+            if (_factionMask.HasValue)
+            {
+                foreach (var bigOwnerId in grid.BigOwners)
+                {
+                    var faction = MySession.Static.Factions.TryGetPlayerFaction(bigOwnerId);
+                    if (faction?.FactionId != _factionMask) return false;
+                }
+            }
+
+            return true;
         }
     }
 }

@@ -20,13 +20,12 @@ namespace Profiler.Basics
             key = null;
 
             if (profilerResult.Category != ProfilerCategory.General) return false;
+            if (profilerResult.GameEntity is not IMyEntity entity) return false;
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
+            if (!_mask.TestBlock(block)) return false;
 
-            var grid = (profilerResult.GameEntity as IMyEntity).GetParentEntityOfType<MyCubeGrid>();
-            if (grid == null) return false;
-            if (!_mask.AcceptGrid(grid)) return false;
-
-            key = grid;
-            return true;
+            key = block.GetParentEntityOfType<MyCubeGrid>();
+            return key != null;
         }
     }
 }

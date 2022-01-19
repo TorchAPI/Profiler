@@ -15,6 +15,7 @@ using Sandbox.Game.World;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
+using VRage.ModAPI;
 
 namespace Profiler
 {
@@ -336,11 +337,12 @@ namespace Profiler
         {
             var entities = world
                 .GetEntities()
-                .Where(e => mask.AcceptEntity(e))
+                .Foo<IMyEntity, MyCubeGrid>()
+                .Where(e => mask.TestGrid(e))
                 .ToArray();
 
             var count = entities.Length;
-            var (size, _) = VRageUtils.GetBound(entities.Select(e => e.GetPosition()));
+            var (size, _) = VRageUtils.GetBound(entities.Select(e => e.PositionComp.GetPosition()));
             return $"{index}: {count} entities in {size / 1000:0.0}km";
         }
 

@@ -1,5 +1,7 @@
 ﻿using NLog;
 using Profiler.Core;
+using Profiler.Utils;
+using Sandbox.Game.Entities;
 using VRage.ModAPI;
 
 namespace Profiler.Basics
@@ -24,9 +26,11 @@ namespace Profiler.Basics
             key = profilerResult.MethodName;
             if (!key.StartsWith(_prefix)) return false;
 
-            if (profilerResult.GameEntity is IMyEntity gameEntity)
+            if (profilerResult.GameEntity is IMyEntity entity &&
+                entity.GetParentEntityOfType<MyCubeBlock>() is { } block &&
+                !_mask.TestBlock(block))
             {
-                if (!_mask.AcceptEntity(gameEntity)) return false;
+                return false;
             }
 
             return true;

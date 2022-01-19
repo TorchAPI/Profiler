@@ -22,18 +22,14 @@ namespace Profiler.Basics
 
             if (profilerResult.Category != ProfilerCategory.General) return false;
 
-            var grid = (profilerResult.GameEntity as IMyEntity).GetParentEntityOfType<MyCubeGrid>();
-            if (grid == null) return false;
-            if (!_mask.AcceptGrid(grid)) return false;
-
-            var block = (profilerResult.GameEntity as IMyEntity).GetParentEntityOfType<MyCubeBlock>();
-            if (block == null) return false;
-            if (!_mask.AcceptBlock(block)) return false;
+            if (profilerResult.GameEntity is not IMyEntity entity) return false;
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
+            if (!_mask.TestBlock(block)) return false;
             if (block.BlockDefinition == null) return false;
             if (!block.GetType().Name.Contains(_blockTypeName)) return false;
 
-            key = grid;
-            return true;
+            key = block.GetParentEntityOfType<MyCubeGrid>();
+            return key != null;
         }
     }
 }

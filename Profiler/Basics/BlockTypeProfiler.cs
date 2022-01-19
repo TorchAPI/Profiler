@@ -18,11 +18,11 @@ namespace Profiler.Basics
         protected override bool TryAccept(in ProfilerResult profilerResult, out Type key)
         {
             key = null;
-            if (profilerResult.Category != ProfilerCategory.General) return false;
 
-            var block = (profilerResult.GameEntity as IMyEntity).GetParentEntityOfType<MyCubeBlock>();
-            if (block == null) return false;
-            if (!_mask.AcceptBlock(block)) return false;
+            if (profilerResult.Category != ProfilerCategory.General) return false;
+            if (profilerResult.GameEntity is not IMyEntity entity) return false;
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
+            if (!_mask.TestBlock(block)) return false;
             if (block.BlockDefinition == null) return false;
 
             key = block.GetType();

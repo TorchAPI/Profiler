@@ -217,6 +217,7 @@
     <Compile Include="Utils\Patches\MySession_Update.cs" />
     <Compile Include="Utils\ReflectionUtils.cs" />
     <Compile Include="Utils\TaskUtils.cs" />
+    <Compile Include="Utils\BlockTypeIdPool.cs" />
     <Compile Include="Utils\VRageUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
   </ItemGroup>
