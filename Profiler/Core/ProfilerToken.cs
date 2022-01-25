@@ -20,5 +20,11 @@ namespace Profiler.Core
             Category = category;
             StartTick = Stopwatch.GetTimestamp();
         }
+
+        public override string ToString()
+        {
+            var method = StringIndexer.Instance.StringAt(MethodIndex);
+            return $"{nameof(GameEntity)}: {GameEntity}, Method: {method}, {nameof(Category)}: {Category}, {nameof(StartTick)}: {StartTick}";
+        }
     }
 }
