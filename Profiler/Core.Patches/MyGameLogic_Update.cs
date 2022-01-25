@@ -16,23 +16,16 @@ namespace Profiler.Core.Patches
             var UpdateOnceBeforeFrameMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateOnceBeforeFrame));
             MyEntity_Transpile.Patch(ctx, UpdateOnceBeforeFrameMethod);
 
-            if (MyDistributedUpdater_Iterate.ApiExists())
+            var UpdateBeforeSimulationMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateBeforeSimulation));
+            foreach (var updateMethod in MyDistributedUpdater_Iterate.FindUpdateMethods(UpdateBeforeSimulationMethod))
             {
-                var UpdateBeforeSimulationMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateBeforeSimulation));
-                foreach (var updateMethod in MyDistributedUpdater_Iterate.FindUpdateMethods(UpdateBeforeSimulationMethod))
-                {
-                    MyEntity_Transpile.Patch(ctx, updateMethod);
-                }
-
-                var UpdateAfterSimulationMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateAfterSimulation));
-                foreach (var updateMethod in MyDistributedUpdater_Iterate.FindUpdateMethods(UpdateAfterSimulationMethod))
-                {
-                    MyEntity_Transpile.Patch(ctx, updateMethod);
-                }
+                MyEntity_Transpile.Patch(ctx, updateMethod);
             }
-            else
+
+            var UpdateAfterSimulationMethod = Type.GetStaticMethod(nameof(MyGameLogic.UpdateAfterSimulation));
+            foreach (var updateMethod in MyDistributedUpdater_Iterate.FindUpdateMethods(UpdateAfterSimulationMethod))
             {
-                Log.Error("Unable to find MyDistributedUpdater.Iterate(Delegate) method.  Some profiling data will be missing.");
+                MyEntity_Transpile.Patch(ctx, updateMethod);
             }
         }
     }

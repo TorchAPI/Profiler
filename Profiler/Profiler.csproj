@@ -151,6 +151,7 @@
     <Compile Include="Basics\BaseProfilerResult.cs" />
     <Compile Include="Basics\BlockDefinitionProfiler.cs" />
     <Compile Include="Basics\BlockTypeProfiler.cs" />
+    <Compile Include="Basics\EntityTypeProfiler.cs" />
     <Compile Include="Basics\GridByBlockTypeProfiler.cs" />
     <Compile Include="Basics\CustomProfiler.cs" />
     <Compile Include="Basics\PhysicsProfiler.cs" />
@@ -193,6 +194,7 @@
     <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
+    <Compile Include="Core.Patches\MyUpdateOrchestrator_Transpile.cs" />
     <Compile Include="Core.Patches\ProfileBeginTokenTarget.cs" />
     <Compile Include="Core\CustomProfiling.cs" />
     <Compile Include="Core\IProfiler.cs" />
@@ -200,7 +202,6 @@
     <Compile Include="Core\ProfilerCategory.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
     <Compile Include="Core\ProfilerResultQueue.cs" />
-    <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
     <Compile Include="Interactive\GpsSendClient.cs" />

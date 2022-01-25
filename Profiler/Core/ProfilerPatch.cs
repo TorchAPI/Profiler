@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
 using Profiler.Core.Patches;
@@ -23,19 +24,11 @@ namespace Profiler.Core
 
             ReflectedManager.Process(typeof(ProfilerPatch));
 
-            // MyEntity and MyEntityComponentBase
-            MyGameLogic_Update.Patch(ctx);
-            MyParallelEntityUpdateOrchestrator_Transpile.Patch(ctx);
-            MyProgrammableBlock_RunSandboxedProgramAction.Patch(ctx);
-            
-            // Physics
-            MyPhysics_StepWorlds.Patch(ctx);
-
             // Game loop in call hierarchy
             Game_RunSingleFrame.Patch(ctx);
             {
                 Game_UpdateInternal.Patch(ctx);
-                {
+                { // MySandboxGame.Update() to MySession.Update()
                     MyTransportLayer_Tick.Patch(ctx);
                     MyGameService_Update.Patch(ctx);
                     MyNetworkReader_Process.Patch(ctx);
@@ -49,22 +42,29 @@ namespace Profiler.Core
                         MyReplicationServer_OnEvent.Patch(ctx);
                     }
                     MyDedicatedServer_ReportReplicatedObjects.Patch(ctx);
+                    MySession_Update_Transpile.Patch(ctx);
+                    MyReplicationServer_UpdateBefore.Patch(ctx);
+                    MySession_UpdateComponents.Patch(ctx);
                     {
-                        MySession_Update_Transpile.Patch(ctx);
-                        MyReplicationServer_UpdateBefore.Patch(ctx);
-                        MySession_UpdateComponents.Patch(ctx);
+                        MySession_UpdateComponents_Transpile.Patch(ctx); // session components
                         {
-                            MySession_UpdateComponents_Transpile.Patch(ctx);
+                            // MyEntity and MyEntityComponentBase
+                            MyGameLogic_Update.Patch(ctx);
+                            MyParallelEntityUpdateOrchestrator_Transpile.Patch(ctx);
+                            MyUpdateOrchestrator_Transpile.Patch(ctx);
+                            MyProgrammableBlock_RunSandboxedProgramAction.Patch(ctx);
+
+                            // Physics
+                            MyPhysics_StepWorlds.Patch(ctx);
                         }
-                        MyGpsCollection_Update.Patch(ctx);
-                        MyReplicationServer_UpdateAfter.Patch(ctx);
-                        MyDedicatedServer_Tick.Patch(ctx);
-                        {
-                            MyReplicationServer_SendUpdate.Patch(ctx);
-                            
-                        }
-                        MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
                     }
+                    MyGpsCollection_Update.Patch(ctx);
+                    MyReplicationServer_UpdateAfter.Patch(ctx);
+                    MyDedicatedServer_Tick.Patch(ctx);
+                    {
+                        MyReplicationServer_SendUpdate.Patch(ctx);
+                    }
+                    MyPlayerCollection_SendDirtyBlockLimits.Patch(ctx);
                 }
                 FixedLoop_Run.Patch(ctx);
             }
@@ -83,11 +83,18 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void StopToken(in ProfilerToken? tokenOrNull)
         {
-            if (!Enabled) return;
-            if (!(tokenOrNull is ProfilerToken token)) return;
+            try
+            {
+                if (!Enabled) return;
+                if (tokenOrNull is not { } token) return;
 
-            var result = new ProfilerResult(token);
-            ProfilerResultQueue.Enqueue(result);
+                var result = new ProfilerResult(token);
+                ProfilerResultQueue.Enqueue(result);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"{e}; token: {tokenOrNull?.ToString() ?? "no token"}");
+            }
         }
     }
 }

@@ -15,16 +15,6 @@ namespace Profiler.Core.Patches
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly MethodInfo Method = typeof(MyDistributedUpdater<,>).GetMethod("Iterate");
 
-        public static bool ApiExists()
-        {
-            var duiP = Method?.GetParameters();
-
-            return Method != null &&
-                   duiP != null &&
-                   duiP.Length == 1 &&
-                   typeof(Action<>) == duiP[0].ParameterType.GetGenericTypeDefinition();
-        }
-
         static bool IsDistributedIterate(MethodInfo info)
         {
             if (info == null) return false;

@@ -32,7 +32,7 @@ namespace Profiler.Utils
             return false;
         }
 
-        public static IEnumerable<U> Foo<T, U>(this IEnumerable<T> self)
+        public static IEnumerable<U> WhereAssignable<T, U>(this IEnumerable<T> self)
         {
             foreach (var t in self)
             {

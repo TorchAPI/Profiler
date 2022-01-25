@@ -261,6 +261,27 @@ namespace Profiler
             });
         }
 
+        [Command("entities", "Profiles performance of entities by type")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileEntityTypes()
+        {
+            this.CatchAndReportAsync(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                using (var profiler = new EntityTypeProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling entity types, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+
+                    var result = profiler.GetResult();
+                    RespondResult(result, false, (p, _) => p);
+                }
+            });
+        }
+
         [Command("physics", "Profiles performance of physics clusters")]
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfilePhysics()
@@ -337,7 +358,7 @@ namespace Profiler
         {
             var entities = world
                 .GetEntities()
-                .Foo<IMyEntity, MyCubeGrid>()
+                .WhereAssignable<IMyEntity, MyCubeGrid>()
                 .Where(e => mask.TestGrid(e))
                 .ToArray();
 

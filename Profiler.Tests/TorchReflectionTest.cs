@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Profiler.Core;
 using Torch.Utils;
 using Xunit;
 
@@ -20,7 +19,7 @@ namespace Profiler.Tests
             if (_manager != null)
                 return _manager;
 
-            return _manager = new ReflectionTestManager().Init(typeof(ProfilerManager).Assembly);
+            return _manager = new ReflectionTestManager().Init(typeof(ProfilerPlugin).Assembly);
         }
 
         public static IEnumerable<object[]> Getters => Manager().Getters;
