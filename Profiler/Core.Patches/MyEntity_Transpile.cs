@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -11,17 +10,49 @@ using Torch.Managers.PatchManager.MSIL;
 
 namespace Profiler.Core.Patches
 {
-    // for MyEntity and MyEntityComponentBase
     public static class MyEntity_Transpile
     {
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MyEntity_Transpile);
         static readonly MethodInfo StartTokenFunc = SelfType.GetStaticMethod(nameof(StartToken));
+        static readonly MethodInfo Transpiler = SelfType.GetStaticMethod(nameof(Transpile));
 
+        // profile all Update methods found inside given method
         public static void Patch(PatchContext ctx, MethodBase method)
         {
-            var transpiler = SelfType.GetStaticMethod(nameof(Transpile));
-            ctx.GetPattern(method).PostTranspilers.Add(transpiler);
+            ctx.GetPattern(method).PostTranspilers.Add(Transpiler);
+        }
+
+        static bool IsUpdateMethod(string methodName)
+        {
+            return methodName.StartsWith("UpdateBeforeSimulation") ||
+                   methodName.StartsWith("UpdateAfterSimulation") ||
+                   methodName is "UpdateOnceBeforeFrame" or "Simulate";
+        }
+
+        //todo move to utils
+        public static bool TryGetUpdateMethod(MsilInstruction insn, out MethodBase method)
+        {
+            if ((insn.OpCode == OpCodes.Call || insn.OpCode == OpCodes.Callvirt) &&
+                insn.Operand is MsilOperandInline<MethodBase> methodOperand)
+            {
+                method = methodOperand.Value;
+                Log.Trace($"Found method {method.Name}");
+
+                if (IsUpdateMethod(method.Name))
+                {
+                    return true;
+                }
+            }
+
+            method = default;
+            return false;
+        }
+
+        //todo move to utils
+        public static string NameMethod(MethodBase method)
+        {
+            return $"{method.DeclaringType?.FullName}#{method.Name}";
         }
 
         static IEnumerable<MsilInstruction> Transpile(
@@ -31,81 +62,38 @@ namespace Profiler.Core.Patches
             // ReSharper disable once InconsistentNaming
             MethodBase __methodBase)
         {
-            var methodBaseName = $"{__methodBase.DeclaringType?.FullName}#{__methodBase.Name}";
+            var methodBaseName = NameMethod(__methodBase);
             Log.Trace($"Starting Transpile for method {methodBaseName}");
 
             var profilerEntry = __localCreator(typeof(ProfilerToken?));
 
-            var il = instructions.ToList();
-
             var foundAny = false;
-            for (var idx = 0; idx < il.Count; idx++)
+            foreach (var insn in instructions)
             {
-                var insn = il[idx];
-                if (insn.OpCode != OpCodes.Call && insn.OpCode != OpCodes.Callvirt) continue;
-                if (!(insn.Operand is MsilOperandInline<MethodBase> methodOperand)) continue;
-
-                var method = methodOperand.Value;
-                Log.Trace($"Found method {method.Name}");
-
-                if (!method.Name.StartsWith("UpdateBeforeSimulation") &&
-                    !method.Name.StartsWith("UpdateAfterSimulation") &&
-                    method.Name != "UpdateOnceBeforeFrame" &&
-                    method.Name != "Simulate")
-                    continue;
-
-                var methodName = $"{method.DeclaringType?.FullName}#{method.Name}";
-                Log.Trace($"Matched method name {methodName}");
-
-                if (method.IsStatic)
+                if (TryGetUpdateMethod(insn, out var method))
                 {
-                    Log.Error($"Failed attaching profiling to {methodName} in {methodBaseName}.  It's static");
-                    continue;
+                    var methodName = NameMethod(method);
+                    var methodIndex = StringIndexer.Instance.IndexOf(methodName);
+
+                    foundAny = true;
+
+                    // start profiling
+                    yield return new MsilInstruction(method.IsStatic ? OpCodes.Ldnull : OpCodes.Dup); // method "can" be static if patched by other plugins
+                    yield return new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex); // pass the method name
+                    yield return new MsilInstruction(OpCodes.Call).InlineValue(StartTokenFunc); // Grab a profiling token
+                    yield return profilerEntry.AsValueStore();
+
+                    // call the update method
+                    yield return insn;
+
+                    // end profiling
+                    yield return profilerEntry.AsReferenceLoad();
+                    yield return new MsilInstruction(OpCodes.Call).InlineValue(ProfilerPatch.StopTokenFunc);
                 }
-
-                // Valid to inject before this point
-                var methodCallPoint = idx;
-                var validInjectionPoint = methodCallPoint;
-                var additionalStackEntries = method.GetParameters().Length;
-                while (additionalStackEntries > 0)
+                else
                 {
-                    additionalStackEntries -= il[--validInjectionPoint].StackChange();
+                    yield return insn;
                 }
-
-                if (additionalStackEntries < 0)
-                {
-                    Log.Error(
-                        $"Failed attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}."
-                        + "  Running back through the parameters left the stack in an invalid state.");
-                    continue;
-                }
-
-                foundAny = true;
-
-                var methodIndex = StringIndexer.Instance.IndexOf(methodName);
-
-                Log.Trace($"Attaching profiling to {methodName} in {methodBaseName}#{__methodBase.Name}");
-                var startProfiler = new[]
-                {
-                    new MsilInstruction(OpCodes.Dup), // duplicate the object the update is called on
-                    new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex), // pass the method name
-                    // Grab a profiling token
-                    new MsilInstruction(OpCodes.Call).InlineValue(StartTokenFunc),
-                    profilerEntry.AsValueStore(),
-                };
-
-                il.InsertRange(validInjectionPoint, startProfiler);
-                methodCallPoint += startProfiler.Length;
-
-                var stopProfiler = new[]
-                {
-                    // Stop the profiler
-                    profilerEntry.AsReferenceLoad(),
-                    new MsilInstruction(OpCodes.Call).InlineValue(ProfilerPatch.StopTokenFunc),
-                };
-
-                il.InsertRange(methodCallPoint + 1, stopProfiler);
-                idx = methodCallPoint + stopProfiler.Length - 1;
             }
 
             if (!foundAny)
@@ -114,8 +102,6 @@ namespace Profiler.Core.Patches
             }
 
             Log.Trace($"Finished Transpile for method {methodBaseName}");
-
-            return il;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

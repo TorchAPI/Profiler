@@ -7,9 +7,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Profiler</RootNamespace>
     <AssemblyName>Profiler</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <LangVersion>default</LangVersion>
+    <LangVersion>9</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -151,6 +151,9 @@
     <Compile Include="Basics\BaseProfilerResult.cs" />
     <Compile Include="Basics\BlockDefinitionProfiler.cs" />
     <Compile Include="Basics\BlockTypeProfiler.cs" />
+    <Compile Include="Basics\EntityTypeProfiler.cs" />
+    <Compile Include="Basics\GridByBlockTypeProfiler.cs" />
+    <Compile Include="Basics\CustomProfiler.cs" />
     <Compile Include="Basics\PhysicsProfiler.cs" />
     <Compile Include="Basics\FactionProfiler.cs" />
     <Compile Include="Basics\GameEntityMask.cs" />
@@ -191,13 +194,14 @@
     <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
+    <Compile Include="Core.Patches\MyUpdateOrchestrator_Transpile.cs" />
     <Compile Include="Core.Patches\ProfileBeginTokenTarget.cs" />
+    <Compile Include="Core\CustomProfiling.cs" />
     <Compile Include="Core\IProfiler.cs" />
     <Compile Include="Core\StringIndexer.cs" />
     <Compile Include="Core\ProfilerCategory.cs" />
     <Compile Include="Core\ProfilerResult.cs" />
     <Compile Include="Core\ProfilerResultQueue.cs" />
-    <Compile Include="Core\ProfilerManager.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
     <Compile Include="Interactive\GpsSendClient.cs" />
@@ -214,6 +218,7 @@
     <Compile Include="Utils\Patches\MySession_Update.cs" />
     <Compile Include="Utils\ReflectionUtils.cs" />
     <Compile Include="Utils\TaskUtils.cs" />
+    <Compile Include="Utils\BlockTypeIdPool.cs" />
     <Compile Include="Utils\VRageUtils.cs" />
     <Compile Include="ProfilerPlugin.cs" />
   </ItemGroup>

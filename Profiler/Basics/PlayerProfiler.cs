@@ -1,4 +1,6 @@
 ﻿using Profiler.Core;
+using Profiler.Utils;
+using Sandbox.Game.Entities;
 using Sandbox.Game.World;
 using VRage.ModAPI;
 
@@ -16,16 +18,15 @@ namespace Profiler.Basics
         protected override bool TryAccept(in ProfilerResult profilerResult, out MyIdentity key)
         {
             key = null;
+
             if (profilerResult.Category != ProfilerCategory.General) return false;
 
-            var playerIdOrNull = _mask.ExtractPlayer(profilerResult.GameEntity as IMyEntity);
-            if (!(playerIdOrNull is long playerId)) return false;
+            if (profilerResult.GameEntity is not IMyEntity entity) return false;
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
+            if (!_mask.TestBlock(block)) return false;
 
-            var identity = MySession.Static.Players.TryGetIdentity(playerId);
-            if (identity == null) return false;
-
-            key = identity;
-            return true;
+            key = MySession.Static.Players.TryGetIdentity(block.OwnerId);
+            return key != null;
         }
     }
 }

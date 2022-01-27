@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using NLog;
 using Profiler.Utils;
 using VRage.Collections;
@@ -40,7 +41,7 @@ namespace Profiler.Core
             _profilerResults.Enqueue(result);
         }
 
-        internal static void Start(CancellationToken canceller)
+        internal static async Task Start(CancellationToken canceller)
         {
             while (!canceller.IsCancellationRequested)
             {
@@ -61,14 +62,7 @@ namespace Profiler.Core
                     }
                 }
 
-                try
-                {
-                    canceller.WaitHandle.WaitOne(TimeSpan.FromSeconds(0.1f));
-                }
-                catch
-                {
-                    return;
-                }
+                await Task.Delay(TimeSpan.FromSeconds(.1f), canceller);
             }
         }
 

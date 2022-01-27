@@ -1,7 +1,14 @@
 using System;
+using System.Threading;
+using NLog;
 using Profiler.Core;
+using Sandbox.ModAPI;
 using Torch;
 using Torch.API;
+using Torch.API.Session;
+using Torch.Session;
+using Torch.API.Managers;
+using Torch.Managers.PatchManager;
 
 namespace Profiler
 {
@@ -10,12 +17,78 @@ namespace Profiler
     /// </summary>
     public class ProfilerPlugin : TorchPluginBase
     {
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
+
+        PatchManager _patchManager;
+        PatchContext _patchContext;
+        CancellationTokenSource _canceller;
+
         /// <inheritdoc cref="TorchPluginBase.Init"/>
         public override void Init(ITorchBase torch)
         {
             base.Init(torch);
-            var pgmr = new ProfilerManager(torch);
-            torch.Managers.AddManager(pgmr);
+
+            var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
+            sessionManager.SessionStateChanged += (_, state) =>
+            {
+                switch (state)
+                {
+                    case TorchSessionState.Loaded:
+                    {
+                        OnGameLoaded();
+                        return;
+                    }
+                    case TorchSessionState.Unloading:
+                    {
+                        OnGameUnloading();
+                        return;
+                    }
+                    default:
+                    {
+                        return;
+                    }
+                }
+            };
+        }
+
+        void OnGameLoaded()
+        {
+            _patchManager = Torch.Managers.GetManager<PatchManager>();
+            _patchContext = _patchManager.AcquireContext();
+
+            ProfilerPatch.Patch(_patchContext);
+            _patchManager.Commit();
+
+            _canceller?.Cancel();
+            _canceller?.Dispose();
+            _canceller = new CancellationTokenSource();
+
+            MyAPIGateway.Parallel.Start(() => Start());
+        }
+
+        void Start()
+        {
+            try
+            {
+                ProfilerResultQueue.Start(_canceller.Token).Wait();
+            }
+            catch (OperationCanceledException)
+            {
+                //pass
+            }
+            catch (Exception e)
+            {
+                Log.Error(e);
+            }
+        }
+
+        void OnGameUnloading()
+        {
+            _canceller?.Cancel();
+            _canceller?.Dispose();
+            _canceller = null;
+
+            _patchManager.FreeContext(_patchContext);
         }
     }
 }

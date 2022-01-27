@@ -1,5 +1,7 @@
 ﻿using System;
 using Profiler.Core;
+using Profiler.Utils;
+using Sandbox.Game.Entities;
 using Sandbox.Game.World;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -20,15 +22,12 @@ namespace Profiler.Basics
             key = null;
 
             if (profilerResult.Category != ProfilerCategory.General) return false;
+            if (profilerResult.GameEntity is not IMyEntity entity) return false;
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
+            if (!_mask.TestBlock(block)) return false;
 
-            var player = _mask.ExtractPlayer(profilerResult.GameEntity as IMyEntity);
-            if (!player.HasValue) return false;
-
-            var faction = MySession.Static.Factions.TryGetPlayerFaction(player.Value);
-            if (faction == null) return false;
-
-            key = faction;
-            return true;
+            key = MySession.Static.Factions.TryGetPlayerFaction(block.OwnerId);
+            return key != null;
         }
     }
 }

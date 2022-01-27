@@ -2,7 +2,7 @@
 {
     public enum ProfilerCategory
     {
-        General,
+        General, //MyEntity or MyGameLogic
         Scripts,
         Update,
         UpdateNetwork,
@@ -16,5 +16,6 @@
         Lock,
         Frame,
         Physics,
+        Custom,
     }
 }

@@ -8,22 +8,13 @@ namespace Profiler.Interactive
 {
     public sealed class RequestParamParser
     {
+        readonly Dictionary<string, string> _args;
         const uint DefaultSampleTicks = 10;
         const int DefaultTop = 10;
 
-        public uint Seconds { get; } = DefaultSampleTicks;
-        public int Top { get; } = DefaultTop;
-        public bool SendGpsToPlayer { get; }
-        public long PlayerIdToSendGps { get; }
-        public bool ShowDetails { get; }
-
-        public long? PlayerMask { get; }
-        public long? GridMask { get; }
-        public long? FactionMask { get; }
-
         public RequestParamParser(IMyPlayer player, IEnumerable<string> arguments)
         {
-            var args = new Dictionary<string, string>();
+            _args = new Dictionary<string, string>();
             foreach (var argument in arguments)
             {
                 if (!argument.StartsWith("--")) continue;
@@ -32,10 +23,10 @@ namespace Profiler.Interactive
                 var keyValuePair = arg.Split('=');
                 var key = keyValuePair[0];
                 var value = keyValuePair.Length >= 2 ? keyValuePair[1] : ""; // empty string if parameter-less
-                args[key] = value;
+                _args[key] = value;
             }
 
-            if (args.TryGetValue("secs", out var tickStr))
+            if (_args.TryGetValue("secs", out var tickStr))
             {
                 if (!uint.TryParse(tickStr, out var tick))
                 {
@@ -45,7 +36,7 @@ namespace Profiler.Interactive
                 Seconds = tick;
             }
 
-            if (args.TryGetValue("top", out var topStr))
+            if (_args.TryGetValue("top", out var topStr))
             {
                 if (!int.TryParse(topStr, out var topInput))
                 {
@@ -55,7 +46,7 @@ namespace Profiler.Interactive
                 Top = topInput;
             }
 
-            if (args.TryGetValue("gps", out _))
+            if (_args.TryGetValue("gps", out _))
             {
                 if (player == null)
                 {
@@ -66,13 +57,13 @@ namespace Profiler.Interactive
                 PlayerIdToSendGps = player.IdentityId;
             }
 
-            if (args.TryGetValue("details", out _) ||
-                args.TryGetValue("detail", out _))
+            if (_args.TryGetValue("details", out _) ||
+                _args.TryGetValue("detail", out _))
             {
                 ShowDetails = true;
             }
 
-            if (args.TryGetValue("faction", out var factionName))
+            if (_args.TryGetValue("faction", out var factionName))
             {
                 if (!ResolveFaction(factionName, out var id))
                 {
@@ -82,7 +73,7 @@ namespace Profiler.Interactive
                 FactionMask = id?.FactionId ?? 0;
             }
 
-            if (args.TryGetValue("player", out var playerName))
+            if (_args.TryGetValue("player", out var playerName))
             {
                 if (!ResolveIdentity(playerName, out var id))
                 {
@@ -92,7 +83,7 @@ namespace Profiler.Interactive
                 PlayerMask = id?.IdentityId ?? 0;
             }
 
-            if (args.TryGetValue("entity", out var entityIdStr))
+            if (_args.TryGetValue("entity", out var entityIdStr))
             {
                 if (!long.TryParse(entityIdStr, out var entityId))
                 {
@@ -107,7 +98,7 @@ namespace Profiler.Interactive
                 GridMask = entityId;
             }
 
-            if (args.TryGetValue("this", out _))
+            if (_args.TryGetValue("this", out _))
             {
                 var controlled = player?.Controller?.ControlledEntity?.Entity;
                 if (controlled == null)
@@ -131,6 +122,21 @@ namespace Profiler.Interactive
 
                 GridMask = grid.EntityId;
             }
+        }
+
+        public uint Seconds { get; } = DefaultSampleTicks;
+        public int Top { get; } = DefaultTop;
+        public bool SendGpsToPlayer { get; }
+        public long PlayerIdToSendGps { get; }
+        public bool ShowDetails { get; }
+
+        public long? PlayerMask { get; }
+        public long? GridMask { get; }
+        public long? FactionMask { get; }
+
+        public bool TryGetValue(string key, out string value)
+        {
+            return _args.TryGetValue(key, out value);
         }
 
         static bool ResolveIdentity(string name, out MyIdentity id)
