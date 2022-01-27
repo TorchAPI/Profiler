@@ -13,22 +13,26 @@ namespace Profiler.Core.Patches
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly Type Type = typeof(MyUpdateOrchestrator);
 
-        static readonly ListReader<string> Methods = new List<string>
-        {
-            "DispatchOnceBeforeFrame",
-            "DispatchBeforeSimulation",
-            "DispatchSimulate",
-            "DispatchAfterSimulation",
-        };
-
         public static void Patch(PatchContext ctx)
         {
             try
             {
-                foreach (var parallelUpdateMethod in Methods)
+                foreach (var parallelUpdateMethod in new[]
+                {
+                    "DispatchOnceBeforeFrame",
+                })
                 {
                     var method = Type.GetMethod(parallelUpdateMethod, ReflectionUtils.StaticFlags | ReflectionUtils.InstanceFlags);
                     MyEntity_Transpile.Patch(ctx, method);
+                }
+                foreach (var parallelUpdateMethod in new[]
+                {
+                    "DispatchBeforeSimulation",
+                    "DispatchSimulate",
+                    "DispatchAfterSimulation",
+                })
+                {
+                    var method = Type.GetMethod(parallelUpdateMethod, ReflectionUtils.StaticFlags | ReflectionUtils.InstanceFlags);
                     foreach (var updateMethod in MyDistributedUpdater_Iterate.FindUpdateMethods(method))
                     {
                         MyEntity_Transpile.Patch(ctx, updateMethod);

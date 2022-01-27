@@ -78,7 +78,7 @@ namespace Profiler.Core.Patches
                     foundAny = true;
 
                     // start profiling
-                    yield return new MsilInstruction(OpCodes.Dup); // duplicate the object the update is called on
+                    yield return new MsilInstruction(method.IsStatic ? OpCodes.Ldnull : OpCodes.Dup); // method "can" be static if patched by other plugins
                     yield return new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex); // pass the method name
                     yield return new MsilInstruction(OpCodes.Call).InlineValue(StartTokenFunc); // Grab a profiling token
                     yield return profilerEntry.AsValueStore();
