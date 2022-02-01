@@ -63,14 +63,14 @@ namespace Profiler
             _canceller?.Dispose();
             _canceller = new CancellationTokenSource();
 
-            MyAPIGateway.Parallel.Start(() => Start());
+            StartQueue();
         }
 
-        void Start()
+        async void StartQueue()
         {
             try
             {
-                ProfilerResultQueue.Start(_canceller.Token).Wait();
+                await ProfilerResultQueue.Start(_canceller.Token);
             }
             catch (OperationCanceledException)
             {

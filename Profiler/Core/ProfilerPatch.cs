@@ -76,8 +76,17 @@ namespace Profiler.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static ProfilerToken? StartToken(object caller, int methodIndex, ProfilerCategory category)
         {
-            if (!Enabled) return null;
-            return new ProfilerToken(caller, methodIndex, category);
+            try
+            {
+                if (!Enabled) return null;
+                return new ProfilerToken(caller, methodIndex, category);
+            }
+            catch (Exception e)
+            {
+                var method = StringIndexer.Instance.StringAt(methodIndex);
+                Log.Error($"{e} caller: {caller}, method: {method}, category: {category}");
+                return null;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
