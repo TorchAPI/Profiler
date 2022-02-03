@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -7,6 +8,7 @@ using NLog;
 using Profiler.Utils;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
+using VRage.Game.Entity;
 
 namespace Profiler.Core.Patches
 {
@@ -62,14 +64,16 @@ namespace Profiler.Core.Patches
             // ReSharper disable once InconsistentNaming
             MethodBase __methodBase)
         {
+            var ins = instructions.ToList();
             var methodBaseName = NameMethod(__methodBase);
             Log.Trace($"Starting Transpile for method {methodBaseName}");
 
             var profilerEntry = __localCreator(typeof(ProfilerToken?));
 
             var foundAny = false;
-            foreach (var insn in instructions)
+            for (var i = 0; i < ins.Count; i++)
             {
+                var insn = ins[i];
                 if (TryGetUpdateMethod(insn, out var method))
                 {
                     var methodName = NameMethod(method);
@@ -78,7 +82,24 @@ namespace Profiler.Core.Patches
                     foundAny = true;
 
                     // start profiling
-                    yield return new MsilInstruction(method.IsStatic ? OpCodes.Ldnull : OpCodes.Dup); // method "can" be static if patched by other plugins
+                    // instance arg is last on stack
+                    if (method.GetParameters().Length == 0)
+                    {
+                        yield return new MsilInstruction(method.IsStatic ? OpCodes.Ldnull : OpCodes.Dup); // method "can" be static if patched by other plugins
+                    }
+                    else if (!method.IsStatic)
+                    {
+                        var previousInstruction = ins[i - (method.GetParameters().Length + 1)]; // find instance arg
+                        var instruction = new MsilInstruction(previousInstruction.OpCode);
+                        if (previousInstruction.Operand is { })
+                            instruction.InlineValue(previousInstruction.Operand);
+                        yield return instruction;
+                    }
+                    else
+                    {
+                        yield return new(OpCodes.Ldnull); // patched + has parameters?
+                    }
+
                     yield return new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex); // pass the method name
                     yield return new MsilInstruction(OpCodes.Call).InlineValue(StartTokenFunc); // Grab a profiling token
                     yield return profilerEntry.AsValueStore();
