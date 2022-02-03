@@ -8,7 +8,6 @@ using NLog;
 using Profiler.Utils;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
-using VRage.Game.Entity;
 
 namespace Profiler.Core.Patches
 {
@@ -35,20 +34,13 @@ namespace Profiler.Core.Patches
         //todo move to utils
         public static bool TryGetUpdateMethod(MsilInstruction insn, out MethodBase method)
         {
-            if ((insn.OpCode == OpCodes.Call || insn.OpCode == OpCodes.Callvirt) &&
-                insn.Operand is MsilOperandInline<MethodBase> methodOperand)
-            {
-                method = methodOperand.Value;
-                Log.Trace($"Found method {method.Name}");
-
-                if (IsUpdateMethod(method.Name))
-                {
-                    return true;
-                }
-            }
-
             method = default;
-            return false;
+
+            if (insn.OpCode != OpCodes.Call && insn.OpCode != OpCodes.Callvirt) return false;
+            if (insn.Operand is not MsilOperandInline<MethodBase> methodOperand) return false;
+
+            method = methodOperand.Value;
+            return IsUpdateMethod(method.Name);
         }
 
         //todo move to utils
@@ -64,40 +56,37 @@ namespace Profiler.Core.Patches
             // ReSharper disable once InconsistentNaming
             MethodBase __methodBase)
         {
-            var ins = instructions.ToList();
+            var profilerEntry = __localCreator(typeof(ProfilerToken?));
+
             var methodBaseName = NameMethod(__methodBase);
             Log.Trace($"Starting Transpile for method {methodBaseName}");
 
-            var profilerEntry = __localCreator(typeof(ProfilerToken?));
-
             var foundAny = false;
-            for (var i = 0; i < ins.Count; i++)
+            var insns = instructions.ToList();
+            for (var i = 0; i < insns.Count; i++)
             {
-                var insn = ins[i];
+                var insn = insns[i];
                 if (TryGetUpdateMethod(insn, out var method))
                 {
+                    Log.Trace($"Found method {method.Name}");
+
                     var methodName = NameMethod(method);
                     var methodIndex = StringIndexer.Instance.IndexOf(methodName);
 
                     foundAny = true;
 
                     // start profiling
-                    // instance arg is last on stack
+
                     if (method.GetParameters().Length == 0)
                     {
-                        yield return new MsilInstruction(method.IsStatic ? OpCodes.Ldnull : OpCodes.Dup); // method "can" be static if patched by other plugins
-                    }
-                    else if (!method.IsStatic)
-                    {
-                        var previousInstruction = ins[i - (method.GetParameters().Length + 1)]; // find instance arg
-                        var instruction = new MsilInstruction(previousInstruction.OpCode);
-                        if (previousInstruction.Operand is { })
-                            instruction.InlineValue(previousInstruction.Operand);
-                        yield return instruction;
+                        // pick the caller
+                        yield return new MsilInstruction(OpCodes.Dup);
                     }
                     else
                     {
-                        yield return new(OpCodes.Ldnull); // patched + has parameters?
+                        // find the caller (last in the stack)
+                        var instanceInsn = insns[i - (method.GetParameters().Length + 1)];
+                        yield return CopyInsn(instanceInsn);
                     }
 
                     yield return new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex); // pass the method name
@@ -123,6 +112,17 @@ namespace Profiler.Core.Patches
             }
 
             Log.Trace($"Finished Transpile for method {methodBaseName}");
+        }
+
+        static MsilInstruction CopyInsn(MsilInstruction originalInsn)
+        {
+            var insn = new MsilInstruction(originalInsn.OpCode);
+            if (originalInsn.Operand != null)
+            {
+                insn.InlineValue(originalInsn.Operand);
+            }
+
+            return insn;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
