@@ -88,7 +88,10 @@ namespace Profiler
             _canceller?.Dispose();
             _canceller = null;
 
-            _patchManager.FreeContext(_patchContext);
+            if (_patchManager != null && _patchContext != null)
+            {
+                _patchManager.FreeContext(_patchContext);
+            }
         }
     }
 }
