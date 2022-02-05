@@ -47,8 +47,6 @@ namespace Profiler.Core.Patches
                     var newInsn = insn.CopyWith(OpCodes.Ldsfld).InlineValue(newField);
                     yield return newInsn;
 
-                    Log.Info($"{insn} -> {newInsn}");
-
                     foundField = true;
                 }
                 else

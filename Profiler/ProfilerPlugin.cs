@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using NLog;
 using Profiler.Core;
-using Sandbox.ModAPI;
 using Torch;
 using Torch.API;
 using Torch.API.Session;
