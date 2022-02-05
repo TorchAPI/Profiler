@@ -56,19 +56,40 @@ namespace Profiler.Core.Patches
             // ReSharper disable once InconsistentNaming
             MethodBase __methodBase)
         {
+            var patchedInsns = TranspileImpl(instructions.ToArray(), __localCreator, __methodBase).ToArray();
+
+            Log.Trace("PATCHED IL:");
+            foreach (var insn in patchedInsns)
+            {
+                Log.Trace(insn);
+            }
+
+            Log.Trace("PATCHED IL DONE");
+
+            return patchedInsns;
+        }
+
+        static IEnumerable<MsilInstruction> TranspileImpl(
+            IReadOnlyList<MsilInstruction> insns,
+            // ReSharper disable once InconsistentNaming
+            Func<Type, MsilLocal> __localCreator,
+            // ReSharper disable once InconsistentNaming
+            MethodBase __methodBase)
+        {
             var profilerEntry = __localCreator(typeof(ProfilerToken?));
 
             var methodBaseName = NameMethod(__methodBase);
             Log.Trace($"Starting Transpile for method {methodBaseName}");
 
             var foundAny = false;
-            var insns = instructions.ToList();
             for (var i = 0; i < insns.Count; i++)
             {
                 var insn = insns[i];
+                Log.Trace(insn);
+
                 if (TryGetUpdateMethod(insn, out var method))
                 {
-                    Log.Trace($"Found method {method.Name}");
+                    Log.Trace($"Found method {method.Name}, static: {method.IsStatic}, instruction: {insn}, base method: {methodBaseName}");
 
                     var methodName = NameMethod(method);
                     var methodIndex = StringIndexer.Instance.IndexOf(methodName);
@@ -77,19 +98,12 @@ namespace Profiler.Core.Patches
 
                     // start profiling
 
-                    if (method.GetParameters().Length == 0)
-                    {
-                        // pick the caller
-                        yield return new MsilInstruction(OpCodes.Dup);
-                    }
-                    else
-                    {
-                        // find the caller (last in the stack)
-                        var instanceInsn = insns[i - (method.GetParameters().Length + 1)];
-                        yield return CopyInsn(instanceInsn);
-                    }
+                    var callerIndexOffset = method.GetParameters().Length + (method.IsStatic ? 0 : 1); // static if patched by other plugins
+                    var callerInsn = insns[i - callerIndexOffset];
+                    yield return callerInsn; // pass the caller instance as StartToken() 1st arg
+                    Log.Trace($"caller insn: {callerInsn}");
 
-                    yield return new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex); // pass the method name
+                    yield return new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex); // pass the method name as StartToken() 2nd arg
                     yield return new MsilInstruction(OpCodes.Call).InlineValue(StartTokenFunc); // Grab a profiling token
                     yield return profilerEntry.AsValueStore();
 
@@ -112,17 +126,6 @@ namespace Profiler.Core.Patches
             }
 
             Log.Trace($"Finished Transpile for method {methodBaseName}");
-        }
-
-        static MsilInstruction CopyInsn(MsilInstruction originalInsn)
-        {
-            var insn = new MsilInstruction(originalInsn.OpCode);
-            if (originalInsn.Operand != null)
-            {
-                insn.InlineValue(originalInsn.Operand);
-            }
-
-            return insn;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
