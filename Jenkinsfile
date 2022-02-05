@@ -4,8 +4,8 @@ def test_with_torch(branch)
 		stage('Acquire Torch ' + branch) {
 			bat 'IF EXIST TorchBinaries RMDIR /S /Q TorchBinaries'
 			bat 'mkdir TorchBinaries'
-			step([$class: 'CopyArtifact', projectName: "Torch/Torch/${branch}", filter: "**/Torch*.dll", flatten: true, fingerprintArtifacts: true, target: "TorchBinaries"])
-			step([$class: 'CopyArtifact', projectName: "Torch/Torch/${branch}", filter: "**/Torch*.exe", flatten: true, fingerprintArtifacts: true, target: "TorchBinaries"])
+			step([$class: 'CopyArtifact', projectName: "Torch/${branch}", filter: "**/Torch*.dll", flatten: true, fingerprintArtifacts: true, target: "TorchBinaries"])
+			step([$class: 'CopyArtifact', projectName: "Torch/${branch}", filter: "**/Torch*.exe", flatten: true, fingerprintArtifacts: true, target: "TorchBinaries"])
 		}
 
 		stage('Build + Torch ' + branch) {
@@ -18,21 +18,7 @@ def test_with_torch(branch)
 
 	
 		stage('Test + Torch ' + branch) {
-			bat 'IF NOT EXIST reports MKDIR reports'
-			bat "\"packages/xunit.runner.console.2.2.0/tools/xunit.console.exe\" \"bin-test/x64/${buildMode}/Profiler.Tests.dll\" -parallel none -xml \"reports/Profiler.Tests.xml\""
-		    step([
-		        $class: 'XUnitBuilder',
-		        thresholdMode: 1,
-		        thresholds: [[$class: 'FailedThreshold', failureThreshold: '1']],
-		        tools: [[
-		            $class: 'XUnitDotNetTestType',
-		            deleteOutputFiles: true,
-		            failIfNotNew: true,
-		            pattern: 'reports/*.xml',
-		            skipNoTestFiles: false,
-		            stopProcessingIfError: true
-		        ]]
-		    ])
+			
 		}
 
 		return true
@@ -44,7 +30,7 @@ def test_with_torch(branch)
 node('windows') {
 	stage('Checkout') {
 		checkout scm
-		bat 'git pull --tags'
+		bat 'git pull https://github.com/TorchAPI/Profiler/ master --tags'
 	}
 
 	stage('Acquire SE') {
@@ -54,7 +40,8 @@ node('windows') {
 	}
 
 	stage('Acquire NuGet Packages') {
-		bat 'nuget restore Profiler.sln'
+		bat 'cd C:\\Program Files\\Jenkins'
+		bat '"C:\\Program Files\\Jenkins\\nuget.exe" restore Profiler.sln'
 	}
 	
 	if (env.BRANCH_NAME == "master") {
@@ -78,13 +65,6 @@ node('windows') {
 			powershell "(Get-Content manifest.xml).Replace('\${VERSION}', [System.Diagnostics.FileVersionInfo]::GetVersionInfo(\"\$PWD\\${packageDir}Profiler.dll\").ProductVersion) | Set-Content \"${packageDir}/manifest.xml\""
 			powershell "Add-Type -Assembly System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::CreateFromDirectory(\"\$PWD\\${packageDir}\", \"\$PWD\\${zipFile}\")"
 			archiveArtifacts artifacts: zipFile, caseSensitive: false, onlyIfSuccessful: true
-		}
-		if (env.BRANCH_NAME == "master") {
-			stage('Release') {
-		        	withCredentials([usernamePassword(credentialsId: 'jimmacle-plugin-publish', usernameVariable: 'USERNAME', passwordVariable: 'TOKEN')]) {
-					bat "Jenkins\\PluginPush.exe \"bin\\profiler.zip\" \"$USERNAME\" \"$TOKEN\""
-				}
-		   	}
 		}
 	}
 	else
