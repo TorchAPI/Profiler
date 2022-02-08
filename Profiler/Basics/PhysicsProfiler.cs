@@ -13,8 +13,9 @@ namespace Profiler.Basics
             MyPhysics_StepWorlds.SimulatesParallel = false;
         }
 
-        public void MarkEnd()
+        public override void MarkEnd()
         {
+            base.MarkEnd();
             MyPhysics_StepWorlds.SimulatesParallel = true;
         }
 

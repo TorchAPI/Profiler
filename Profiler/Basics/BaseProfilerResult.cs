@@ -16,10 +16,7 @@ namespace Profiler.Basics
         {
             TotalFrameCount = totalFrameCount;
             TotalTime = totalTime;
-
-            // copy here so that we wont have concurrency issues down the road
-            // https://stackoverflow.com/questions/11692389
-            _entities = self.ToArray().ToDictionary(p => p.Key, p => p.Value);
+            _entities = self;
         }
 
         /// <summary>

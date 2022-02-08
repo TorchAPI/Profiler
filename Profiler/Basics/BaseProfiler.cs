@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using NLog;
 using Profiler.Core;
 using Profiler.Utils;
@@ -21,6 +22,7 @@ namespace Profiler.Basics
 
         ulong _startFrameCount;
         DateTime _startTime;
+        bool _ended;
 
         protected BaseProfiler()
         {
@@ -37,9 +39,19 @@ namespace Profiler.Basics
             _startTime = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Mark the end of profiling. Can be called before extracting the profiling result.
+        /// </summary>
+        public virtual void MarkEnd()
+        {
+            _ended = true;
+        }
+
         /// <inheritdoc/>
         void IProfiler.ReceiveProfilerResult(in ProfilerResult profilerResult)
         {
+            if (_ended) return;
+
             try
             {
                 if (TryAccept(profilerResult, out var key))
@@ -74,7 +86,11 @@ namespace Profiler.Basics
         {
             var totalFrameCount = VRageUtils.CurrentGameFrameCount - _startFrameCount;
             var totalTime = (DateTime.UtcNow - _startTime).TotalMilliseconds;
-            return new BaseProfilerResult<K>(totalFrameCount, totalTime, _profilerEntries);
+
+            // copy here so that we wont have concurrency issues down the road
+            // https://stackoverflow.com/questions/11692389
+            var entries = _profilerEntries.ToArray().ToDictionary(p => p.Key, p => p.Value);
+            return new BaseProfilerResult<K>(totalFrameCount, totalTime, entries);
         }
 
         /// <inheritdoc/>
