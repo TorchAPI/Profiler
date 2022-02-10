@@ -1,8 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Havok;
 using Sandbox;
 using Sandbox.Engine.Physics;
+using Sandbox.ModAPI;
 using VRage.ModAPI;
 using VRageMath;
 
@@ -10,6 +14,28 @@ namespace Profiler.Utils
 {
     internal static class VRageUtils
     {
+        public static ulong CurrentGameFrameCount => MySandboxGame.Static.SimulationFrameCounter;
+
+        public static Task MoveToGameLoop(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var taskSrc = new TaskCompletionSource<byte>();
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    taskSrc.SetResult(0);
+                }
+                catch (Exception e)
+                {
+                    taskSrc.SetException(e);
+                }
+            });
+
+            return taskSrc.Task;
+        }
+
         /// <summary>
         /// Get the nearest parent object of given type searching up the hierarchy.
         /// </summary>
@@ -53,7 +79,5 @@ namespace Profiler.Utils
         {
             return $":GPS:{name}:{coord.X:0}:{coord.Y:0}:{coord.Z:0}:";
         }
-
-        public static ulong CurrentGameFrameCount => MySandboxGame.Static.SimulationFrameCounter;
     }
 }

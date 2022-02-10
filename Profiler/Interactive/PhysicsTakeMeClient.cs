@@ -87,7 +87,7 @@ namespace Profiler.Interactive
 
             DeleteGpss(player.IdentityId);
 
-            await GameLoopObserver.MoveToGameLoop(); // to create gps entities
+            await VRageUtils.MoveToGameLoop(); // to create gps entities
 
             foreach (var grid in entities)
             {

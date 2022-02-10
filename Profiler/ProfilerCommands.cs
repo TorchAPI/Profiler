@@ -329,13 +329,13 @@ namespace Profiler
                     Log.Warn("Physics profiling needs to sync all threads! This may cause performance impact.");
                     Context.Respond($"Started profiling clusters, result in {physicsParams.Tics} frames (--tics=N)");
 
-                    await GameLoopObserver.MoveToGameLoop();
+                    await VRageUtils.MoveToGameLoop();
 
                     profiler.MarkStart();
 
                     for (var _ = 0; _ < physicsParams.Tics; _++)
                     {
-                        await GameLoopObserver.MoveToGameLoop();
+                        await VRageUtils.MoveToGameLoop();
                     }
 
                     profiler.MarkEnd();
@@ -383,7 +383,7 @@ namespace Profiler
             using (ProfilerResultQueue.Profile(profiler))
             {
                 Context.Respond($"Started profiling custom measurements, result in {_args.Seconds} seconds");
-                await GameLoopObserver.MoveToGameLoop();
+                await VRageUtils.MoveToGameLoop();
 
                 profiler.MarkStart();
                 await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
