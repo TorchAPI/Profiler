@@ -86,6 +86,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (b, _) => BlockTypeToString(b));
@@ -114,6 +115,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (k, _) => k.BlockPairName);
@@ -141,8 +143,46 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
+                    RespondResult(result, false, (g, _) => GridToResultText(g));
+
+                    // Sending GPS of laggy grids to caller
+                    if (_args.SendGpsToPlayer)
+                    {
+                        _gpsSendClient.CleanGPS(_args.PlayerIdToSendGps);
+
+                        foreach (var (grid, profilerEntry) in result.GetTopEntities(_args.Top))
+                        {
+                            var gpsName = $"{grid.DisplayName} ({profilerEntry.TotalTime / result.TotalFrameCount:0.0000}ms/f)";
+                            var gpsPosition = grid.PositionComp.WorldAABB.Center;
+                            _gpsSendClient.SendGps(_args.PlayerIdToSendGps, gpsName, gpsPosition);
+                        }
+                    }
+                }
+            });
+        }
+
+        [Command("gridsonly", "Profiles performance per grid", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileGridsOnly()
+        {
+            this.CatchAndReportAsync(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
+
+                using (var profiler = new GridOnlyProfiler(mask))
+                using (ProfilerResultQueue.Profile(new GridOnlyProfiler(mask)))
+                {
+                    Context.Respond($"Started profiling grids, result in {_args.Seconds}s");
+                    
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
+
+                    var result = new GridOnlyProfiler(mask).GetResult();
                     RespondResult(result, false, (g, _) => GridToResultText(g));
 
                     // Sending GPS of laggy grids to caller
@@ -207,6 +247,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (f, _) => f.Tag);
@@ -230,6 +271,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (k, _) => k.DisplayName);
@@ -253,6 +295,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (p, _) => PbToString(p));
@@ -281,6 +324,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (p, _) => p.GetType().Name);
@@ -302,6 +346,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (p, _) => p);
@@ -414,6 +459,7 @@ namespace Profiler
 
                 profiler.MarkStart();
                 await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                profiler.MarkEnd();
 
                 var result = profiler.GetResult();
                 RespondResult(result, true, (p, _) => p);
