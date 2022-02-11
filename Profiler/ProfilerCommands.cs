@@ -45,6 +45,31 @@ namespace Profiler
             ProfilerPatch.Enabled = false;
         }
 
+        [Command("sim", "Check simspeed", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void Sim()
+        {
+            this.CatchAndReportAsync(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                Context.Respond($"Started profiling the sim, result in {_args.Seconds}s");
+
+                var monitor = new SimMonitor((int)_args.Seconds);
+                await monitor.Monitor();
+
+                Log.Info("Got result from profiling via command");
+
+                var messageBuilder = new StringBuilder();
+                messageBuilder.AppendLine($"Finished profiling; past {_args.Seconds}s");
+                messageBuilder.AppendLine($"Best sim: {monitor.Max:0.0}");
+                messageBuilder.AppendLine($"Worst sim: {monitor.Min:0.0}");
+                messageBuilder.AppendLine($"Average sim: {monitor.Avg:0.0}");
+                Context.Respond(messageBuilder.ToString());
+
+                Log.Info("Finished showing profiler result via command");
+            });
+        }
+
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlockType()

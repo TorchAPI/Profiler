@@ -215,6 +215,7 @@
     <Compile Include="Utils\MyGpsCollection_PlayerGpss.cs" />
     <Compile Include="Utils\ObjectPool.cs" />
     <Compile Include="Utils\ReflectionUtils.cs" />
+    <Compile Include="Utils\SimMonitor.cs" />
     <Compile Include="Utils\TaskUtils.cs" />
     <Compile Include="Utils\BlockTypeIdPool.cs" />
     <Compile Include="Utils\VRageUtils.cs" />
