@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Profiler.Core;
 using Profiler.Utils;
 using Sandbox.Game.Entities;
@@ -17,17 +18,41 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(in ProfilerResult profilerResult, out IMyFaction key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<IMyFaction> acceptedKeys)
         {
-            key = null;
+            if (profilerResult.Category != ProfilerCategory.General) return;
+            if (profilerResult.GameEntity is not IMyEntity entity) return;
 
-            if (profilerResult.Category != ProfilerCategory.General) return false;
-            if (profilerResult.GameEntity is not IMyEntity entity) return false;
-            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
-            if (!_mask.TestBlock(block)) return false;
+            if (entity is MyCubeGrid grid)
+            {
+                if (_mask.TestAll(grid))
+                {
+                    foreach (var ownerId in grid.BigOwners)
+                    {
+                        if (MySession.Static.Factions.TryGetPlayerFaction(ownerId) is { } faction)
+                        {
+                            acceptedKeys.Add(faction);
+                        }
+                    }
+                }
 
-            key = MySession.Static.Factions.TryGetPlayerFaction(block.OwnerId);
-            return key != null;
+                return;
+            }
+
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is { } block)
+            {
+                if (_mask.TestAll(block))
+                {
+                    if (MySession.Static.Factions.TryGetPlayerFaction(block.OwnerId) is { } faction)
+                    {
+                        acceptedKeys.Add(faction);
+                    }
+                }
+
+                return;
+            }
+
+            //todo
         }
     }
 }

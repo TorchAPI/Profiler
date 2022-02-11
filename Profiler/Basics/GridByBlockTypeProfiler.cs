@@ -1,4 +1,5 @@
-﻿using Profiler.Core;
+﻿using System.Collections.Generic;
+using Profiler.Core;
 using Profiler.Utils;
 using Sandbox.Game.Entities;
 using VRage.ModAPI;
@@ -16,20 +17,17 @@ namespace Profiler.Basics
             _blockTypeName = blockTypeName;
         }
 
-        protected override bool TryAccept(in ProfilerResult profilerResult, out MyCubeGrid key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<MyCubeGrid> acceptedKeys)
         {
-            key = null;
+            if (profilerResult.Category != ProfilerCategory.General) return;
+            if (profilerResult.GameEntity is not IMyEntity entity) return;
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return;
+            if (!_mask.TestAll(block)) return;
+            if (block.BlockDefinition == null) return;
+            if (!block.GetType().Name.Contains(_blockTypeName)) return;
 
-            if (profilerResult.Category != ProfilerCategory.General) return false;
-
-            if (profilerResult.GameEntity is not IMyEntity entity) return false;
-            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
-            if (!_mask.TestBlock(block)) return false;
-            if (block.BlockDefinition == null) return false;
-            if (!block.GetType().Name.Contains(_blockTypeName)) return false;
-
-            key = block.GetParentEntityOfType<MyCubeGrid>();
-            return key != null;
+            var grid = block.GetParentEntityOfType<MyCubeGrid>();
+            acceptedKeys.Add(grid);
         }
     }
 }

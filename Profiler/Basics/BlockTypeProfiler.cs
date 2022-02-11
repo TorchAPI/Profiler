@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Profiler.Core;
 using Profiler.Utils;
 using Sandbox.Game.Entities;
@@ -15,18 +16,22 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(in ProfilerResult profilerResult, out Type key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<Type> acceptedKeys)
         {
-            key = null;
+            if (profilerResult.Category != ProfilerCategory.General) return;
+            if (profilerResult.GameEntity is not IMyEntity entity) return;
 
-            if (profilerResult.Category != ProfilerCategory.General) return false;
-            if (profilerResult.GameEntity is not IMyEntity entity) return false;
-            if (entity.GetParentEntityOfType<MyCubeBlock>() is not { } block) return false;
-            if (!_mask.TestBlock(block)) return false;
-            if (block.BlockDefinition == null) return false;
-
-            key = block.GetType();
-            return true;
+            if (entity.GetParentEntityOfType<MyCubeBlock>() is { } block)
+            {
+                if (_mask.TestAll(block))
+                {
+                    if (block.BlockDefinition != null)
+                    {
+                        var blockType = block.GetType();
+                        acceptedKeys.Add(blockType);
+                    }
+                }
+            }
         }
     }
 }

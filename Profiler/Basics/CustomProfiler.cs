@@ -1,7 +1,6 @@
-﻿using NLog;
+﻿using System.Collections.Generic;
+using NLog;
 using Profiler.Core;
-using Profiler.Utils;
-using Sandbox.Game.Entities;
 using VRage.ModAPI;
 
 namespace Profiler.Basics
@@ -18,22 +17,21 @@ namespace Profiler.Basics
             _prefix = prefix;
         }
 
-        protected override bool TryAccept(in ProfilerResult profilerResult, out string key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<string> acceptedKeys)
         {
-            key = null;
-            if (profilerResult.Category != ProfilerCategory.Custom) return false;
+            if (profilerResult.Category != ProfilerCategory.Custom) return;
 
-            key = profilerResult.MethodName;
-            if (!key.StartsWith(_prefix)) return false;
-
-            if (profilerResult.GameEntity is IMyEntity entity &&
-                entity.GetParentEntityOfType<MyCubeBlock>() is { } block &&
-                !_mask.TestBlock(block))
+            var methodName = profilerResult.MethodName;
+            if (methodName.StartsWith(_prefix))
             {
-                return false;
-            }
+                if (profilerResult.GameEntity is IMyEntity entity &&
+                    !_mask.TestAll(entity))
+                {
+                    return;
+                }
 
-            return true;
+                acceptedKeys.Add(methodName);
+            }
         }
     }
 }

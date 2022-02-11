@@ -1,4 +1,5 @@
-﻿using Profiler.Core;
+﻿using System.Collections.Generic;
+using Profiler.Core;
 using Sandbox.Game.Entities;
 
 namespace Profiler.Basics
@@ -12,16 +13,13 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(in ProfilerResult profilerResult, out MyCubeGrid key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<MyCubeGrid> acceptedKeys)
         {
-            key = null;
+            if (profilerResult.Category != ProfilerCategory.General) return;
+            if (profilerResult.GameEntity is not MyCubeGrid grid) return;
+            if (!_mask.TestAll(grid)) return;
 
-            if (profilerResult.Category != ProfilerCategory.General) return false;
-            if (profilerResult.GameEntity is not MyCubeGrid grid) return false;
-            if (!_mask.TestGrid(grid)) return false;
-
-            key = grid;
-            return key != null;
+            acceptedKeys.Add(grid);
         }
     }
 }

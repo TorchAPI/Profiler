@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using NLog;
 using Profiler.Core;
@@ -20,6 +21,9 @@ namespace Profiler.Basics
         // Cached function to unpool (or create) a new ProfilerEntity instance.
         readonly Func<K, ProfilerEntry> _makeProfilerEntity;
 
+        // temporary storage of keys
+        readonly List<K> _tmpKeys;
+
         ulong _startFrameCount;
         DateTime _startTime;
         bool _ended;
@@ -28,6 +32,7 @@ namespace Profiler.Basics
         {
             _profilerEntries = new ConcurrentDictionary<K, ProfilerEntry>();
             _makeProfilerEntity = _ => ProfilerEntry.Pool.Instance.UnpoolOrCreate();
+            _tmpKeys = new List<K>();
         }
 
         /// <summary>
@@ -54,11 +59,14 @@ namespace Profiler.Basics
 
             try
             {
-                if (TryAccept(profilerResult, out var key))
+                Accept(profilerResult, _tmpKeys);
+                foreach (var key in _tmpKeys)
                 {
                     var profilerEntry = _profilerEntries.GetOrAdd(key, _makeProfilerEntity);
                     profilerEntry.Add(profilerResult);
                 }
+
+                _tmpKeys.Clear();
             }
             catch (Exception e)
             {
@@ -74,9 +82,8 @@ namespace Profiler.Basics
         /// Called from a single worker thread.
         /// </remarks>
         /// <param name="profilerResult">Profiling result of a method invocation sent from ProfilerPatch.</param>
-        /// <param name="key">Key object to be registered to this profiler if accepted.</param>
-        /// <returns>True if given ProfilerResult is accepted, otherwise false.</returns>
-        protected abstract bool TryAccept(in ProfilerResult profilerResult, out K key);
+        /// <param name="acceptedKeys">Keys to be registered to this profiler.</param>
+        protected abstract void Accept(in ProfilerResult profilerResult, ICollection<K> acceptedKeys);
 
         /// <summary>
         /// Generate a key-value-pair collection of the key objects and ProfilerEntries.

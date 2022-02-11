@@ -1,12 +1,12 @@
-﻿using Profiler.Core;
+﻿using System.Collections.Generic;
+using Profiler.Core;
 
 namespace Profiler.Basics
 {
     public sealed class GameLoopProfiler : BaseProfiler<ProfilerCategory>
     {
-        protected override bool TryAccept(in ProfilerResult profilerResult, out ProfilerCategory key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<ProfilerCategory> acceptedKeys)
         {
-            key = profilerResult.Category;
             switch (profilerResult.Category)
             {
                 case ProfilerCategory.Update:
@@ -18,8 +18,14 @@ namespace Profiler.Basics
                 case ProfilerCategory.UpdateParallelWait:
                 case ProfilerCategory.Lock:
                 case ProfilerCategory.Frame:
-                    return true;
-                default: return false;
+                {
+                    acceptedKeys.Add(profilerResult.Category);
+                    return;
+                }
+                default:
+                {
+                    return;
+                }
             }
         }
     }

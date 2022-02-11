@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Profiler.Core;
 using Sandbox.Game.Entities.Blocks;
 
@@ -13,17 +14,14 @@ namespace Profiler.Basics
             _mask = mask;
         }
 
-        protected override bool TryAccept(in ProfilerResult profilerResult, out MyProgrammableBlock key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<MyProgrammableBlock> acceptedKeys)
         {
-            key = null;
+            if (profilerResult.Category != ProfilerCategory.Scripts) return;
+            if (profilerResult.GameEntity is not MyProgrammableBlock programmableBlock) return; // shouldn't happen
+            if (programmableBlock.Closed) return;
+            if (!_mask.TestAll(programmableBlock)) return;
 
-            if (profilerResult.Category != ProfilerCategory.Scripts) return false;
-            if (!(profilerResult.GameEntity is MyProgrammableBlock programmableBlock)) return false; // shouldn't happen
-            if (programmableBlock.Closed) return false;
-            if (!_mask.TestBlock(programmableBlock)) return false;
-
-            key = programmableBlock;
-            return true;
+            acceptedKeys.Add(programmableBlock);
         }
     }
 }

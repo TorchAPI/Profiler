@@ -404,7 +404,7 @@ namespace Profiler
             var entities = world
                 .GetEntities()
                 .WhereAssignable<IMyEntity, MyCubeGrid>()
-                .Where(e => mask.TestGrid(e))
+                .Where(e => mask.TestAll(e))
                 .ToArray();
 
             var count = entities.Length;

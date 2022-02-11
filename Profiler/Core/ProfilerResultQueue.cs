@@ -46,7 +46,7 @@ namespace Profiler.Core
             while (!canceller.IsCancellationRequested)
             {
                 _profilers.ApplyChanges();
-
+                
                 while (_profilerResults.TryDequeue(out var result))
                 {
                     foreach (var profiler in _profilers)
