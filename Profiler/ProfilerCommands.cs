@@ -70,6 +70,49 @@ namespace Profiler
             });
         }
 
+        [Command("frames", "Profiles game frames", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileFrames()
+        {
+            this.CatchAndReportAsync(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+
+                using (var profiler = new GameLoopProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling frames, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
+
+                    var result = profiler.GetResult();
+                    RespondResult(result, false, (b, _) => ProfilerCategoryToNameOrNull(b));
+                }
+            });
+        }
+
+        static string ProfilerCategoryToNameOrNull(ProfilerCategory category) => category switch
+        {
+            ProfilerCategory.Frame => null,
+            ProfilerCategory.Lock => "Idle",
+            ProfilerCategory.Update => null,
+            ProfilerCategory.UpdateNetwork => "Network",
+            ProfilerCategory.UpdateReplication => "Replication",
+            ProfilerCategory.UpdateSessionComponents => null,
+            ProfilerCategory.UpdateSessionComponentsAll => "Session",
+            ProfilerCategory.UpdateGps => "GPS",
+            ProfilerCategory.UpdateParallelWait => null,
+            ProfilerCategory.General => null,
+            ProfilerCategory.Scripts => null,
+            ProfilerCategory.UpdateNetworkEvent => null,
+            ProfilerCategory.UpdateParallelRun => null,
+            ProfilerCategory.Physics => null,
+            ProfilerCategory.Custom => null,
+            _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
+        };
+
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlockType()
@@ -439,7 +482,7 @@ namespace Profiler
             }
         });
 
-        void RespondResult<T>(BaseProfilerResult<T> result, bool showWorkerThreads, Func<T, int, string> toName)
+        void RespondResult<T>(BaseProfilerResult<T> result, bool showWorkerThreads, Func<T, int, string> toNameOrNull)
         {
             Log.Info("Got result from profiling via command");
 
@@ -451,7 +494,9 @@ namespace Profiler
                 var totalTime = $"{profilerEntry.TotalTime:0.00}ms";
                 var mainThreadTime = $"{profilerEntry.MainThreadTime / result.TotalFrameCount:0.00}ms/f";
                 var workerThreadTime = $"{profilerEntry.OffThreadTime / result.TotalFrameCount:0.00}ms/f";
-                var name = toName(item, index);
+                var name = toNameOrNull(item, index);
+                if (string.IsNullOrEmpty(name)) continue;
+
                 messageBuilder.AppendLine(showWorkerThreads
                     ? $"{name}: main: {mainThreadTime}, off: {workerThreadTime}, total: {totalTime}"
                     : $"{name}: {mainThreadTime} (total {totalTime})");

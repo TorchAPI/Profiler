@@ -83,14 +83,24 @@ namespace Profiler.Interactive
                 PlayerMask = id?.IdentityId ?? 0;
             }
 
+            if (_args.TryGetValue("grid", out var gridName))
+            {
+                if (!long.TryParse(gridName, out var gridId))
+                {
+                    throw new Exception($"Failed to parse grid ID={gridName}");
+                }
+
+                GridMask = gridId;
+            }
+
             if (_args.TryGetValue("entity", out var entityIdStr))
             {
                 if (!long.TryParse(entityIdStr, out var entityId))
                 {
-                    throw new Exception($"Failed to parse grid ID={entityIdStr}");
+                    throw new Exception($"Failed to parse entity ID={entityIdStr}");
                 }
 
-                if (!(MyEntities.GetEntityById(entityId) is MyCubeGrid))
+                if (MyEntities.GetEntityById(entityId) is not MyCubeGrid)
                 {
                     throw new Exception($"Failed to find grid with ID={entityId}");
                 }
