@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Profiler.Basics;
 using Profiler.Core;
 using Profiler.Interactive;
 using Profiler.Utils;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.World;
@@ -22,7 +24,7 @@ namespace Profiler
     [Category("profile")]
     public sealed class ProfilerCommands : CommandModule
     {
-        const string HelpText = "--secs=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
+        const string HelpText = "type !profile help";
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly GpsSendClient _gpsSendClient = new();
         static readonly PhysicsTakeMeClient _takeMeClient = new();
@@ -105,7 +107,7 @@ namespace Profiler
 
                 var profiler = _args.TryGetValue("block", out var blockMask)
                     ? new GridByBlockTypeProfiler(mask, blockMask)
-                    : (BaseProfiler<MyCubeGrid>) new GridProfiler(mask);
+                    : (BaseProfiler<MyCubeGrid>)new GridProfiler(mask);
 
                 using (profiler)
                 using (ProfilerResultQueue.Profile(profiler))
@@ -433,13 +435,29 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void Help()
         {
-            Context.Respond("Use !longhelp to show all profiler subcommands");
-            Context.Respond("Add --player=PlayerName to report values for a single player");
-            Context.Respond("Add --faction=FactionTag to report values for a single faction");
-            Context.Respond("Add --entity=EntityId to report values for a specific entity");
-            Context.Respond("Add --this to profile the entity you're currently controlling (players only)");
-            Context.Respond("Add --gps to show positional results as GPS points (players only)");
-            Context.Respond("Results are reported as entry description, milliseconds per tick (updates per tick)");
+            const string url = "https://torchapi.com/wiki/index.php/Plugins/Profiler";
+
+            if (Context.Player?.IdentityId is { } playerId)
+            {
+                Context.Respond("Opening wiki on the steam overlay");
+                var steamOverlayUrl = MakeSteamOverlayUrl(url);
+                MyVisualScriptLogicProvider.OpenSteamOverlay(steamOverlayUrl, playerId);
+            }
+            else if (Context.GetType() == typeof(ConsoleCommandContext))
+            {
+                Context.Respond("Opening wiki on the default web browser");
+                Process.Start(url);
+            }
+            else
+            {
+                Context.Respond(url);
+            }
+        }
+
+        static string MakeSteamOverlayUrl(string baseUrl)
+        {
+            const string steamOverlayFormat = "https://steamcommunity.com/linkfilter/?url={0}";
+            return string.Format(steamOverlayFormat, baseUrl);
         }
     }
 }
