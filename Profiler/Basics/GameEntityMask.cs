@@ -57,22 +57,22 @@ namespace Profiler.Basics
 
         public bool TestGrid(MyCubeGrid grid)
         {
-            if (_gridMask.HasValue)
+            if (_gridMask is {} gridMask)
             {
-                if (_gridMask != grid.EntityId) return false;
+                if (gridMask != grid.EntityId) return false;
             }
 
-            if (_playerMask.HasValue)
+            if (_playerMask is {} playerMask)
             {
-                if (!grid.BigOwners.Contains(_playerMask.Value)) return false;
+                if (!grid.BigOwners.Contains(playerMask)) return false;
             }
 
-            if (_factionMask.HasValue)
+            if (_factionMask is {} factionMask)
             {
                 foreach (var bigOwnerId in grid.BigOwners)
                 {
                     var faction = MySession.Static.Factions.TryGetPlayerFaction(bigOwnerId);
-                    if (faction?.FactionId != _factionMask) return false;
+                    if (faction?.FactionId != factionMask) return false;
                 }
             }
 

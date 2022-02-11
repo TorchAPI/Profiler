@@ -139,6 +139,11 @@ namespace Profiler.Interactive
             return _args.TryGetValue(key, out value);
         }
 
+        public bool HasFlagValue(string key)
+        {
+            return _args.ContainsKey(key);
+        }
+
         static bool ResolveIdentity(string name, out MyIdentity id)
         {
             long identityId;

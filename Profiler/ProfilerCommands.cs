@@ -127,16 +127,26 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileGrids()
         {
+            BaseProfiler<MyCubeGrid> GetProfiler(GameEntityMask mask)
+            {
+                if (_args.TryGetValue("block", out var blockMask))
+                {
+                    return new GridByBlockTypeProfiler(mask, blockMask);
+                }
+
+                if (_args.HasFlagValue("noblocks"))
+                {
+                    return new GridOnlyProfiler(mask);
+                }
+
+                return new GridProfiler(mask);
+            }
+
             this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
-
-                var profiler = _args.TryGetValue("block", out var blockMask)
-                    ? new GridByBlockTypeProfiler(mask, blockMask)
-                    : (BaseProfiler<MyCubeGrid>)new GridProfiler(mask);
-
-                using (profiler)
+                using (var profiler = GetProfiler(mask))
                 using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling grids, result in {_args.Seconds}s");
@@ -146,43 +156,6 @@ namespace Profiler
                     profiler.MarkEnd();
 
                     var result = profiler.GetResult();
-                    RespondResult(result, false, (g, _) => GridToResultText(g));
-
-                    // Sending GPS of laggy grids to caller
-                    if (_args.SendGpsToPlayer)
-                    {
-                        _gpsSendClient.CleanGPS(_args.PlayerIdToSendGps);
-
-                        foreach (var (grid, profilerEntry) in result.GetTopEntities(_args.Top))
-                        {
-                            var gpsName = $"{grid.DisplayName} ({profilerEntry.TotalTime / result.TotalFrameCount:0.0000}ms/f)";
-                            var gpsPosition = grid.PositionComp.WorldAABB.Center;
-                            _gpsSendClient.SendGps(_args.PlayerIdToSendGps, gpsName, gpsPosition);
-                        }
-                    }
-                }
-            });
-        }
-
-        [Command("gridsonly", "Profiles performance per grid", HelpText)]
-        [Permission(MyPromoteLevel.Moderator)]
-        public void ProfileGridsOnly()
-        {
-            this.CatchAndReportAsync(async () =>
-            {
-                _args = new RequestParamParser(Context.Player, Context.Args);
-                var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
-
-                using (var profiler = new GridOnlyProfiler(mask))
-                using (ProfilerResultQueue.Profile(new GridOnlyProfiler(mask)))
-                {
-                    Context.Respond($"Started profiling grids, result in {_args.Seconds}s");
-                    
-                    profiler.MarkStart();
-                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
-                    profiler.MarkEnd();
-
-                    var result = new GridOnlyProfiler(mask).GetResult();
                     RespondResult(result, false, (g, _) => GridToResultText(g));
 
                     // Sending GPS of laggy grids to caller
