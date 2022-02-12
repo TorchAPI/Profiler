@@ -16,10 +16,14 @@ namespace Profiler.Basics
         protected override void Accept(in ProfilerResult profilerResult, ICollection<MyCubeGrid> acceptedKeys)
         {
             if (profilerResult.Category != ProfilerCategory.General) return;
-            if (profilerResult.GameEntity is not MyCubeGrid grid) return;
-            if (!_mask.TestAll(grid)) return;
 
-            acceptedKeys.Add(grid);
+            if (profilerResult.GameEntity is MyCubeGrid grid)
+            {
+                if (_mask.TestAll(grid))
+                {
+                    acceptedKeys.Add(grid);
+                }
+            }
         }
     }
 }

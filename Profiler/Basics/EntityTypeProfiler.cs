@@ -12,11 +12,17 @@ namespace Profiler.Basics
         protected override void Accept(in ProfilerResult profilerResult, ICollection<string> acceptedKeys)
         {
             if (profilerResult.Category != ProfilerCategory.General) return;
+
             switch (profilerResult.GameEntity)
             {
+                case MyCubeBlock:
+                {
+                    acceptedKeys.Add(nameof(MyCubeBlock)); // don't go down too deep
+                    return;
+                }
                 case IMyEntity entity:
                 {
-                    var key = GetEntityType(entity);
+                    var key = entity.GetType().Name;
                     acceptedKeys.Add(key);
                     return;
                 }
@@ -32,16 +38,6 @@ namespace Profiler.Basics
                     return;
                 }
             }
-        }
-
-        static string GetEntityType(IMyEntity entity)
-        {
-            if (entity is MyCubeBlock)
-            {
-                return nameof(MyCubeBlock);
-            }
-
-            return entity.GetType().Name;
         }
 
         static string GetGameLogicComponentType(IMyGameLogicComponent logic)
