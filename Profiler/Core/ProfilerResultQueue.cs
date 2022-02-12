@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
@@ -14,12 +13,12 @@ namespace Profiler.Core
     public static class ProfilerResultQueue
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
-        static readonly ConcurrentQueue<ProfilerResult> _profilerResults;
+        static readonly FastConcurrentQueue<ProfilerResult> _profilerResults;
         static readonly ConcurrentCachingList<IProfiler> _profilers;
 
         static ProfilerResultQueue()
         {
-            _profilerResults = new ConcurrentQueue<ProfilerResult>();
+            _profilerResults = new FastConcurrentQueue<ProfilerResult>();
             _profilers = new ConcurrentCachingList<IProfiler>();
         }
 
@@ -45,9 +44,11 @@ namespace Profiler.Core
         {
             while (!canceller.IsCancellationRequested)
             {
+                _profilerResults.Alternate();
                 _profilers.ApplyChanges();
-                
-                while (_profilerResults.TryDequeue(out var result))
+
+                var index = 0;
+                while (_profilerResults.TryDequeue(ref index, out var result))
                 {
                     foreach (var profiler in _profilers)
                     {
