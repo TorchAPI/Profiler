@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Profiler.Basics;
 using Profiler.Core;
 using Profiler.Interactive;
 using Profiler.Utils;
+using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
 using Sandbox.Game.World;
@@ -22,7 +24,7 @@ namespace Profiler
     [Category("profile")]
     public sealed class ProfilerCommands : CommandModule
     {
-        const string HelpText = "--secs=SampleLength --top=ReportEntries --faction=Tag --player=PlayerName --this --gps";
+        const string HelpText = "type !profile help";
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
         static readonly GpsSendClient _gpsSendClient = new();
         static readonly PhysicsTakeMeClient _takeMeClient = new();
@@ -43,6 +45,74 @@ namespace Profiler
             ProfilerPatch.Enabled = false;
         }
 
+        [Command("sim", "Check simspeed", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void Sim()
+        {
+            this.CatchAndReportAsync(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+                Context.Respond($"Started profiling the sim, result in {_args.Seconds}s");
+
+                var monitor = new SimMonitor((int)_args.Seconds);
+                await monitor.Monitor();
+
+                Log.Info("Got result from profiling via command");
+
+                var messageBuilder = new StringBuilder();
+                messageBuilder.AppendLine($"Finished profiling; past {_args.Seconds}s");
+                messageBuilder.AppendLine($"Best sim: {monitor.Max:0.0}");
+                messageBuilder.AppendLine($"Worst sim: {monitor.Min:0.0}");
+                messageBuilder.AppendLine($"Average sim: {monitor.Avg:0.0}");
+                Context.Respond(messageBuilder.ToString());
+
+                Log.Info("Finished showing profiler result via command");
+            });
+        }
+
+        [Command("frames", "Profiles game frames", HelpText)]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ProfileFrames()
+        {
+            this.CatchAndReportAsync(async () =>
+            {
+                _args = new RequestParamParser(Context.Player, Context.Args);
+
+                using (var profiler = new GameLoopProfiler())
+                using (ProfilerResultQueue.Profile(profiler))
+                {
+                    Context.Respond($"Started profiling frames, result in {_args.Seconds}s");
+
+                    profiler.MarkStart();
+                    await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
+
+                    var result = profiler.GetResult();
+                    RespondResult(result, false, (b, _) => ProfilerCategoryToNameOrNull(b));
+                }
+            });
+        }
+
+        static string ProfilerCategoryToNameOrNull(ProfilerCategory category) => category switch
+        {
+            ProfilerCategory.Frame => null,
+            ProfilerCategory.Lock => "Idle",
+            ProfilerCategory.Update => null,
+            ProfilerCategory.UpdateNetwork => "Network",
+            ProfilerCategory.UpdateReplication => "Replication",
+            ProfilerCategory.UpdateSessionComponents => null,
+            ProfilerCategory.UpdateSessionComponentsAll => "Session",
+            ProfilerCategory.UpdateGps => "GPS",
+            ProfilerCategory.UpdateParallelWait => null,
+            ProfilerCategory.General => null,
+            ProfilerCategory.Scripts => null,
+            ProfilerCategory.UpdateNetworkEvent => null,
+            ProfilerCategory.UpdateParallelRun => null,
+            ProfilerCategory.Physics => null,
+            ProfilerCategory.Custom => null,
+            _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
+        };
+
         [Command("blocktypes", "Profiles performance per block type", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileBlockType()
@@ -59,6 +129,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (b, _) => BlockTypeToString(b));
@@ -87,6 +158,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (k, _) => k.BlockPairName);
@@ -98,22 +170,33 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void ProfileGrids()
         {
+            BaseProfiler<MyCubeGrid> GetProfiler(GameEntityMask mask)
+            {
+                if (_args.TryGetValue("block", out var blockMask))
+                {
+                    return new GridByBlockTypeProfiler(mask, blockMask);
+                }
+
+                if (_args.HasFlagValue("noblocks"))
+                {
+                    return new GridOnlyProfiler(mask);
+                }
+
+                return new GridProfiler(mask);
+            }
+
             this.CatchAndReportAsync(async () =>
             {
                 _args = new RequestParamParser(Context.Player, Context.Args);
                 var mask = new GameEntityMask(_args.PlayerMask, _args.GridMask, _args.FactionMask);
-
-                var profiler = _args.TryGetValue("block", out var blockMask)
-                    ? new GridByBlockTypeProfiler(mask, blockMask)
-                    : (BaseProfiler<MyCubeGrid>) new GridProfiler(mask);
-
-                using (profiler)
+                using (var profiler = GetProfiler(mask))
                 using (ProfilerResultQueue.Profile(profiler))
                 {
                     Context.Respond($"Started profiling grids, result in {_args.Seconds}s");
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (g, _) => GridToResultText(g));
@@ -180,6 +263,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (f, _) => f.Tag);
@@ -203,6 +287,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (k, _) => k.DisplayName);
@@ -226,6 +311,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (p, _) => PbToString(p));
@@ -254,6 +340,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (p, _) => p.GetType().Name);
@@ -275,6 +362,7 @@ namespace Profiler
 
                     profiler.MarkStart();
                     await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                    profiler.MarkEnd();
 
                     var result = profiler.GetResult();
                     RespondResult(result, false, (p, _) => p);
@@ -329,13 +417,13 @@ namespace Profiler
                     Log.Warn("Physics profiling needs to sync all threads! This may cause performance impact.");
                     Context.Respond($"Started profiling clusters, result in {physicsParams.Tics} frames (--tics=N)");
 
-                    await GameLoopObserver.MoveToGameLoop();
+                    await VRageUtils.MoveToGameLoop();
 
                     profiler.MarkStart();
 
                     for (var _ = 0; _ < physicsParams.Tics; _++)
                     {
-                        await GameLoopObserver.MoveToGameLoop();
+                        await VRageUtils.MoveToGameLoop();
                     }
 
                     profiler.MarkEnd();
@@ -359,7 +447,7 @@ namespace Profiler
             var entities = world
                 .GetEntities()
                 .WhereAssignable<IMyEntity, MyCubeGrid>()
-                .Where(e => mask.TestGrid(e))
+                .Where(e => mask.TestAll(e))
                 .ToArray();
 
             var count = entities.Length;
@@ -383,17 +471,18 @@ namespace Profiler
             using (ProfilerResultQueue.Profile(profiler))
             {
                 Context.Respond($"Started profiling custom measurements, result in {_args.Seconds} seconds");
-                await GameLoopObserver.MoveToGameLoop();
+                await VRageUtils.MoveToGameLoop();
 
                 profiler.MarkStart();
                 await Task.Delay(TimeSpan.FromSeconds(_args.Seconds));
+                profiler.MarkEnd();
 
                 var result = profiler.GetResult();
                 RespondResult(result, true, (p, _) => p);
             }
         });
 
-        void RespondResult<T>(BaseProfilerResult<T> result, bool showWorkerThreads, Func<T, int, string> toName)
+        void RespondResult<T>(BaseProfilerResult<T> result, bool showWorkerThreads, Func<T, int, string> toNameOrNull)
         {
             Log.Info("Got result from profiling via command");
 
@@ -405,7 +494,9 @@ namespace Profiler
                 var totalTime = $"{profilerEntry.TotalTime:0.00}ms";
                 var mainThreadTime = $"{profilerEntry.MainThreadTime / result.TotalFrameCount:0.00}ms/f";
                 var workerThreadTime = $"{profilerEntry.OffThreadTime / result.TotalFrameCount:0.00}ms/f";
-                var name = toName(item, index);
+                var name = toNameOrNull(item, index);
+                if (string.IsNullOrEmpty(name)) continue;
+
                 messageBuilder.AppendLine(showWorkerThreads
                     ? $"{name}: main: {mainThreadTime}, off: {workerThreadTime}, total: {totalTime}"
                     : $"{name}: {mainThreadTime} (total {totalTime})");
@@ -433,13 +524,29 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void Help()
         {
-            Context.Respond("Use !longhelp to show all profiler subcommands");
-            Context.Respond("Add --player=PlayerName to report values for a single player");
-            Context.Respond("Add --faction=FactionTag to report values for a single faction");
-            Context.Respond("Add --entity=EntityId to report values for a specific entity");
-            Context.Respond("Add --this to profile the entity you're currently controlling (players only)");
-            Context.Respond("Add --gps to show positional results as GPS points (players only)");
-            Context.Respond("Results are reported as entry description, milliseconds per tick (updates per tick)");
+            const string url = "https://torchapi.com/wiki/index.php/Plugins/Profiler";
+
+            if (Context.Player?.IdentityId is { } playerId)
+            {
+                Context.Respond("Opening wiki on the steam overlay");
+                var steamOverlayUrl = MakeSteamOverlayUrl(url);
+                MyVisualScriptLogicProvider.OpenSteamOverlay(steamOverlayUrl, playerId);
+            }
+            else if (Context.GetType() == typeof(ConsoleCommandContext))
+            {
+                Context.Respond("Opening wiki on the default web browser");
+                Process.Start(url);
+            }
+            else
+            {
+                Context.Respond(url);
+            }
+        }
+
+        static string MakeSteamOverlayUrl(string baseUrl)
+        {
+            const string steamOverlayFormat = "https://steamcommunity.com/linkfilter/?url={0}";
+            return string.Format(steamOverlayFormat, baseUrl);
         }
     }
 }

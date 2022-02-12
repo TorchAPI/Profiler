@@ -7,7 +7,7 @@ using Torch.Utils;
 
 namespace Profiler.Utils
 {
-    public static class MyGpsCollection_PlayerGpss
+    internal static class MyGpsCollection_PlayerGpss
     {
 #pragma warning disable 649
         [ReflectedFieldInfo(typeof(MyGpsCollection), "m_playerGpss")]

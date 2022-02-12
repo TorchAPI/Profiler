@@ -154,6 +154,7 @@
     <Compile Include="Basics\EntityTypeProfiler.cs" />
     <Compile Include="Basics\GridByBlockTypeProfiler.cs" />
     <Compile Include="Basics\CustomProfiler.cs" />
+    <Compile Include="Basics\GridOnlyProfiler.cs" />
     <Compile Include="Basics\PhysicsProfiler.cs" />
     <Compile Include="Basics\FactionProfiler.cs" />
     <Compile Include="Basics\GameEntityMask.cs" />
@@ -212,11 +213,10 @@
     <Compile Include="Utils\ActionDisposable.cs" />
     <Compile Include="Utils\CollectionUtils.cs" />
     <Compile Include="Utils\CommandErrorResponseGenerator.cs" />
-    <Compile Include="Utils\GameLoopObserver.cs" />
     <Compile Include="Utils\MyGpsCollection_PlayerGpss.cs" />
     <Compile Include="Utils\ObjectPool.cs" />
-    <Compile Include="Utils\Patches\MySession_Update.cs" />
     <Compile Include="Utils\ReflectionUtils.cs" />
+    <Compile Include="Utils\SimMonitor.cs" />
     <Compile Include="Utils\TaskUtils.cs" />
     <Compile Include="Utils\BlockTypeIdPool.cs" />
     <Compile Include="Utils\VRageUtils.cs" />

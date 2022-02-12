@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Profiler.Core;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity.EntityComponents.Interfaces;
@@ -8,38 +9,35 @@ namespace Profiler.Basics
 {
     public sealed class EntityTypeProfiler : BaseProfiler<string>
     {
-        protected override bool TryAccept(in ProfilerResult profilerResult, out string key)
+        protected override void Accept(in ProfilerResult profilerResult, ICollection<string> acceptedKeys)
         {
-            key = null;
+            if (profilerResult.Category != ProfilerCategory.General) return;
 
-            if (profilerResult.Category != ProfilerCategory.General) return false;
             switch (profilerResult.GameEntity)
             {
+                case MyCubeBlock:
+                {
+                    acceptedKeys.Add(nameof(MyCubeBlock)); // don't go down too deep
+                    return;
+                }
                 case IMyEntity entity:
                 {
-                    key = GetEntityType(entity);
-                    return true;
+                    var key = entity.GetType().Name;
+                    acceptedKeys.Add(key);
+                    return;
                 }
                 case IMyGameLogicComponent logic:
                 {
-                    key = GetGameLogicComponentType(logic);
-                    return true;
+                    var key = GetGameLogicComponentType(logic);
+                    acceptedKeys.Add(key);
+                    return;
                 }
                 default:
                 {
-                    return false;
+                    // todo
+                    return;
                 }
             }
-        }
-
-        static string GetEntityType(IMyEntity entity)
-        {
-            if (entity is MyCubeBlock)
-            {
-                return nameof(MyCubeBlock);
-            }
-
-            return entity.GetType().Name;
         }
 
         static string GetGameLogicComponentType(IMyGameLogicComponent logic)
