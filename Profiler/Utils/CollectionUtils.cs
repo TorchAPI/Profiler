@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Profiler.Utils
 {
@@ -41,6 +42,11 @@ namespace Profiler.Utils
                     yield return u;
                 }
             }
+        }
+
+        public static IEnumerable<T> Unwrap<T>(this IEnumerable<T?> self) where T : struct
+        {
+            return self.Where(e => e.HasValue).Select(e => e.Value);
         }
 
         public static ISet<T> ToSet<T>(this IEnumerable<T> self)

@@ -384,7 +384,7 @@ namespace Profiler
                     var msg = new StringBuilder();
                     msg.AppendLine($"List of grids in a cluster at index {inspectIndex}:");
 
-                    var grids = _takeMeClient.GetGridsAt(inspectIndex);
+                    var grids = _takeMeClient.GetEntitiesAt(inspectIndex);
                     foreach (var factions in grids.GroupBy(g => g.FirstOwnerFactionTag))
                     foreach (var grid in factions.OrderBy(g => g.FirstOwnerName))
                     {
