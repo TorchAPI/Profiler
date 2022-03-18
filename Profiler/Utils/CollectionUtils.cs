@@ -47,5 +47,24 @@ namespace Profiler.Utils
         {
             return new HashSet<T>(self);
         }
+
+        public static Stack<T> Pop<T>(this Stack<T> self, int count)
+        {
+            var sub = new Stack<T>();
+            for (var i = 0; i < count; i++)
+            {
+                sub.Push(self.Pop());
+            }
+
+            return sub;
+        }
+
+        public static void PushAll<T>(this Stack<T> self, IEnumerable<T> others)
+        {
+            foreach (var other in others)
+            {
+                self.Push(other);
+            }
+        }
     }
 }

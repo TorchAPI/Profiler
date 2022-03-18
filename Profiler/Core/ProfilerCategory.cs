@@ -11,7 +11,7 @@
         UpdateParallelWait,
         UpdateParallelRun,
         UpdateSessionComponents,
-        UpdateSessionComponentsAll,
+        UpdateSessionComponentsAll, // not used anymore
         UpdateGps,
         Lock,
         Frame,

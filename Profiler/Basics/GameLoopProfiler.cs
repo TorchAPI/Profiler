@@ -13,7 +13,6 @@ namespace Profiler.Basics
                 case ProfilerCategory.UpdateNetwork:
                 case ProfilerCategory.UpdateReplication:
                 case ProfilerCategory.UpdateSessionComponents:
-                case ProfilerCategory.UpdateSessionComponentsAll:
                 case ProfilerCategory.UpdateGps:
                 case ProfilerCategory.UpdateParallelWait:
                 case ProfilerCategory.Lock:

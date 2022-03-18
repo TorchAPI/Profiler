@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
+using Torch.Managers.PatchManager.MSIL;
 
 namespace Profiler.Utils
 {
@@ -73,6 +75,21 @@ namespace Profiler.Utils
             }
 
             return derivedTypes.ToArray();
+        }
+        
+        public static bool TryGetInlineMethod(MsilInstruction insn, out MethodBase method)
+        {
+            method = default;
+
+            // skip any instructions other than method calls
+            if (insn.OpCode != OpCodes.Call && insn.OpCode != OpCodes.Callvirt) return false;
+
+            // shouldn't happen but anyway
+            if (insn.Operand is not MsilOperandInline<MethodBase> methodOperand) return false;
+
+            // skip any calls other than one of target calls
+            method = methodOperand.Value;
+            return true;
         }
     }
 }
