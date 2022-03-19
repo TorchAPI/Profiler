@@ -17,5 +17,6 @@
         Frame,
         Physics,
         Custom,
+        PhysicsSimulate,
     }
 }

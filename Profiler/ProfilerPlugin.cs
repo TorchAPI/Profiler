@@ -134,6 +134,7 @@ namespace Profiler
                         MyProgrammableBlock_RunSandboxedProgramAction.Patch(ctx);
 
                         // Physics
+                        MyPhysics_Simulate.Patch(ctx);
                         MyPhysics_StepWorlds.Patch(ctx);
                     }
                     MyGpsCollection_Update.Patch(ctx);

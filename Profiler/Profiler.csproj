@@ -161,6 +161,8 @@
     <Compile Include="Basics\GridProfiler.cs" />
     <Compile Include="Basics\MethodNameProfiler.cs" />
     <Compile Include="Basics\NetworkEventProfiler.cs" />
+    <Compile Include="Basics\PhysicsSimulateMtProfiler.cs" />
+    <Compile Include="Basics\PhysicsSimulateProfiler.cs" />
     <Compile Include="Basics\PlayerProfiler.cs" />
     <Compile Include="Basics\ProfilerEntry.cs" />
     <Compile Include="Basics\GameLoopProfiler.cs" />
@@ -176,6 +178,7 @@
     <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
     <Compile Include="Core.Patches\MyDedicatedServer_Tick.cs" />
     <Compile Include="Core.Patches\MyParallelEntityUpdateOrchestrator_Transpile.cs" />
+    <Compile Include="Core.Patches\MyPhysics_Simulate.cs" />
     <Compile Include="Core.Patches\MyPhysics_StepWorlds.cs" />
     <Compile Include="Core.Patches\MyPlayerCollection_SendDirtyBlockLimits.cs" />
     <Compile Include="Core.Patches\MyProgrammableBlock_RunSandboxedProgramAction.cs" />
