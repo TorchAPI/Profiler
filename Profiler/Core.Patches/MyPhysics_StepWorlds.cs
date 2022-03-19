@@ -25,13 +25,13 @@ namespace Profiler.Core.Patches
         public static void FlagContinuous(object locker)
         {
             _flags.Add(locker);
-            _simulatesParallel = _flags.Count > 0;
+            _simulatesParallel = _flags.Count == 0;
         }
 
         public static void UnflagContinuous(object locker)
         {
             _flags.Remove(locker);
-            _simulatesParallel = _flags.Count > 0;
+            _simulatesParallel = _flags.Count == 0;
         }
 
         public static void Patch(PatchContext ctx)
