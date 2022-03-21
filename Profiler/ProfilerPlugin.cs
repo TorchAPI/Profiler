@@ -10,8 +10,6 @@ using Torch.Session;
 using Torch.API.Managers;
 using Torch.Managers.PatchManager;
 using Torch.Utils;
-using VRageMath;
-using VRageMath.Spatial;
 
 namespace Profiler
 {
@@ -98,7 +96,7 @@ namespace Profiler
                 _patchManager.FreeContext(_patchContext);
             }
         }
-        
+
         static void Patch(PatchContext ctx)
         {
             Log.Trace("Profiler patch started");
@@ -109,7 +107,8 @@ namespace Profiler
             Game_RunSingleFrame.Patch(ctx);
             {
                 Game_UpdateInternal.Patch(ctx);
-                { // MySandboxGame.Update() to MySession.Update()
+                {
+                    // MySandboxGame.Update() to MySession.Update()
                     MyTransportLayer_Tick.Patch(ctx);
                     MyGameService_Update.Patch(ctx);
                     MyNetworkReader_Process.Patch(ctx);
