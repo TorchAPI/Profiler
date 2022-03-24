@@ -14,38 +14,13 @@ namespace Profiler.Interactive
 {
     public sealed class PhysicsTakeMeClient
     {
-        public readonly struct GridSnapshot
-        {
-            public readonly string Name;
-            public readonly Vector3D Position;
-            public readonly string FirstOwnerName;
-            public readonly string FirstOwnerFactionTag;
-
-            public GridSnapshot(IMyCubeGrid entity)
-            {
-                Name = entity.DisplayName;
-                Position = entity.GetPosition();
-
-                FirstOwnerName = "<null>";
-                FirstOwnerFactionTag = "<null>";
-                if (entity.BigOwners.TryGetFirst(out var ownerId))
-                {
-                    var id = MySession.Static.Players.TryGetIdentity(ownerId);
-                    FirstOwnerName = id?.DisplayName ?? "<null>";
-
-                    var faction = MySession.Static.Factions.TryGetPlayerFaction(ownerId);
-                    FirstOwnerFactionTag = faction?.Tag ?? "<null>";
-                }
-            }
-        }
-
         const string GpsNamePrefix = "Physics Profiler: ";
 
-        readonly List<GridSnapshot[]> _clusters;
+        readonly List<PhysicsEntitySnapshot[]> _clusters;
 
         public PhysicsTakeMeClient()
         {
-            _clusters = new List<GridSnapshot[]>();
+            _clusters = new List<PhysicsEntitySnapshot[]>();
         }
 
         public void Update(IEnumerable<HkWorld> clusters)
@@ -53,18 +28,17 @@ namespace Profiler.Interactive
             _clusters.Clear();
             foreach (var cluster in clusters)
             {
-                var grids = cluster
+                var entities = cluster
                     .GetEntities()
-                    .Where(e => e is IMyCubeGrid)
-                    .Cast<IMyCubeGrid>()
-                    .Select(g => new GridSnapshot(g))
+                    .Select(e => PhysicsEntitySnapshot.TryCreate(e))
+                    .Unwrap()
                     .ToArray();
 
-                _clusters.Add(grids);
+                _clusters.Add(entities);
             }
         }
 
-        public IEnumerable<GridSnapshot> GetGridsAt(int index)
+        public IEnumerable<PhysicsEntitySnapshot> GetEntitiesAt(int index)
         {
             return _clusters[index];
         }
@@ -77,14 +51,9 @@ namespace Profiler.Interactive
             }
 
             var entities = _clusters[index];
-            if (entities.Length == 0)
-            {
-                throw new InvalidOperationException("entities not found");
-            }
-
             var (_, center) = VRageUtils.GetBound(entities.Select(e => e.Position));
-            player.Character.SetPosition(center);
 
+            player.Character.SetPosition(center);
             DeleteGpss(player.IdentityId);
 
             await VRageUtils.MoveToGameLoop(); // to create gps entities

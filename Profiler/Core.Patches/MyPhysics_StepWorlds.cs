@@ -10,6 +10,7 @@ using Sandbox.Engine.Physics;
 using Sandbox.Engine.Utils;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
+using VRage.Collections;
 
 namespace Profiler.Core.Patches
 {
@@ -17,8 +18,21 @@ namespace Profiler.Core.Patches
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{typeof(MyPhysics).FullName}#StepSingleWorld");
+        static readonly MyConcurrentHashSet<object> _flags = new();
 
-        public static bool SimulatesParallel = true;
+        static bool _simulatesParallel;
+
+        public static void FlagContinuous(object locker)
+        {
+            _flags.Add(locker);
+            _simulatesParallel = _flags.Count == 0;
+        }
+
+        public static void UnflagContinuous(object locker)
+        {
+            _flags.Remove(locker);
+            _simulatesParallel = _flags.Count == 0;
+        }
 
         public static void Patch(PatchContext ctx)
         {
@@ -43,7 +57,7 @@ namespace Profiler.Core.Patches
                     insn.Operand is MsilOperandInline<FieldInfo> field &&
                     field.Value.Name == nameof(MyFakes.ENABLE_HAVOK_PARALLEL_SCHEDULING))
                 {
-                    var newField = typeof(MyPhysics_StepWorlds).GetField(nameof(SimulatesParallel), BindingFlags.Static | BindingFlags.Public);
+                    var newField = typeof(MyPhysics_StepWorlds).GetField(nameof(_simulatesParallel), BindingFlags.Static | BindingFlags.NonPublic);
                     var newInsn = insn.CopyWith(OpCodes.Ldsfld).InlineValue(newField);
                     yield return newInsn;
 
@@ -65,14 +79,14 @@ namespace Profiler.Core.Patches
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void StepSingleWorldPrefix(ref HkWorld world, ref ProfilerToken? __localProfilerHandle)
         {
-            if (SimulatesParallel) return;
+            if (_simulatesParallel) return;
             __localProfilerHandle = ProfilerPatch.StartToken(world, MethodIndex, ProfilerCategory.Physics);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void StepSingleWorldSuffix(ref ProfilerToken? __localProfilerHandle)
         {
-            if (SimulatesParallel) return;
+            if (_simulatesParallel) return;
             ProfilerPatch.StopToken(in __localProfilerHandle);
         }
     }

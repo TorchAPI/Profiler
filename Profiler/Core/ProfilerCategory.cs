@@ -11,11 +11,12 @@
         UpdateParallelWait,
         UpdateParallelRun,
         UpdateSessionComponents,
-        UpdateSessionComponentsAll,
+        UpdateSessionComponentsAll, // not used anymore
         UpdateGps,
         Lock,
         Frame,
         Physics,
         Custom,
+        PhysicsSimulate,
     }
 }

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
 using ParallelTasks;
@@ -15,8 +14,6 @@ namespace Profiler.Core.Patches
 {
     public static class MySession_Update_Transpile
     {
-        
-        
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         static readonly Type SelfType = typeof(MySession_Update_Transpile);
         static readonly Type Type = typeof(MySession);
@@ -25,23 +22,11 @@ namespace Profiler.Core.Patches
         static readonly MethodInfo ParallelWaitTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInParallelWait));
         static readonly MethodInfo ParallelRunTokenMethod = SelfType.GetStaticMethod(nameof(CreateTokenInParallelRun));
 
-        static readonly ProfileBeginTokenTarget[] TargetCalls =
+        static readonly TranspileProfilePatcher TranspileProfilePatcher = new()
         {
-            new ProfileBeginTokenTarget(typeof(IWorkScheduler), nameof(IWorkScheduler.WaitForTasksToFinish), ParallelWaitTokenMethod),
-            new ProfileBeginTokenTarget(typeof(Parallel), nameof(Parallel.RunCallbacks), ParallelRunTokenMethod),
+            (typeof(IWorkScheduler), nameof(IWorkScheduler.WaitForTasksToFinish), ParallelWaitTokenMethod),
+            (typeof(Parallel), nameof(Parallel.RunCallbacks), ParallelRunTokenMethod),
         };
-
-        static bool TryGetTokenCreatorMethod(MethodBase method, out MethodInfo tokenCreatorMethod)
-        {
-            if (TargetCalls.TryGetFirst(c => c.Matches(method), out var call))
-            {
-                tokenCreatorMethod = call.TokenCreator;
-                return true;
-            }
-
-            tokenCreatorMethod = default;
-            return false;
-        }
 
         public static void Patch(PatchContext ctx)
         {
@@ -56,68 +41,9 @@ namespace Profiler.Core.Patches
             }
         }
 
-        // ReSharper disable once InconsistentNaming
-        static IEnumerable<MsilInstruction> Transpile(IEnumerable<MsilInstruction> insns, Func<Type, MsilLocal> __localCreator)
+        static IEnumerable<MsilInstruction> Transpile(IEnumerable<MsilInstruction> insns, Func<Type, MsilLocal> __localCreator, MethodBase __methodBase)
         {
-            var localTokenValue = __localCreator(typeof(ProfilerToken?));
-            var oldInsns = insns.ToArray();
-            var newInsns = insns.ToList();
-            var insertedInsnCount = 0;
-
-            for (var i = 0; i < oldInsns.Length; i++)
-            {
-                var insn = oldInsns[i];
-
-                // skip any instructions other than method calls
-                if (insn.OpCode != OpCodes.Call && insn.OpCode != OpCodes.Callvirt) continue;
-
-                // shouldn't happen but anyway
-                if (!(insn.Operand is MsilOperandInline<MethodBase> methodOperand)) continue;
-
-                // skip any calls other than one of target calls
-                var method = methodOperand.Value;
-
-                Log.Trace($"method call: {method.DeclaringType?.FullName}{method.Name}");
-
-                if (!TryGetTokenCreatorMethod(method, out var tokenCreatorMethod)) continue;
-
-                Log.Trace("passed test");
-
-                // get the index that the target stack begins
-                var insertIndex = i + insertedInsnCount;
-
-                Log.Trace($"index: {i}, insert index: {insertIndex}");
-
-                // create a method index
-                var methodIndex = StringIndexer.Instance.IndexOf($"{method.DeclaringType}#{method.Name}");
-
-                // make a ProfilerToken instance
-                var createTokenInsns = new List<MsilInstruction>
-                {
-                    new MsilInstruction(OpCodes.Ldc_I4).InlineValue(methodIndex), // pass the method index to token
-                    new MsilInstruction(OpCodes.Call).InlineValue(tokenCreatorMethod), // create the token
-                    localTokenValue.AsValueStore(), // store
-                };
-
-                // insert
-                newInsns.InsertRange(insertIndex, createTokenInsns);
-                insertedInsnCount += createTokenInsns.Count;
-
-                // now is time to insert "submit token"
-                insertIndex = i + insertedInsnCount + 1;
-
-                // make a "submit token" call
-                var submitTokenInsns = new List<MsilInstruction>
-                {
-                    localTokenValue.AsReferenceLoad(), // pass the token
-                    new MsilInstruction(OpCodes.Call).InlineValue(ProfilerPatch.StopTokenFunc), // submit
-                };
-
-                newInsns.InsertRange(insertIndex, submitTokenInsns);
-                insertedInsnCount += submitTokenInsns.Count;
-            }
-
-            return newInsns;
+            return TranspileProfilePatcher.Patch(insns.ToArray(), __localCreator, __methodBase);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
