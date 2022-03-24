@@ -25,6 +25,7 @@ namespace Profiler.Core.Patches
                     var method = Type.GetMethod(parallelUpdateMethod, ReflectionUtils.StaticFlags | ReflectionUtils.InstanceFlags);
                     MyEntity_Transpile.Patch(ctx, method);
                 }
+
                 foreach (var parallelUpdateMethod in new[]
                 {
                     "DispatchBeforeSimulation",

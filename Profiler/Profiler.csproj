@@ -161,6 +161,8 @@
     <Compile Include="Basics\GridProfiler.cs" />
     <Compile Include="Basics\MethodNameProfiler.cs" />
     <Compile Include="Basics\NetworkEventProfiler.cs" />
+    <Compile Include="Basics\PhysicsSimulateMtProfiler.cs" />
+    <Compile Include="Basics\PhysicsSimulateProfiler.cs" />
     <Compile Include="Basics\PlayerProfiler.cs" />
     <Compile Include="Basics\ProfilerEntry.cs" />
     <Compile Include="Basics\GameLoopProfiler.cs" />
@@ -176,6 +178,7 @@
     <Compile Include="Core.Patches\MyGpsCollection_Update.cs" />
     <Compile Include="Core.Patches\MyDedicatedServer_Tick.cs" />
     <Compile Include="Core.Patches\MyParallelEntityUpdateOrchestrator_Transpile.cs" />
+    <Compile Include="Core.Patches\MyPhysics_Simulate.cs" />
     <Compile Include="Core.Patches\MyPhysics_StepWorlds.cs" />
     <Compile Include="Core.Patches\MyPlayerCollection_SendDirtyBlockLimits.cs" />
     <Compile Include="Core.Patches\MyProgrammableBlock_RunSandboxedProgramAction.cs" />
@@ -192,11 +195,9 @@
     <Compile Include="Core.Patches\MyDedicatedServer_ReportReplicatedObjects.cs" />
     <Compile Include="Core.Patches\MyNetworkReader_Process.cs" />
     <Compile Include="Core.Patches\MySession_Update_Transpile.cs" />
-    <Compile Include="Core.Patches\MySession_UpdateComponents.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
     <Compile Include="Core.Patches\MyUpdateOrchestrator_Transpile.cs" />
-    <Compile Include="Core.Patches\ProfileBeginTokenTarget.cs" />
     <Compile Include="Core\CustomProfiling.cs" />
     <Compile Include="Core\FastConcurrentQueue.cs" />
     <Compile Include="Core\IProfiler.cs" />
@@ -206,7 +207,9 @@
     <Compile Include="Core\ProfilerResultQueue.cs" />
     <Compile Include="Core\ProfilerPatch.cs" />
     <Compile Include="Core\ProfilerToken.cs" />
+    <Compile Include="Core\TranspileProfilePatcher.cs" />
     <Compile Include="Interactive\GpsSendClient.cs" />
+    <Compile Include="Interactive\PhysicsEntitySnapshot.cs" />
     <Compile Include="Interactive\PhysicsParamParser.cs" />
     <Compile Include="Interactive\PhysicsTakeMeClient.cs" />
     <Compile Include="Interactive\RequestParamParser.cs" />

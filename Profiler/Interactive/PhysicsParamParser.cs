@@ -53,7 +53,7 @@ namespace Profiler.Interactive
             }
         }
 
-        public int Tics { get; } = 10;
+        public int Tics { get; } = 20;
         public int? InspectIndexOrNull { get; }
         public int? TakeMeIndexOrNull { get; }
         public bool TakeMeDone { get; }

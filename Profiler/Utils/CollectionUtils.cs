@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Profiler.Utils
 {
@@ -43,9 +44,33 @@ namespace Profiler.Utils
             }
         }
 
+        public static IEnumerable<T> Unwrap<T>(this IEnumerable<T?> self) where T : struct
+        {
+            return self.Where(e => e.HasValue).Select(e => e.Value);
+        }
+
         public static ISet<T> ToSet<T>(this IEnumerable<T> self)
         {
             return new HashSet<T>(self);
+        }
+
+        public static Stack<T> Pop<T>(this Stack<T> self, int count)
+        {
+            var sub = new Stack<T>();
+            for (var i = 0; i < count; i++)
+            {
+                sub.Push(self.Pop());
+            }
+
+            return sub;
+        }
+
+        public static void PushAll<T>(this Stack<T> self, IEnumerable<T> others)
+        {
+            foreach (var other in others)
+            {
+                self.Push(other);
+            }
         }
     }
 }

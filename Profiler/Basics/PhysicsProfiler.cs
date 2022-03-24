@@ -7,17 +7,19 @@ namespace Profiler.Basics
 {
     public sealed class PhysicsProfiler : BaseProfiler<HkWorld>
     {
+        readonly object _flag = new();
+
         public override void MarkStart()
         {
             base.MarkStart();
 
-            MyPhysics_StepWorlds.SimulatesParallel = false;
+            MyPhysics_StepWorlds.FlagContinuous(_flag);
         }
 
         public override void MarkEnd()
         {
             base.MarkEnd();
-            MyPhysics_StepWorlds.SimulatesParallel = true;
+            MyPhysics_StepWorlds.UnflagContinuous(_flag);
         }
 
         protected override void Accept(in ProfilerResult profilerResult, ICollection<HkWorld> acceptedKeys)
