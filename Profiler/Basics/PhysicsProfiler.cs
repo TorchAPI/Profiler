@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Havok;
 using Profiler.Core;
 using Profiler.Core.Patches;
@@ -7,19 +8,24 @@ namespace Profiler.Basics
 {
     public sealed class PhysicsProfiler : BaseProfiler<HkWorld>
     {
-        readonly object _flag = new();
+        readonly DateTime _dateTime;
+
+        public PhysicsProfiler()
+        {
+            _dateTime = DateTime.Now;
+        }
 
         public override void MarkStart()
         {
             base.MarkStart();
 
-            MyPhysics_StepWorlds.FlagContinuous(_flag);
+            MyPhysics_StepWorlds.FlagContinuous(this);
         }
 
         public override void MarkEnd()
         {
             base.MarkEnd();
-            MyPhysics_StepWorlds.UnflagContinuous(_flag);
+            MyPhysics_StepWorlds.UnflagContinuous(this);
         }
 
         protected override void Accept(in ProfilerResult profilerResult, ICollection<HkWorld> acceptedKeys)
@@ -33,6 +39,11 @@ namespace Profiler.Basics
         {
             MarkEnd();
             base.Dispose();
+        }
+
+        public override string ToString() // for MyPhysics_StepWorlds.Flags.ToString
+        {
+            return $"{nameof(PhysicsProfiler)}({_dateTime:yyyy/MM/dd HH:mm:ss})";
         }
     }
 }

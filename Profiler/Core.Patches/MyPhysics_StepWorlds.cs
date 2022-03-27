@@ -20,19 +20,21 @@ namespace Profiler.Core.Patches
         static readonly int MethodIndex = StringIndexer.Instance.IndexOf($"{typeof(MyPhysics).FullName}#StepSingleWorld");
         static readonly MyConcurrentHashSet<object> _flags = new();
 
-        static bool _simulatesParallel;
+        static bool _simulatesParallel = true;
 
-        public static void FlagContinuous(object locker)
+        public static void FlagContinuous(object flag)
         {
-            _flags.Add(locker);
+            _flags.Add(flag);
             _simulatesParallel = _flags.Count == 0;
         }
 
-        public static void UnflagContinuous(object locker)
+        public static void UnflagContinuous(object flag)
         {
-            _flags.Remove(locker);
+            _flags.Remove(flag);
             _simulatesParallel = _flags.Count == 0;
         }
+
+        public static IEnumerable<object> Flags => _flags;
 
         public static void Patch(PatchContext ctx)
         {
