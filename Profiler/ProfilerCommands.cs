@@ -8,6 +8,7 @@ using Havok;
 using NLog;
 using Profiler.Basics;
 using Profiler.Core;
+using Profiler.Core.Patches;
 using Profiler.Interactive;
 using Profiler.Utils;
 using Sandbox.Game;
@@ -452,6 +453,21 @@ namespace Profiler
             var count = entities.Length;
             var (size, _) = VRageUtils.GetBound(entities.Select(e => e.PositionComp.GetPosition()));
             return $"{index}: {count} entities in {size / 1000:0.0}km";
+        }
+
+
+        [Command("flags", "Show flags used to profile physics, which slows down the main thread")]
+        [Permission(MyPromoteLevel.Moderator)]
+        public void ShowPhysicsFlags()
+        {
+            var msg = new StringBuilder();
+            msg.AppendLine();
+            foreach (var flag in MyPhysics_StepWorlds.Flags)
+            {
+                msg.AppendLine(flag.ToString());
+            }
+
+            Context.Respond(msg.ToString());
         }
 
         [Command("custom", "Profiles custom measurements. `--prefix=` to specify the path.")]

@@ -72,5 +72,10 @@ namespace Profiler.Utils
                 self.Push(other);
             }
         }
+
+        public static string SeqToString<T>(this IEnumerable<T> self)
+        {
+            return $"[{string.Join(", ", self)}]";
+        }
     }
 }
