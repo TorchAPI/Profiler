@@ -24,6 +24,7 @@ namespace Profiler.Interactive
             MySafeZone => null,
             MyVoxelMap => null,
             MyVoxelBase => null,
+            IMyFloatingObject => null,
             _ => new PhysicsEntitySnapshot(entity)
         };
 
@@ -35,18 +36,16 @@ namespace Profiler.Interactive
             FirstOwnerName = "<null>";
             FirstOwnerFactionTag = "<null>";
 
-            switch (entity)
+            if (entity is IMyCubeGrid grid)
             {
-                case IMyCubeGrid grid when grid.BigOwners.TryGetFirst(out var ownerId):
+                Name = grid.DisplayName;
+                if (grid.BigOwners.TryGetFirst(out var ownerId))
                 {
-                    Name = grid.DisplayName;
-
                     var id = MySession.Static.Players.TryGetIdentity(ownerId);
                     FirstOwnerName = id?.DisplayName ?? "<null>";
 
                     var faction = MySession.Static.Factions.TryGetPlayerFaction(ownerId);
                     FirstOwnerFactionTag = faction?.Tag ?? "<null>";
-                    break;
                 }
             }
         }
