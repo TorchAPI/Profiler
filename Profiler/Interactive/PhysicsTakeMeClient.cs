@@ -61,7 +61,7 @@ namespace Profiler.Interactive
             foreach (var grid in entities)
             {
                 var gps = CreateGridGps($"{GpsNamePrefix}{grid.Name}", grid.Position, "", Color.Purple);
-                MySession.Static.Gpss.SendAddGps(player.IdentityId, ref gps);
+                MySession.Static.Gpss.AddPlayerGps(player.IdentityId, ref gps);
             }
 
             await TaskUtils.MoveToThreadPool();
@@ -74,7 +74,7 @@ namespace Profiler.Interactive
             {
                 if (identityId == playerId && gps.Name.StartsWith(GpsNamePrefix))
                 {
-                    MySession.Static.Gpss.SendDelete(identityId, gps.Hash);
+                    MySession.Static.Gpss.SendDeleteGpsRequest(identityId, gps.Hash);
                 }
             }
         }
