@@ -61,7 +61,7 @@ namespace Profiler.Interactive
             foreach (var grid in entities)
             {
                 var gps = CreateGridGps($"{GpsNamePrefix}{grid.Name}", grid.Position, "", Color.Purple);
-                MySession.Static.Gpss.AddPlayerGps(player.IdentityId, ref gps);
+                MySession.Static.Gpss.SendAddGpsRequest(player.IdentityId, ref gps);
             }
 
             await TaskUtils.MoveToThreadPool();
