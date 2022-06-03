@@ -27,7 +27,7 @@ namespace Profiler.Basics
             {
                 if (_mask.TestAll(grid))
                 {
-                    foreach (var ownerId in grid.BigOwners)
+                    foreach (var ownerId in grid.BigOwners.ToArray())
                     {
                         if (MySession.Static.Factions.TryGetPlayerFaction(ownerId) is { } faction)
                         {
