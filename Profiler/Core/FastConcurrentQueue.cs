@@ -61,9 +61,9 @@ namespace Profiler.Core
 
         public QueuePair()
         {
+            _initialized = true;
             _queue0 = new Queue<T>();
             _queue1 = new Queue<T>();
-            _initialized = true;
         }
 
         public void Alternate()

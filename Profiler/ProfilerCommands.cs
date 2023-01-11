@@ -539,7 +539,7 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void Help()
         {
-            const string url = "https://torchapi.com/wiki/index.php/Plugins/Profiler";
+            const string url = "https://wiki.torchapi.com/index.php?title=Plugins/Profiler";
 
             if (Context.Player?.IdentityId is { } playerId)
             {
