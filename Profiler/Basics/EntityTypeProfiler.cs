@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Profiler.Core;
 using Sandbox.Game.Entities;
@@ -9,6 +10,13 @@ namespace Profiler.Basics
 {
     public sealed class EntityTypeProfiler : BaseProfiler<string>
     {
+        readonly ConcurrentDictionary<Type, string> _names;
+
+        public EntityTypeProfiler()
+        {
+            _names = new ConcurrentDictionary<Type, string>();
+        }
+
         protected override void Accept(in ProfilerResult profilerResult, ICollection<string> acceptedKeys)
         {
             if (profilerResult.Category != ProfilerCategory.General) return;
@@ -34,16 +42,20 @@ namespace Profiler.Basics
                 }
                 default:
                 {
-                    // todo
-                    return;
+                    throw new InvalidOperationException($"shouldn't happen: {profilerResult.GameEntity.GetType()}");
                 }
             }
         }
 
-        static string GetGameLogicComponentType(IMyGameLogicComponent logic)
+        string GetGameLogicComponentType(IMyGameLogicComponent logic)
         {
             var type = logic.GetType();
-            return $"{type.Namespace}/{type.Name}";
+            if (!_names.TryGetValue(type, out var name))
+            {
+                _names[type] = name = $"{type.Namespace}/{type.Name}";
+            }
+
+            return name;
         }
     }
 }
