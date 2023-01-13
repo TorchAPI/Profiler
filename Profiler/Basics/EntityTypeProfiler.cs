@@ -40,6 +40,10 @@ namespace Profiler.Basics
                     acceptedKeys.Add(key);
                     return;
                 }
+                case null:
+                {
+                    throw new InvalidOperationException("null in the profiler; possibly patch overlap by other plugins");
+                }
                 default:
                 {
                     throw new InvalidOperationException($"shouldn't happen: {profilerResult.GameEntity.GetType()}");
