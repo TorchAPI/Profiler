@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using NLog;
-using Profiler.Utils;
 using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
+using Utils.General;
 
 namespace Profiler.Core.Patches
 {

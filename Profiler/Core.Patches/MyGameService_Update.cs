@@ -2,7 +2,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.Utils;
+using Utils.General;
 using Sandbox.Engine.Networking;
 using Torch.Managers.PatchManager;
 

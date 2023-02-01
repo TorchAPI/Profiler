@@ -10,6 +10,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		manifest.xml = manifest.xml
 	EndProjectSection
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Utils.General", "TorchUtils\Utils.General\Utils.General.shproj", "{4E4B3282-B361-4E86-B971-059EFF657677}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Utils.Torch", "TorchUtils\Utils.Torch\Utils.Torch.shproj", "{27569BFC-809F-4253-8959-78107741620D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

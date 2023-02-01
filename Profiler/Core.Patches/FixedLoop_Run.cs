@@ -5,10 +5,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.Utils;
 using Sandbox.Engine.Platform;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
+using Utils.General;
 
 namespace Profiler.Core.Patches
 {

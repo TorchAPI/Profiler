@@ -1,4 +1,4 @@
-﻿using Profiler.Utils;
+﻿using Utils.General;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Cube;
 using Sandbox.Game.Entities.EnvironmentItems;

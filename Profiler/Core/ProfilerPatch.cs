@@ -2,8 +2,8 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.Utils;
 using Torch.Utils.Reflected;
+using Utils.General;
 
 namespace Profiler.Core
 {

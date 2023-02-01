@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
 using ParallelTasks;
-using Profiler.Utils;
+using Utils.General;
 using Sandbox.Game.World;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;

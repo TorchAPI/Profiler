@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Havok;
 using Profiler.Utils;
+using Utils.General;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
+using Utils.Torch;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRageMath;
@@ -28,8 +30,7 @@ namespace Profiler.Interactive
             _clusters.Clear();
             foreach (var cluster in clusters)
             {
-                var entities = cluster
-                    .GetEntities()
+                var entities = VRageUtils.GetEntities(cluster)
                     .Select(e => PhysicsEntitySnapshot.TryCreate(e))
                     .Unwrap()
                     .ToArray();
@@ -69,7 +70,7 @@ namespace Profiler.Interactive
 
         public void DeleteGpss(long playerId)
         {
-            var allGpss = MySession.Static.Gpss.GetAllGpss();
+            var allGpss = MyGpsCollection_PlayerGpss.GetAllGpss(MySession.Static.Gpss);
             foreach (var (identityId, gps) in allGpss)
             {
                 if (identityId == playerId && gps.Name.StartsWith(GpsNamePrefix))

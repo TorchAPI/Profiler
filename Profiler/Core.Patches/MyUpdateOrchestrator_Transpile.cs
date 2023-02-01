@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NLog;
-using Profiler.Utils;
+using Utils.General;
 using Sandbox.Game.Entities;
 using Torch.Managers.PatchManager;
 using VRage.Collections;

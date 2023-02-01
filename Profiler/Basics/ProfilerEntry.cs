@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Profiler.Core;
-using Profiler.Utils;
+using Utils.General;
 
 namespace Profiler.Basics
 {

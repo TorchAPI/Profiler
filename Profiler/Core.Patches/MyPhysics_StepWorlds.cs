@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using Havok;
 using NLog;
-using Profiler.Utils;
+using Utils.General;
 using Sandbox.Engine.Physics;
 using Sandbox.Engine.Utils;
 using Torch.Managers.PatchManager;
