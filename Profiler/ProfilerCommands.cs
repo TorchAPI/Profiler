@@ -39,14 +39,14 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void Enable()
         {
-            ProfilerPatch.Enabled = true;
+            ProfilerConfig.Instance.Enabled = true;
         }
 
         [Command("off", "Disable profiling", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void Disable()
         {
-            ProfilerPatch.Enabled = false;
+            ProfilerConfig.Instance.Enabled = false;
         }
 
         [Command("sim", "Check simspeed", HelpText)]

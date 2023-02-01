@@ -8,7 +8,6 @@ using System.Text.RegularExpressions;
 using NLog;
 using Utils.General;
 using Torch.Managers.PatchManager.MSIL;
-using Utils.General;
 
 namespace Profiler.Core
 {

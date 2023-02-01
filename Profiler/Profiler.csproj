@@ -32,17 +32,28 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="mscorlib" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(SolutionDir)\TorchBinaries\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="NLog">
-      <HintPath>..\packages\NLog.4.4.12\lib\net45\NLog.dll</HintPath>
+      <HintPath>$(SolutionDir)\TorchBinaries\Nlog.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="PresentationCore" />
-    <Reference Include="PresentationFramework" />
-    <Reference Include="PresentationFramework.Aero" />
     <Reference Include="Sandbox.Common">
       <HintPath>$(SolutionDir)\GameBinaries\Sandbox.Common.dll</HintPath>
       <Private>False</Private>
@@ -67,16 +78,6 @@
       <HintPath>$(SolutionDir)\GameBinaries\SpaceEngineers.ObjectBuilders.XmlSerializers.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Windows.Presentation" />
-    <Reference Include="System.Xaml" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
     <Reference Include="Torch">
       <HintPath>$(SolutionDir)\TorchBinaries\Torch.dll</HintPath>
       <Private>False</Private>
@@ -141,7 +142,6 @@
       <HintPath>$(SolutionDir)\GameBinaries\VRage.Scripting.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Versioning\AssemblyVersion.cs">
@@ -215,6 +215,7 @@
     <Compile Include="Interactive\RequestParamParser.cs" />
     <Compile Include="ProfilerCommands.cs" />
     <Compile Include="ProfilerConfig.cs" />
+    <Compile Include="ProfilerControl.xaml.cs" />
     <Compile Include="Utils\MyGpsCollection_PlayerGpss.cs" />
     <Compile Include="Utils\SimMonitor.cs" />
     <Compile Include="Utils\BlockTypeIdPool.cs" />
@@ -222,6 +223,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="ProfilerControl.xaml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\TorchUtils\Utils.General\Utils.General.projitems" Label="Shared" />
