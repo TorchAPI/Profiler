@@ -13,12 +13,14 @@ namespace Profiler
         bool _enableLoggingTrace;
         bool _enableLoggingDebug;
         string _logFilePath;
+        bool _silenceInvalidPatch;
 
         public static ProfilerConfig Instance { get; set; }
 
         public static ProfilerConfig Default { get; } = new()
         {
             Enabled = true,
+            SilenceInvalidPatch = false,
             LogFilePath = DefaultLogFilePath,
         };
 
@@ -27,6 +29,13 @@ namespace Profiler
         {
             get => _enabled;
             set => SetValue(ref _enabled, value);
+        }
+
+        [XmlElement]
+        public bool SilenceInvalidPatch
+        {
+            get => _silenceInvalidPatch;
+            set => SetValue(ref _silenceInvalidPatch, value);
         }
 
         // logging stuff
