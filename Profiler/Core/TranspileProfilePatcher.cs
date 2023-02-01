@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using NLog;
-using Profiler.Utils;
+using Utils.General;
 using Torch.Managers.PatchManager.MSIL;
 
 namespace Profiler.Core

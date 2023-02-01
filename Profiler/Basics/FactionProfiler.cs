@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Profiler.Core;
-using Profiler.Utils;
 using Sandbox.Game.Entities;
 using Sandbox.Game.World;
+using Utils.Torch;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 

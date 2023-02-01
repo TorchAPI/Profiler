@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.Utils;
+using Utils.General;
 using Torch.Managers.PatchManager;
 using VRage;
 using VRage.Network;

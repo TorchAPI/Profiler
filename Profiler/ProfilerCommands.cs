@@ -11,6 +11,7 @@ using Profiler.Core;
 using Profiler.Core.Patches;
 using Profiler.Interactive;
 using Profiler.Utils;
+using Utils.General;
 using Sandbox.Game;
 using Sandbox.Game.Entities;
 using Sandbox.Game.Entities.Blocks;
@@ -19,6 +20,8 @@ using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
+using Utils.Torch;
+using TaskUtils = Utils.General.TaskUtils;
 
 namespace Profiler
 {
@@ -36,14 +39,14 @@ namespace Profiler
         [Permission(MyPromoteLevel.Moderator)]
         public void Enable()
         {
-            ProfilerPatch.Enabled = true;
+            ProfilerConfig.Instance.Enabled = true;
         }
 
         [Command("off", "Disable profiling", HelpText)]
         [Permission(MyPromoteLevel.Moderator)]
         public void Disable()
         {
-            ProfilerPatch.Enabled = false;
+            ProfilerConfig.Instance.Enabled = false;
         }
 
         [Command("sim", "Check simspeed", HelpText)]

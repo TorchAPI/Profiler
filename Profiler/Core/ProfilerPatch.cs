@@ -2,8 +2,8 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using NLog;
-using Profiler.Utils;
 using Torch.Utils.Reflected;
+using Utils.General;
 
 namespace Profiler.Core
 {
@@ -13,14 +13,13 @@ namespace Profiler.Core
         static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         public static readonly MethodInfo StopTokenFunc = typeof(ProfilerPatch).GetStaticMethod(nameof(StopToken));
-        public static bool Enabled { get; set; } = true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static ProfilerToken? StartToken(object caller, int methodIndex, ProfilerCategory category)
         {
             try
             {
-                if (!Enabled) return null;
+                if (!ProfilerConfig.Instance.Enabled) return null;
                 var token = new ProfilerToken(caller, methodIndex, category);
                 //Log.Trace($"start: {token}");
                 return token;
@@ -38,7 +37,7 @@ namespace Profiler.Core
         {
             try
             {
-                if (!Enabled) return;
+                if (!ProfilerConfig.Instance.Enabled) return;
                 if (tokenOrNull is not { } token) return;
 
                 var result = new ProfilerResult(token);

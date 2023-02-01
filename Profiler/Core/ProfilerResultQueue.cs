@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
-using Profiler.Utils;
+using Utils.General;
 using VRage.Collections;
 
 namespace Profiler.Core

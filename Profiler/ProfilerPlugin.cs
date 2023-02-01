@@ -1,55 +1,71 @@
 using System;
+using System.ComponentModel;
 using System.Threading;
+using System.Windows.Controls;
 using NLog;
 using Profiler.Core;
 using Profiler.Core.Patches;
 using Torch;
 using Torch.API;
 using Torch.API.Session;
-using Torch.Session;
 using Torch.API.Managers;
+using Torch.API.Plugins;
 using Torch.Managers.PatchManager;
 using Torch.Utils;
+using Utils.General;
+using Utils.Torch;
 
 namespace Profiler
 {
     /// <summary>
     /// Plugin that lets you profile entities 
     /// </summary>
-    public class ProfilerPlugin : TorchPluginBase
+    public class ProfilerPlugin : TorchPluginBase, IWpfPlugin
     {
         static readonly ILogger Log = LogManager.GetCurrentClassLogger();
 
         PatchManager _patchManager;
         PatchContext _patchContext;
         CancellationTokenSource _canceller;
+        Persistent<ProfilerConfig> _config;
+        ProfilerControl _control;
+        FileLoggingConfigurator _fileLogger;
+
+        UserControl IWpfPlugin.GetControl()
+        {
+            return _control ??= new ProfilerControl(this);
+        }
 
         /// <inheritdoc cref="TorchPluginBase.Init"/>
         public override void Init(ITorchBase torch)
         {
             base.Init(torch);
+            this.OnSessionStateChanged(TorchSessionState.Loaded, OnGameLoaded);
+            this.OnSessionStateChanged(TorchSessionState.Unloading, OnGameUnloading);
 
-            var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
-            sessionManager.SessionStateChanged += (_, state) =>
-            {
-                switch (state)
-                {
-                    case TorchSessionState.Loaded:
-                    {
-                        OnGameLoaded();
-                        return;
-                    }
-                    case TorchSessionState.Unloading:
-                    {
-                        OnGameUnloading();
-                        return;
-                    }
-                    default:
-                    {
-                        return;
-                    }
-                }
-            };
+            _fileLogger = new FileLoggingConfigurator(
+                nameof(ProfilerPlugin),
+                new[] { $"{nameof(ProfilerPlugin)}.*" },
+                ProfilerConfig.DefaultLogFilePath);
+            _fileLogger.Initialize();
+
+            ReloadConfig();
+        }
+
+        public void ReloadConfig()
+        {
+            var configPath = this.MakeFilePath("Profiler.cfg");
+            _config = TorchPluginUtils.LoadPersistent(configPath, ProfilerConfig.Default);
+            ProfilerConfig.Instance = _config.Data;
+            PropertyChangedEventManager.AddHandler(_config.Data, OnConfigChanged, "");
+            _control?.OnConfigReloaded();
+            OnConfigChanged(null, null);
+        }
+
+        void OnConfigChanged(object sender, PropertyChangedEventArgs e)
+        {
+            _fileLogger.Configure(ProfilerConfig.Instance);
+            _control?.OnConfigChanged();
         }
 
         void OnGameLoaded()
@@ -66,23 +82,7 @@ namespace Profiler
             _canceller?.Dispose();
             _canceller = new CancellationTokenSource();
 
-            StartQueue();
-        }
-
-        async void StartQueue()
-        {
-            try
-            {
-                await ProfilerResultQueue.Start(_canceller.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                //pass
-            }
-            catch (Exception e)
-            {
-                Log.Error(e);
-            }
+            ProfilerResultQueue.Start(_canceller.Token).Forget(Log);
         }
 
         void OnGameUnloading()

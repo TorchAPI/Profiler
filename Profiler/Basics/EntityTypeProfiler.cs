@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using NLog;
 using Profiler.Core;
 using Sandbox.Game.Entities;
 using VRage.Game.Entity.EntityComponents.Interfaces;
@@ -10,6 +11,7 @@ namespace Profiler.Basics
 {
     public sealed class EntityTypeProfiler : BaseProfiler<string>
     {
+        static readonly ILogger Log = LogManager.GetCurrentClassLogger();
         readonly ConcurrentDictionary<Type, string> _names;
 
         public EntityTypeProfiler()
@@ -40,13 +42,17 @@ namespace Profiler.Basics
                     acceptedKeys.Add(key);
                     return;
                 }
-                case null:
-                {
-                    throw new InvalidOperationException("null in the profiler; possibly patch overlap by other plugins");
-                }
                 default:
                 {
-                    throw new InvalidOperationException($"shouldn't happen: {profilerResult.GameEntity.GetType()}");
+                    if (ProfilerConfig.Instance.SilenceInvalidPatch)
+                    {
+                        return;
+                    }
+
+                    var str = profilerResult.GameEntity?.GetType().ToString() ?? "null";
+                    Log.Error($"invalid patch or conflict: {str}");
+
+                    return;
                 }
             }
         }

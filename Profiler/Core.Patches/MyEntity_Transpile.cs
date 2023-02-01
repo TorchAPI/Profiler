@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Profiler.Utils;
+using Utils.General;
 using Torch.Managers.PatchManager;
 using Torch.Managers.PatchManager.MSIL;
 

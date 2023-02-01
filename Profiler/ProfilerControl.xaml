@@ -1,0 +1,90 @@
+<UserControl x:Class="Profiler.ProfilerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:Profiler"
+             d:DataContext="{x:Static local:ProfilerConfig.Instance}"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="300">
+    <UserControl.Resources>
+        <ObjectDataProvider
+            x:Key="AllCommands"
+            ObjectType="{x:Type local:ProfilerControl}"
+            MethodName="GetAllCommands" />
+        <!-- Header Label Template -->
+        <ControlTemplate x:Key="Header" TargetType="Label">
+            <Grid>
+                <Label FontWeight="700" Margin="0,10,0,0">
+                    <UserControl>
+                        <ContentPresenter />
+                    </UserControl>
+                </Label>
+            </Grid>
+        </ControlTemplate>
+    </UserControl.Resources>
+    <StackPanel Orientation="Vertical" Margin="10, 10, 10, 10">
+        <Label>
+            <Label.Content>
+                <Hyperlink NavigateUri="https://wiki.torchapi.com/index.php?title=Plugins/Profiler"
+                           RequestNavigate="RequestNavigate">
+                    How to use Profiler plugin
+                </Hyperlink>
+            </Label.Content>
+        </Label>
+        <!-- Commands -->
+        <Expander Header="Commands"
+                  Margin="0,10,0,0"
+                  IsExpanded="True">
+            <ItemsControl ItemsSource="{Binding Source={StaticResource AllCommands}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{Binding Item1}" MinWidth="80" />
+                            <Label Content="{Binding Item3}" MinWidth="60" />
+                            <Label Content="{Binding Item2}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Expander>
+        <!-- Configs -->
+        <Label Content="Configs" Template="{StaticResource Header}" />
+        <Button Click="OnReloadClick" Content="Reload from disk" Margin="1" Width="100" HorizontalAlignment="Left" />
+        <ItemsControl>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Enabled" />
+                <CheckBox IsChecked="{Binding Enabled}" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Silence invalid patch" />
+                <CheckBox IsChecked="{Binding SilenceInvalidPatch}" VerticalAlignment="Center" />
+            </StackPanel>
+            <Label>
+                <Label.Content>
+                    <AccessText Text="(*): Requires a restart." TextWrapping="Wrap" />
+                </Label.Content>
+            </Label>
+        </ItemsControl>
+        <!-- Debug -->
+        <Label Content="Debugs" Template="{StaticResource Header}" />
+        <ItemsControl>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Log file path" />
+                <TextBox Text="{Binding LogFilePath}" VerticalAlignment="Center" MinWidth="100" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Suppress console output" />
+                <CheckBox IsChecked="{Binding SuppressWpfOutput}" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Enable DEBUG logs" />
+                <CheckBox IsChecked="{Binding EnableLoggingDebug}" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Enable TRACE logs" />
+                <CheckBox IsChecked="{Binding EnableLoggingTrace}" VerticalAlignment="Center" />
+            </StackPanel>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>
