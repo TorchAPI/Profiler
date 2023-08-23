@@ -129,7 +129,7 @@ namespace Profiler
                         // MyEntity and MyEntityComponentBase
                         MyGameLogic_Update.Patch(ctx);
                         MyParallelEntityUpdateOrchestrator_Transpile.Patch(ctx);
-                        MyUpdateOrchestrator_Transpile.Patch(ctx);
+                        //MyUpdateOrchestrator_Transpile.Patch(ctx);
                         MyProgrammableBlock_RunSandboxedProgramAction.Patch(ctx);
 
                         // Physics

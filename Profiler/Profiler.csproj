@@ -197,7 +197,6 @@
     <Compile Include="Core.Patches\MySession_Update_Transpile.cs" />
     <Compile Include="Core.Patches\MySession_UpdateComponents_Transpile.cs" />
     <Compile Include="Core.Patches\MyTransportLayer_Tick.cs" />
-    <Compile Include="Core.Patches\MyUpdateOrchestrator_Transpile.cs" />
     <Compile Include="Core\CustomProfiling.cs" />
     <Compile Include="Core\FastConcurrentQueue.cs" />
     <Compile Include="Core\IProfiler.cs" />
